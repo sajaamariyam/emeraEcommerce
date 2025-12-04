@@ -1,0 +1,289 @@
+<%-include('../../views/partials/user/header')%>
+
+    <!-- Hero Section -->
+    <section class="bg-black text-white py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <p class="text-sm text-gray-400 mb-2">New Season Collection</p>
+            <h2 class="text-4xl md:text-6xl font-bold mb-4">Summer Elegance<br>2024</h2>
+            <p class="text-gray-300 mb-8 max-w-md">
+                Discover our newest arrivals. Crafted for the modern woman<br>
+                who appreciates timeless luxury and sophistication.
+            </p>
+            <button class="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-8 py-3 rounded transition">
+                Shop the Collection
+            </button>
+        </div>
+    </section>
+
+    <!-- Shop by Category -->
+    <section class="py-16 px-4">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-12">Shop by Category</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center group cursor-pointer">
+                    <div class="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-md group-hover:shadow-xl transition">
+                        <i class="fas fa-shopping-bag text-5xl text-gray-700"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg border-b-2 border-black inline-block pb-1">Handbags</h3>
+                </div>
+                <div class="text-center group cursor-pointer">
+                    <div class="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-md group-hover:shadow-xl transition">
+                        <i class="fas fa-wallet text-5xl text-gray-700"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg border-b-2 border-black inline-block pb-1">Clutches</h3>
+                </div>
+                <div class="text-center group cursor-pointer">
+                    <div class="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-md group-hover:shadow-xl transition">
+                        <i class="fas fa-suitcase text-5xl text-gray-700"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg border-b-2 border-black inline-block pb-1">Travel Bags</h3>
+                </div>
+                <div class="text-center group cursor-pointer">
+                    <div class="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-md group-hover:shadow-xl transition">
+                        <i class="fas fa-money-bill-wave text-5xl text-gray-700"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg border-b-2 border-black inline-block pb-1">Wallets</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Luxury Bags -->
+    <section class="py-16 px-4 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2">Featured Luxury Bags</h2>
+                    <p class="text-gray-600">Handpicked selection of our finest pieces</p>
+                </div>
+                <button class="flex items-center text-emerald-600 hover:text-emerald-700 font-medium">
+                    View All <i class="fas fa-chevron-right ml-2"></i>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Product 1 -->
+                <div class="group relative bg-stone-50 rounded-lg overflow-hidden">
+                    <div class="aspect-square bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center relative">
+                        <div class="absolute top-4 right-4 flex flex-col space-y-2">
+                            <button class="favorite-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                                <i class="far fa-heart text-gray-600"></i>
+                            </button>
+                            <button class="cart-btn w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-emerald-700">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1">Emerald Tote</h3>
+                        <p class="text-emerald-600 font-bold">$1,299.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="group relative bg-stone-50 rounded-lg overflow-hidden">
+                    <div class="aspect-square bg-gradient-to-br from-amber-900 to-amber-950 flex items-center justify-center relative">
+                        <div class="absolute top-4 right-4 flex flex-col space-y-2">
+                            <button class="favorite-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                                <i class="far fa-heart text-gray-600"></i>
+                            </button>
+                            <button class="cart-btn w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-emerald-700">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1">Midnight Clutch</h3>
+                        <p class="text-emerald-600 font-bold">$899.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="group relative bg-stone-50 rounded-lg overflow-hidden">
+                    <div class="aspect-square bg-gradient-to-br from-stone-200 to-stone-300 flex items-center justify-center relative">
+                        <div class="absolute top-4 right-4 flex flex-col space-y-2">
+                            <button class="favorite-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                                <i class="far fa-heart text-gray-600"></i>
+                            </button>
+                            <button class="cart-btn w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-emerald-700">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1">Ivory Shoulder Bag</h3>
+                        <p class="text-emerald-600 font-bold">$1,499.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="group relative bg-stone-50 rounded-lg overflow-hidden">
+                    <div class="aspect-square bg-gradient-to-br from-amber-700 to-amber-800 flex items-center justify-center relative">
+                        <div class="absolute top-4 right-4 flex flex-col space-y-2">
+                            <button class="favorite-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                                <i class="far fa-heart text-gray-600"></i>
+                            </button>
+                            <button class="cart-btn w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-emerald-700">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1">Cognac Crossbody</h3>
+                        <p class="text-emerald-600 font-bold">$1,199.00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- New Arrivals -->
+    <section class="py-16 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2">New Arrivals</h2>
+                    <p class="text-gray-600">Latest additions to our collection</p>
+                </div>
+                <button class="flex items-center text-emerald-600 hover:text-emerald-700 font-medium">
+                    View All <i class="fas fa-chevron-right ml-2"></i>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Product 5 -->
+                <div class="group relative bg-white rounded-lg overflow-hidden shadow-md">
+                    <div class="aspect-square bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center relative">
+                        <div class="absolute top-4 right-4 flex flex-col space-y-2">
+                            <button class="favorite-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                                <i class="far fa-heart text-gray-600"></i>
+                            </button>
+                            <button class="cart-btn w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-emerald-700">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1">Sage Mini Bag</h3>
+                        <p class="text-emerald-600 font-bold">$799.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 6 -->
+                <div class="group relative bg-white rounded-lg overflow-hidden shadow-md">
+                    <span class="absolute top-4 left-4 bg-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full z-10">New</span>
+                    <div class="aspect-square bg-gradient-to-br from-purple-300 to-purple-400 flex items-center justify-center relative">
+                        <div class="absolute top-4 right-4 flex flex-col space-y-2">
+                            <button class="favorite-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                                <i class="far fa-heart text-gray-600"></i>
+                            </button>
+                            <button class="cart-btn w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-emerald-700">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1">Pearl Evening Clutch</h3>
+                        <p class="text-emerald-600 font-bold">$999.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 7 -->
+                <div class="group relative bg-white rounded-lg overflow-hidden shadow-md">
+                    <span class="absolute top-4 left-4 bg-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full z-10">New</span>
+                    <div class="aspect-square bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center relative">
+                        <div class="absolute top-4 right-4 flex flex-col space-y-2">
+                            <button class="favorite-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                                <i class="far fa-heart text-gray-600"></i>
+                            </button>
+                            <button class="cart-btn w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-emerald-700">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1">Ruby Leather Tote</h3>
+                        <p class="text-emerald-600 font-bold">$1,399.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 8 -->
+                <div class="group relative bg-white rounded-lg overflow-hidden shadow-md">
+                    <span class="absolute top-4 left-4 bg-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full z-10">New</span>
+                    <div class="aspect-square bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center relative">
+                        <div class="absolute top-4 right-4 flex flex-col space-y-2">
+                            <button class="favorite-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                                <i class="far fa-heart text-gray-600"></i>
+                            </button>
+                            <button class="cart-btn w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-emerald-700">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1">Emerald Hobo Bag</h3>
+                        <p class="text-emerald-600 font-bold">$1,099.00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Crafted with Passion Section -->
+    <section class="py-16 px-4 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="text-4xl font-bold mb-4">Crafted with Passion,<br><span class="text-emerald-600">Worn with Pride</span></h2>
+                    <p class="text-gray-700 mb-4">
+                        At Emera, we believe that luxury is in the details. Each of our handbags is meticulously crafted by master artisans using the finest materials sourced from around the world.
+                    </p>
+                    <p class="text-gray-700 mb-6">
+                        Our commitment to quality and sustainable practices ensures that every Emera creation is not just a fashion statement but a legacy piece to be cherished for generations.
+                    </p>
+                    <button class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-3 rounded transition">
+                        Discover Our Story
+                    </button>
+                </div>
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1528460033278-a6ba57020470?w=600&h=600&fit=crop" alt="Craftsmanship" class="rounded-lg shadow-xl w-full">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="py-16 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shipping-fast text-2xl text-emerald-600"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Free Shipping</h3>
+                    <p class="text-gray-600 text-sm">On all orders above $100</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-undo text-2xl text-emerald-600"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">30 Days Return</h3>
+                    <p class="text-gray-600 text-sm">Hassle-free return policy</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shield-alt text-2xl text-emerald-600"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Secure Payment</h3>
+                    <p class="text-gray-600 text-sm">100% secure payment</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-credit-card text-2xl text-emerald-600"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Flexible Payment</h3>
+                    <p class="text-gray-600 text-sm">Multiple payment options</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <%-include('../../views/partials/user/footer')%>

@@ -1,0 +1,101 @@
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <h3 class="text-2xl font-bold text-emerald-500 mb-4">Emera</h3>
+                    <p class="text-gray-400 text-sm">
+                        Premium crafting—refined style. Elevate your style with superior, timeless elegance.
+                    </p>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Shop</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white">All Products</a></li>
+                        <li><a href="#" class="hover:text-white">New Bags</a></li>
+                        <li><a href="#" class="hover:text-white">Clutch Bags</a></li>
+                        <li><a href="#" class="hover:text-white">Women's Bags</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Company</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white">About Us</a></li>
+                        <li><a href="#" class="hover:text-white">Contact</a></li>
+                        <li><a href="#" class="hover:text-white">Careers</a></li>
+                        <li><a href="#" class="hover:text-white">Store Locator</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Contact</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><i class="fas fa-map-marker-alt mr-2"></i>123 Luxury Avenue, Fashion District, NY 10001</li>
+                        <li><i class="fas fa-phone mr-2"></i>+1 (800) 123-4567</li>
+                        <li><i class="fas fa-envelope mr-2"></i>contact@emerabags.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
+                <p>© 2025 Emera. All rights reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-white">Privacy Policy</a>
+                    <a href="#" class="hover:text-white">Terms of Service</a>
+                    <a href="#" class="hover:text-white">Shipping</a>
+                    <a href="#" class="hover:text-white">Returns</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Favorite button functionality
+        const favoriteButtons = document.querySelectorAll('.favorite-btn');
+        favoriteButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon.classList.contains('far')) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    icon.classList.add('text-red-500');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.remove('text-red-500');
+                    icon.classList.add('far');
+                }
+            });
+        });
+
+        // Add to cart functionality
+        const cartButtons = document.querySelectorAll('.cart-btn');
+        const cartCountElement = document.getElementById('cartCount');
+        let cartCount = 2;
+
+        cartButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                cartCount++;
+                cartCountElement.textContent = cartCount;
+                
+                // Add animation
+                cartCountElement.classList.add('animate-bounce');
+                setTimeout(() => {
+                    cartCountElement.classList.remove('animate-bounce');
+                }, 500);
+            });
+        });
+    </script>
+</body>
+</html>

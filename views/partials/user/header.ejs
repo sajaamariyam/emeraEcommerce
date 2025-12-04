@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emera - Luxury Bags Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-stone-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-emerald-700">Emera</h1>
+                </div>
+                
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-900 hover:text-emerald-600 font-medium">Home</a>
+                    <a href="#" class="text-gray-700 hover:text-emerald-600">About</a>
+                    <a href="#" class="text-gray-700 hover:text-emerald-600">Shop</a>
+                </nav>
+
+                <div class="flex items-center space-x-4">
+                    <button class="p-2 hover:bg-gray-100 rounded-full">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="p-2 hover:bg-gray-100 rounded-full">
+                        <i class="far fa-heart"></i>
+                    </button>
+                    <button class="p-2 hover:bg-gray-100 rounded-full relative">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="absolute top-0 right-0 bg-emerald-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" id="cartCount">2</span>
+                    </button>
+                    <button class="p-2 hover:bg-gray-100 rounded-full">
+                        <i class="far fa-user"></i>
+                    </button>
+                    <button class="md:hidden p-2" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="md:hidden border-t hidden" id="mobileMenu">
+            <div class="px-4 py-4 space-y-3">
+                <a href="#" class="block text-gray-900 font-medium">Home</a>
+                <a href="#" class="block text-gray-700">About</a>
+                <a href="#" class="block text-gray-700">Shop</a>
+            </div>
+        </div>
+    </header>
