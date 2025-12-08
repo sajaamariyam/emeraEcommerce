@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Emera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-stone-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-emerald-700">EMERA</h1>
+            <p class="text-yellow-600 text-sm tracking-widest mt-1">LUXURY SHOPPING</p>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Create Your Account</h2>
+                <p class="text-gray-600 text-sm">Join Emera and enjoy luxury shopping</p>
+            </div>
+
+            <form method="post" action="/signup" id="signupForm" >
+                <!-- Full Name -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <input 
+                        type="text" 
+                        id="fullName"
+                        name="name"
+                        placeholder="John Doe"
+                        required
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                    >
+                </div>
+
+                <!-- Email -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input 
+                        type="email" 
+                        id="email"
+                        name="email"
+                        placeholder="your.email@example.com"
+                        required
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                    >
+                </div>
+
+                <!-- Phone Number -->
+                <div class="mb-4">
+                     <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label> 
+                     <input type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="+91 8943220832"
+                    required 
+                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition" > </div>
+
+                <!-- Password -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password"
+                            name="password"
+                            placeholder="••••••••"
+                            required
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                        >
+                        <button 
+                            type="button"
+                            onclick="togglePassword('password', 'passwordIcon')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            <i class="far fa-eye" id="passwordIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="confirmPassword"
+                            name="cPassword"
+                            placeholder="••••••••"
+                            required
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                        >
+                        <button 
+                            type="button"
+                            onclick="togglePassword('confirmPassword', 'confirmPasswordIcon')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            <i class="far fa-eye" id="confirmPasswordIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Password Requirements -->
+                <div class="mb-4 space-y-1">
+                    <div class="flex items-center text-sm">
+                        <span class="w-2 h-2 rounded-full bg-yellow-500 mr-2" id="minChars"></span>
+                        <span class="text-gray-600" id="minCharsText">Minimum 8 characters</span>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="w-2 h-2 rounded-full bg-yellow-500 mr-2" id="upperCase"></span>
+                        <span class="text-gray-600" id="upperCaseText">One uppercase letter</span>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="w-2 h-2 rounded-full bg-yellow-500 mr-2" id="number"></span>
+                        <span class="text-gray-600" id="numberText">One number</span>
+                    </div>
+                </div>
+
+                <!-- Referral Code -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Have a referral code?</label>
+                    <input 
+                        type="text" 
+                        id="referralCode"
+                        placeholder="Enter referral code (optional)"
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                    >
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit"
+                    class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105"
+                >
+                    Create Account
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="my-6 relative">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-200"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-white text-yellow-600 font-medium">OR</span>
+                </div>
+            </div>
+
+            <!-- Google Sign Up -->
+            <button 
+                type="button"
+                onclick="handleGoogleSignup()"
+                class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            >
+                <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                <span class="text-gray-700 font-medium">Continue with</span>
+                <span class="text-yellow-600 font-medium ml-1">Google</span>
+            </button>
+
+            <!-- Login Link -->
+            <p class="mt-6 text-center text-sm text-gray-600">
+                Already have an account? 
+                <a href="login.html" class="text-yellow-600 hover:text-yellow-700 font-medium">Log in</a>
+            </p>
+        </div>
+
+        <!-- Footer Links -->
+        <div class="mt-8 flex justify-center items-center space-x-4 text-sm">
+            <a href="#" class="text-yellow-600 hover:text-yellow-700">Terms</a>
+            <span class="text-gray-400">•</span>
+            <a href="#" class="text-yellow-600 hover:text-yellow-700">Privacy</a>
+            <span class="text-gray-400">•</span>
+            <a href="#" class="text-yellow-600 hover:text-yellow-700">Help</a>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Password validation
+        const passwordInput = document.getElementById('password');
+        
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            
+            // Check minimum 8 characters
+            const minChars = password.length >= 8;
+            updateRequirement('minChars', 'minCharsText', minChars);
+            
+            // Check uppercase letter
+            const hasUpperCase = /[A-Z]/.test(password);
+            updateRequirement('upperCase', 'upperCaseText', hasUpperCase);
+            
+            // Check number
+            const hasNumber = /[0-9]/.test(password);
+            updateRequirement('number', 'numberText', hasNumber);
+        });
+
+        function updateRequirement(dotId, textId, isMet) {
+            const dot = document.getElementById(dotId);
+            const text = document.getElementById(textId);
+            
+            if (isMet) {
+                dot.classList.remove('bg-yellow-500');
+                dot.classList.add('bg-emerald-500');
+                text.classList.remove('text-gray-600');
+                text.classList.add('text-emerald-600');
+            } else {
+                dot.classList.remove('bg-emerald-500');
+                dot.classList.add('bg-yellow-500');
+                text.classList.remove('text-emerald-600');
+                text.classList.add('text-gray-600');
+            }
+        }
+
+        // Handle form submission
+        function handleSignup(event) {
+            event.preventDefault();
+            
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const referralCode = document.getElementById('referralCode').value;
+            
+            // Validate password match
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            // Validate password requirements
+            if (password.length < 8) {
+                alert('Password must be at least 8 characters long!');
+                return;
+            }
+            
+            if (!/[A-Z]/.test(password)) {
+                alert('Password must contain at least one uppercase letter!');
+                return;
+            }
+            
+            if (!/[0-9]/.test(password)) {
+                alert('Password must contain at least one number!');
+                return;
+            }
+            
+            // Simulate signup
+            console.log('Signup:', { fullName, email, phone, password, referralCode });
+            alert('Account created successfully! (This is a demo)');
+            
+            // Redirect to home or login
+            window.location.href = 'index.html';
+        }
+
+        // Handle Google signup
+        function handleGoogleSignup() {
+            alert('Google Sign Up (This is a demo)');
+            // In production, this would integrate with Google OAuth
+        }
+
+        // Phone number formatting
+        const phoneInput = document.getElementById('phone');
+
+phoneInput.addEventListener('input', function (e) {
+    let value = e.target.value.replace(/\D/g, '');
+
+    // Ensure it always begins with "91"
+    if (!value.startsWith('91')) {
+        value = '91' + value;
+    }
+
+    // Remove repeated 91 if user types it manually
+    if (value.startsWith('9191')) {
+        value = value.slice(2);
+    }
+
+    // Keep only 10 digits for the phone part
+    let numberPart = value.slice(2, 12);
+
+    // Formatting:
+    // +91 98765 43210
+    let formatted = '+91';
+
+    if (numberPart.length > 0) {
+        formatted += ' ' + numberPart.slice(0, 5);
+    }
+    if (numberPart.length > 5) {
+        formatted += ' ' + numberPart.slice(5);
+    }
+
+    e.target.value = formatted;
+});
+
+    </script>
+</body>
+</html>

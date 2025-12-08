@@ -33,9 +33,17 @@
                         <i class="fas fa-shopping-cart"></i>
                         <span class="absolute top-0 right-0 bg-emerald-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" id="cartCount">2</span>
                     </button>
-                    <button class="p-2 hover:bg-gray-100 rounded-full">
-                        <i class="far fa-user"></i>
-                    </button>
+                    
+                    <!-- Auth Buttons -->
+                    <div class="hidden md:flex items-center space-x-2">
+                        <a href="/login" class="px-4 py-2 text-gray-700 hover:text-emerald-600 font-medium transition">
+                            Login
+                        </a>
+                        <a href="/signup" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition">
+                            Sign Up
+                        </a>
+                    </div>
+                    
                     <button class="md:hidden p-2" id="mobileMenuBtn">
                         <i class="fas fa-bars"></i>
                     </button>
@@ -49,6 +57,8 @@
                 <a href="#" class="block text-gray-900 font-medium">Home</a>
                 <a href="#" class="block text-gray-700">About</a>
                 <a href="#" class="block text-gray-700">Shop</a>
+                <a href="login.html" class="block text-gray-700">Login</a>
+                <a href="signup.html" class="block text-emerald-600 font-medium">Sign Up</a>
             </div>
         </div>
     </header>
