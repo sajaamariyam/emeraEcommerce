@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Emera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f5f1ed;
+        }
+        .otp-input {
+            width: 50px;
+            height: 56px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .otp-input:focus {
+            outline: none;
+            border-color: #0d7c66;
+        }
+        .primary-btn {
+            background-color: #0d7c66;
+            transition: all 0.3s;
+        }
+        .primary-btn:hover {
+            background-color: #0a6353;
+        }
+        .resend-link {
+            color: #c89d5c;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .resend-link:hover {
+            color: #b08a4a;
+        }
+        .resend-link.disabled {
+            color: #d1d5db;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-1" style="color: #0d7c66;">EMERA</h1>
+            <p class="text-sm tracking-wider" style="color: #c89d5c;">LUXURY SHOPPING</p>
+        </div>
+
+        <!-- OTP Card -->
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Verify Your Email</h2>
+                <p class="text-gray-600 text-sm">We've sent a verification code to</p>
+                <p class="text-gray-800 font-medium mt-1" id="userEmail"><%= userEmail %></p>
+            </div>
+
+            <!-- OTP Input Fields -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-3">Enter 6-digit code</label>
+                <div class="flex justify-center gap-2 mb-2">
+                    <input type="text" maxlength="1" class="otp-input" id="otp1" />
+                    <input type="text" maxlength="1" class="otp-input" id="otp2" />
+                    <input type="text" maxlength="1" class="otp-input" id="otp3" />
+                    <input type="text" maxlength="1" class="otp-input" id="otp4" />
+                    <input type="text" maxlength="1" class="otp-input" id="otp5" />
+                    <input type="text" maxlength="1" class="otp-input" id="otp6" />
+                </div>
+                <p class="text-xs text-red-500 mt-2 hidden" id="errorMsg">Invalid code. Please try again.</p>
+            </div>
+
+            <!-- Verify Button -->
+            <button class="w-full primary-btn text-white font-medium py-3.5 rounded-lg mb-4" id="verifyBtn">
+                Verify Email
+            </button>
+
+            <!-- Divider -->
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-200"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-4 bg-white text-gray-500">Didn't receive the code?</span>
+                </div>
+            </div>
+
+            <!-- Resend Code -->
+            <div class="text-center">
+                <span class="resend-link text-sm font-medium" id="resendBtn">Resend Code</span>
+                <span class="text-sm text-gray-500 ml-2 hidden" id="timer"></span>
+            </div>
+
+            <!-- Back to Login -->
+            <div class="text-center mt-6">
+                <p class="text-sm text-gray-600">
+                    Want to use a different email? 
+                    <a href="#" class="resend-link font-medium">Change Email</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer Links -->
+        <div class="text-center mt-6 flex justify-center items-center gap-4 text-sm">
+            <a href="#" class="text-gray-600 hover:text-gray-800">Terms</a>
+            <span class="text-gray-400">•</span>
+            <a href="#" class="text-gray-600 hover:text-gray-800">Privacy</a>
+            <span class="text-gray-400">•</span>
+            <a href="#" class="text-gray-600 hover:text-gray-800">Help</a>
+        </div>
+    </div>
+
+   <script>
+    const OTP_MODE = "<%= otpMode %>";
+    const USER_EMAIL = "<%= userEmail %>";
+
+    const otpInputs = document.querySelectorAll('.otp-input');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const resendBtn = document.getElementById('resendBtn');
+    const timer = document.getElementById('timer');
+    const errorMsg = document.getElementById('errorMsg');
+
+    let resendTimeout;
+    let countdown = 60;
+
+    
+    otpInputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            if (!/^\d$/.test(e.target.value)) {
+                e.target.value = "";
+                return;
+            }
+            if (index < otpInputs.length - 1) {
+                otpInputs[index + 1].focus();
+            }
+            errorMsg.classList.add('hidden');
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                otpInputs[index - 1].focus();
+            }
+        });
+    });
+
+
+
+    verifyBtn.addEventListener("click", async () => {
+        const otp = Array.from(otpInputs).map(input => input.value).join("");
+
+        if (otp.length !== 6) {
+            errorMsg.textContent = "Please enter all 6 digits.";
+            errorMsg.classList.remove("hidden");
+            return;
+        }
+
+        try {
+            const verifyUrl = OTP_MODE === "signup" ? "/verify-otp" : "/verify-forgot-otp";
+
+            const res = await fetch(verifyUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ otp })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                window.location.href = data.redirectUrl;
+            } else {
+                errorMsg.textContent = data.message;
+                errorMsg.classList.remove("hidden");
+            }
+
+        } catch (error) {
+            errorMsg.textContent = "Server error. Try again.";
+            errorMsg.classList.remove("hidden");
+        }
+    });
+
+
+
+    resendBtn.addEventListener("click", async () => {
+        if (resendBtn.classList.contains("disabled")) return;
+
+        try {
+            const resendUrl = OTP_MODE === "signup" ? "/resend-otp" : "/forgot-resend-otp";
+
+            const res = await fetch(resendUrl, { method: "POST" });
+            const data = await res.json();
+
+            if (data.success) {
+                otpInputs.forEach(i => i.value = "");
+                otpInputs[0].focus();
+                errorMsg.classList.add("hidden");
+                startResendTimer();
+            } else {
+                alert("Failed to resend OTP.");
+            }
+        } catch (err) {
+            alert("Server error");
+        }
+    });
+
+
+    function startResendTimer() {
+        countdown = 60;
+        resendBtn.classList.add("disabled");
+        timer.classList.remove("hidden");
+
+        resendTimeout = setInterval(() => {
+            countdown--;
+            timer.textContent = `(${countdown}s)`;
+
+            if (countdown <= 0) {
+                clearInterval(resendTimeout);
+                resendBtn.classList.remove("disabled");
+                timer.classList.add("hidden");
+            }
+        }, 1000);
+    }
+
+    startResendTimer();
+    otpInputs[0].focus();
+</script>
+
+</body>
+</html>
