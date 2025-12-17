@@ -5,6 +5,7 @@ const session = require("express-session");
 const passport = require("./config/passport")
 const db = require("./config/db")
 const userRouter = require("./routes/userRouter")
+const adminRouter = require("./routes/adminRouter")
 db()
 const app = express();
 
@@ -31,11 +32,12 @@ app.set("views", [path.join(__dirname, "views/user"),
     path.join(__dirname, "views/admin")])
 app.use(express.static(path.join(__dirname, "public")))
 
+app.use("/admin", adminRouter);
 app.use("/", userRouter);
 
 
 app.listen(process.env.PORT, () => {
-    console.log("server running")
+    console.log("server running http://localhost:3000/")
 })
 
 module.exports = app

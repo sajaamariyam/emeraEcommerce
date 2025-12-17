@@ -1,168 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emera - Luxury Bags Store</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emera - Luxury Leather Goods</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Playfair Display', 'serif'],
+            },
+            colors: {
+              emera: {
+                50: '#f2fbf7',
+                100: '#e1f5eb',
+                200: '#c3ead9',
+                300: '#94d8c0',
+                400: '#5cbea3',
+                500: '#36a389',
+                600: '#26836d',
+                700: '#206958',
+                800: '#1d5448',
+                900: '#19453c',
+                950: '#062c26', // Deep luxury green
+              },
+              gold: {
+                400: '#d4af37',
+                500: '#c5a028',
+              }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.8s ease-out forwards',
+              'slide-up': 'slideUp 0.8s ease-out forwards',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      /* Smooth scrolling */
+      html { scroll-behavior: smooth; }
+      /* Hide scrollbar for clean horizontal scroll */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body class="bg-stone-50">
-    <!-- Header -->
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-emerald-700">Emera</h1>
-                </div>
-                
-                <nav class="hidden md:flex space-x-8">
-                    <a href="#" class="text-gray-900 hover:text-emerald-600 font-medium">Home</a>
-                    <a href="#" class="text-gray-700 hover:text-emerald-600">About</a>
-                    <a href="#" class="text-gray-700 hover:text-emerald-600">Shop</a>
-                </nav>
 
-                <div class="flex items-center space-x-4">
-                    <button class="p-2 hover:bg-gray-100 rounded-full">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    <button class="p-2 hover:bg-gray-100 rounded-full">
-                        <i class="far fa-heart"></i>
-                    </button>
-                    <button class="p-2 hover:bg-gray-100 rounded-full relative">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="absolute top-0 right-0 bg-emerald-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" id="cartCount">2</span>
-                    </button>
-                                    
-                    <% if (user) { %>
 
-<div class="relative inline-block group">
-
-    <!-- Username button -->
-    <button class="font-medium text-gray-700 group-hover:text-emerald-600 transition">
-        <%= user.name %>
-    </button>
-
-    <!-- HOVER BRIDGE (fix disappearing dropdown) -->
-    <div class="absolute left-0 right-0 h-4 group-hover:block"></div>
-
-    <!-- Dropdown -->
-    <div 
-        class="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md border border-gray-200
-               opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all
-               z-50 pointer-events-auto">
-
-        <a href="/userProfile" 
-           class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-            Profile
-        </a>
-
-        <a onclick="openLogoutModal()" 
-            class="block px-4 py-2 text-red-600 hover:bg-gray-100 cursor-pointer">
-            Logout
-        </a>
-
-    </div>
+<!-- Announcement -->
+<div class="bg-emera-950 text-white text-xs tracking-widest text-center py-2 uppercase font-medium">
+  Complimentary Shipping on Orders Over ₹500
 </div>
 
-        <% } else { %>
+<!-- NAVBAR -->
+<nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-20">
 
-<div class="hidden md:flex items-center space-x-3">
-    <a href="/login" class="px-4 py-2 text-gray-700 hover:text-emerald-600 font-medium transition">
-        Login
-    </a>
-    <a href="/signup" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition">
-        Sign Up
-    </a>
-</div>
-
-<% } %>
-
-
-
-
-
-                    <button class="md:hidden p-2" id="mobileMenuBtn">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile Menu -->
-        <div class="md:hidden border-t hidden" id="mobileMenu">
-            <div class="px-4 py-4 space-y-3">
-                <a href="#" class="block text-gray-900 font-medium">Home</a>
-                <a href="#" class="block text-gray-700">About</a>
-                <a href="#" class="block text-gray-700">Shop</a>
-                <a href="login.html" class="block text-gray-700">Login</a>
-                <a href="signup.html" class="block text-emerald-600 font-medium">Sign Up</a>
-            </div>
-        </div>
-    </header>
-
-  <!-- Logout Modal -->
-<div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-30 hidden flex items-center justify-center p-4 z-50">
-    
-    <!-- Modal Content -->
-    <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md relative">
-
-        <!-- Close Button -->
-        <button 
-            onclick="closeLogoutModal()"
-            class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+      <!-- Mobile Menu Button -->
+      <div class="flex items-center md:hidden">
+        <button id="mobile-menu-btn" class="p-2 text-gray-900">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
         </button>
+      </div>
 
-        <!-- Icon -->
-        <div class="flex justify-center mb-6">
-            <div class="w-20 h-20 bg-[#e8f4f1] rounded-full flex items-center justify-center">
-                <svg class="w-10 h-10 text-[#c9a961]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-            </div>
-        </div>
+      <!-- Logo -->
+      <div class="flex-shrink-0 flex items-center justify-center flex-1 md:flex-none md:justify-start">
+        <a href="/" class="font-serif text-3xl tracking-tighter text-emera-950 font-bold">
+          EMERA.
+        </a>
+      </div>
 
-        <h2 class="text-2xl font-semibold text-gray-900 text-center mb-3">Log Out?</h2>
+      <!-- ✅ DESKTOP NAV (THIS WAS MISSING) -->
+      <div class="hidden md:flex space-x-8 items-center justify-center flex-1">
+        <a href="#" class="text-sm uppercase tracking-wide font-medium text-gray-600 hover:text-emera-900 transition-colors">New Arrivals</a>
+        <a href="#" class="text-sm uppercase tracking-wide font-medium text-gray-600 hover:text-emera-900 transition-colors">Handbags</a>
+        <a href="#" class="text-sm uppercase tracking-wide font-medium text-gray-600 hover:text-emera-900 transition-colors">Small Leather Goods</a>
+        <a href="#" class="text-sm uppercase tracking-wide font-medium text-gray-600 hover:text-emera-900 transition-colors">World of Emera</a>
+      </div>
 
-        <p class="text-gray-600 text-center mb-8">
-            Are you sure you want to log out of your account?
-        </p>
+      <!-- Right Side (Auth / Icons) -->
+      <div class="flex items-center space-x-4 sm:space-x-6">
+<!-- Icons (ALWAYS VISIBLE) -->
+<div class="flex items-center space-x-4 sm:space-x-6">
 
-        <div class="flex gap-4">
+  <!-- Search -->
+  <button class="text-gray-900 hover:text-emera-700 transition-colors">
+    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  </button>
 
-            <button 
-                onclick="closeLogoutModal()"
-                class="flex-1 py-3.5 border-2 border-[#c9a961] text-[#c9a961] rounded-full font-medium hover:bg-[#c9a961] hover:text-white transition-all duration-200">
-                No, Cancel
-            </button>
+  <!-- Cart -->
+  <button class="text-gray-900 hover:text-emera-700 transition-colors relative group">
+    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+    </svg>
+    <span id="cart-badge"
+          class="absolute -top-1.5 -right-1.5 bg-emera-900 text-white text-[10px] font-bold
+                 w-4 h-4 rounded-full flex items-center justify-center opacity-0 scale-0
+                 transition-all duration-300">
+      0
+    </span>
+  </button>
 
-            <button 
-                onclick="handleLogout()"
-                class="flex-1 py-3.5 bg-[#0f6b5a] text-white rounded-full font-medium hover:bg-[#0d5a4a] transition-colors duration-200">
-                Yes, Proceed
-            </button>
+  <!-- AUTH SECTION -->
+  <% if (!user) { %>
+    <!-- Guest -->
+    <a href="/login"
+       class="hidden sm:block text-sm font-medium text-gray-600 hover:text-emera-900">
+      Login
+    </a>
+    <a href="/signup"
+       class="hidden sm:block px-4 py-2 bg-emera-900 text-white text-sm font-medium rounded
+              hover:bg-emera-800">
+      Sign Up
+    </a>
+  <% } else { %>
+    <!-- Logged User -->
+    <div class="relative hidden sm:block group">
+      <button class="text-sm font-medium text-gray-700 hover:text-emera-900">
+        <%= user.name %>
+      </button>
 
-        </div>
+      <div class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg
+                  opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+        <a href="/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+          Profile
+        </a>
+        <a href="/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-100">
+          Logout
+        </a>
+      </div>
     </div>
+  <% } %>
+
 </div>
 
-<script>
-    function openLogoutModal() {
-        document.getElementById("logoutModal").classList.remove("hidden");
-    }
+  </div>
 
-    function closeLogoutModal() {
-        document.getElementById("logoutModal").classList.add("hidden");
-    }
+  <!-- ✅ MOBILE MENU (ALWAYS PRESENT) -->
+  <div id="mobile-menu"
+       class="fixed inset-0 z-40 bg-white transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden flex flex-col h-screen w-full">
 
-    function handleLogout() {
-        window.location.href = "/logout";  // Correct logout route
-    }
-</script>
+    <div class="flex justify-between items-center p-4 border-b">
+      <span class="font-serif text-2xl font-bold text-emera-950">EMERA.</span>
+      <button id="close-menu-btn" class="p-2 text-gray-500">
+        ✕
+      </button>
+    </div>
 
+    <div class="flex flex-col p-6 space-y-6 overflow-y-auto">
+      <a href="#" class="text-2xl font-serif text-gray-900">New Arrivals</a>
+      <a href="#" class="text-2xl font-serif text-gray-900">Handbags</a>
+      <a href="#" class="text-2xl font-serif text-gray-900">Travel</a>
+      <a href="#" class="text-2xl font-serif text-gray-900">Accessories</a>
+    </div>
+  </div>
+</nav>

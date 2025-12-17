@@ -1,0 +1,291 @@
+  
+<%- include("../partials/admin/header") %>
+
+<div class="ml-52 h-screen overflow-y-auto bg-gray-50">
+
+
+  <!-- Main Content -->
+        <div class="flex-1">
+            <!-- Header -->
+            <div class="bg-white border-b px-8 py-4 flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-semibold text-teal-700">Emera Admin — Products</h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-teal-700 font-medium text-sm">
+                        JD
+                    </div>
+                    <span class="text-sm text-gray-700">John Doe</span>
+                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-800">Product Management</h2>
+                        <p class="text-gray-600 mt-1">Create, edit, list, or unlist products.</p>
+                    </div>
+                    <button onclick="openAddModal()" class="bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium">
+                        <i class="fas fa-plus"></i>
+                        Add Product
+                    </button>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Total Products</p>
+                                <p class="text-3xl font-bold text-gray-800" id="totalProducts">0</p>
+                                <div class="h-1 w-12 bg-yellow-400 mt-2"></div>
+                            </div>
+                            <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-box text-teal-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Listed Products</p>
+                                <p class="text-3xl font-bold text-green-600" id="listedProducts">0</p>
+                                <div class="h-1 w-12 bg-yellow-400 mt-2"></div>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Unlisted Products</p>
+                                <p class="text-3xl font-bold text-orange-600" id="unlistedProducts">0</p>
+                                <div class="h-1 w-12 bg-yellow-400 mt-2"></div>
+                            </div>
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-eye-slash text-orange-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Total Value</p>
+                                <p class="text-3xl font-bold text-gray-800" id="totalValue">₹0</p>
+                                <div class="h-1 w-12 bg-yellow-400 mt-2"></div>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-rupee-sign text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <div class="flex flex-col md:flex-row gap-4 items-center">
+                        <div class="flex-1 w-full">
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                <input 
+                                    type="text" 
+                                    id="searchInput"
+                                    placeholder="Search products..." 
+                                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                >
+                            </div>
+                        </div>
+                        
+                        <select id="categoryFilter" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            <option value="all">All Categories</option>
+                            <option value="Designer Handbags">Designer Handbags</option>
+                            <option value="Fine Jewelry">Fine Jewelry</option>
+                            <option value="Luxury Apparel">Luxury Apparel</option>
+                            <option value="Luxury Watches">Luxury Watches</option>
+                            <option value="Premium Footwear">Premium Footwear</option>
+                        </select>
+                        
+                        <select id="statusFilter" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            <option value="all">All Status</option>
+                            <option value="listed">Listed</option>
+                            <option value="unlisted">Unlisted</option>
+                        </select>
+                        
+                        <select id="sortFilter" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            <option value="name-az">Name: A–Z</option>
+                            <option value="name-za">Name: Z–A</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="stock-high">Stock: High to Low</option>
+                            <option value="stock-low">Stock: Low to High</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Products Table -->
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Image</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Product Name</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Category</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Price</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Stock</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody" class="divide-y divide-gray-200">
+                            <!-- Products will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="productModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 my-8">
+            <div class="flex items-center justify-between mb-6">
+                <h3 id="modalTitle" class="text-2xl font-bold text-gray-800">Add Product</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="productForm" onsubmit="saveProduct(event)">
+                <input type="hidden" id="productId">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+                        <input 
+                            type="text" 
+                            id="productName" 
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            placeholder="Enter product name"
+                        >
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                        <select 
+                            id="productCategory" 
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        >
+                            <option value="">Select category</option>
+                            <option value="Designer Handbags">Designer Handbags</option>
+                            <option value="Fine Jewelry">Fine Jewelry</option>
+                            <option value="Luxury Apparel">Luxury Apparel</option>
+                            <option value="Luxury Watches">Luxury Watches</option>
+                            <option value="Premium Footwear">Premium Footwear</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
+                        <input 
+                            type="number" 
+                            id="productPrice" 
+                            required
+                            min="0"
+                            step="0.01"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            placeholder="Enter price"
+                        >
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity *</label>
+                        <input 
+                            type="number" 
+                            id="productStock" 
+                            required
+                            min="0"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            placeholder="Enter stock quantity"
+                        >
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea 
+                        id="productDescription" 
+                        rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="Enter product description"
+                    ></textarea>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                    <input 
+                        type="text" 
+                        id="productImage"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="Enter image URL"
+                    >
+                </div>
+                
+                <div class="flex gap-3">
+                    <button 
+                        type="button"
+                        onclick="closeModal()" 
+                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="submit"
+                        class="flex-1 px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition font-medium"
+                    >
+                        Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-trash text-red-600 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">Delete Product</h3>
+                <p class="text-gray-600">Are you sure you want to permanently delete this product? This action cannot be undone.</p>
+            </div>
+            
+            <div class="flex gap-3">
+                <button 
+                    onclick="closeDeleteModal()" 
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                >
+                    Cancel
+                </button>
+                <button 
+                    onclick="confirmDelete()"
+                    class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+                >
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+    <%- include("../partials/admin/footer") %>

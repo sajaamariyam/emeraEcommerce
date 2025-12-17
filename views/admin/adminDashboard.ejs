@@ -1,0 +1,229 @@
+
+<%- include("../partials/admin/header") %>
+
+<div class="ml-52 flex-1 overflow-auto bg-gray-50">
+
+    <div class="bg-white border-b px-6 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-semibold text-teal-700">
+            Emera Admin — Dashboard
+        </h1>
+
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-700 font-semibold">
+                JD
+            </div>
+            <span class="text-gray-700">John Doe</span>
+            <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="p-6">
+
+           <!-- Dashboard Content -->
+            <div class="p-6">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                    <p class="text-gray-500 text-sm">Overview of store performance.</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">Total Orders</p>
+                                <h3 class="text-3xl font-bold text-gray-800">1,284</h3>
+                                <div class="w-12 h-1 bg-yellow-400 mt-2"></div>
+                            </div>
+                            <div class="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-shopping-cart text-teal-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">Total Users</p>
+                                <h3 class="text-3xl font-bold text-gray-800">3,567</h3>
+                                <div class="w-12 h-1 bg-yellow-400 mt-2"></div>
+                            </div>
+                            <div class="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-users text-teal-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">Total Sales</p>
+                                <h3 class="text-3xl font-bold text-gray-800">₹4,52,890</h3>
+                                <div class="w-12 h-1 bg-yellow-400 mt-2"></div>
+                            </div>
+                            <div class="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-dollar-sign text-teal-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-1">Pending Refunds</p>
+                                <h3 class="text-3xl font-bold text-gray-800">23</h3>
+                                <div class="w-12 h-1 bg-yellow-400 mt-2"></div>
+                            </div>
+                            <div class="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-sync-alt text-teal-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart and Alerts -->
+                <div class="grid grid-cols-3 gap-6 mb-6">
+                    <!-- Monthly Sales Chart -->
+                    <div class="col-span-2 bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly Sales Overview</h3>
+                        <div class="w-full h-1 bg-yellow-400 mb-4" style="width: 60px;"></div>
+                        <canvas id="salesChart"></canvas>
+                    </div>
+
+                    <!-- Low Stock Alerts -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="fas fa-exclamation-triangle text-red-500"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">Low Stock Alerts</h3>
+                        </div>
+                        <div class="w-full h-1 bg-yellow-400 mb-4" style="width: 60px;"></div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3">
+                                <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100" alt="Watch" class="w-12 h-12 rounded object-cover">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">Luxury Watch Gold Edition</p>
+                                    <p class="text-xs text-red-500">Stock: 3</p>
+                                </div>
+                                <button class="px-3 py-1 text-xs border border-teal-600 text-teal-600 rounded hover:bg-teal-50">Restock</button>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <img src="https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=100" alt="Handbag" class="w-12 h-12 rounded object-cover">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">Designer Leather Handbag</p>
+                                    <p class="text-xs text-red-500">Stock: 5</p>
+                                </div>
+                                <button class="px-3 py-1 text-xs border border-teal-600 text-teal-600 rounded hover:bg-teal-50">Restock</button>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <img src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=100" alt="Ring" class="w-12 h-12 rounded object-cover">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">Premium Diamond Ring</p>
+                                    <p class="text-xs text-red-500">Stock: 2</p>
+                                </div>
+                                <button class="px-3 py-1 text-xs border border-teal-600 text-teal-600 rounded hover:bg-teal-50">Restock</button>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=100" alt="Shoes" class="w-12 h-12 rounded object-cover">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">Italian Leather Shoes</p>
+                                    <p class="text-xs text-red-500">Stock: 4</p>
+                                </div>
+                                <button class="px-3 py-1 text-xs border border-teal-600 text-teal-600 rounded hover:bg-teal-50">Restock</button>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+                            <div class="w-full h-1 bg-yellow-400 mb-4" style="width: 60px;"></div>
+                            
+                            <div class="grid grid-cols-2 gap-3">
+                                <button class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50">
+                                    <i class="fas fa-plus text-teal-600 text-xl mb-2"></i>
+                                    <span class="text-sm text-gray-700">Add Product</span>
+                                </button>
+                                <button class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50">
+                                    <i class="fas fa-tags text-teal-600 text-xl mb-2"></i>
+                                    <span class="text-sm text-gray-700">Add Category</span>
+                                </button>
+                                <button class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50">
+                                    <i class="fas fa-ticket-alt text-teal-600 text-xl mb-2"></i>
+                                    <span class="text-sm text-gray-700">Create Coupon</span>
+                                </button>
+                                <button class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50">
+                                    <i class="fas fa-shopping-cart text-teal-600 text-xl mb-2"></i>
+                                    <span class="text-sm text-gray-700">View Orders</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Orders</h3>
+                    <div class="w-full h-1 bg-yellow-400 mb-4" style="width: 60px;"></div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Order ID</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Customer</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Amount</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-sm text-gray-800">#OR D-1 284</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">Rajesh Kumar</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">₹12,450</td>
+                                    <td class="py-3 px-4"><span class="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full">Delivered</span></td>
+                                    <td class="py-3 px-4 text-sm text-gray-600">Dec 28, 2024</td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-sm text-gray-800">#OR D-1 283</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">Priya Sharma</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">₹8,900</td>
+                                    <td class="py-3 px-4"><span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">Shipped</span></td>
+                                    <td class="py-3 px-4 text-sm text-gray-600">Dec 28, 2024</td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-sm text-gray-800">#OR D-1 282</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">Amit Patel</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">₹15,600</td>
+                                    <td class="py-3 px-4"><span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">Pending</span></td>
+                                    <td class="py-3 px-4 text-sm text-gray-600">Dec 27, 2024</td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-sm text-gray-800">#OR D-1 281</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">Sneha Reddy</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">₹22,300</td>
+                                    <td class="py-3 px-4"><span class="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full">Delivered</span></td>
+                                    <td class="py-3 px-4 text-sm text-gray-600">Dec 27, 2024</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-sm text-gray-800">#OR D-1 280</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">Vikram Singh</td>
+                                    <td class="py-3 px-4 text-sm text-gray-800">₹6,750</td>
+                                    <td class="py-3 px-4"><span class="px-3 py-1 bg-red-100 text-red-700 text-xs rounded-full">Cancelled</span></td>
+                                    <td class="py-3 px-4 text-sm text-gray-600">Dec 26, 2024</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+       
+    </div>
+</div>
+
+<%- include("../partials/admin/footer") %>

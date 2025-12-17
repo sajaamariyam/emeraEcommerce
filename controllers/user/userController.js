@@ -1,4 +1,6 @@
-const User = require("../../models/userSchema")
+const User = require("../../models/userSchema");
+const Category = require("../../models/categorySchema");
+const Product = require("../../models/productSchema");
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt")
@@ -49,9 +51,51 @@ const loadHomepage = async (req, res) => {
     }
 }
 
+
+const loadCategoryProducts = async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+
+    const category = await Category.findOne({ _id: categoryId, isListed: true });
+
+    if (!category) {
+      return res.redirect("/page-404");
+    }
+
+    const products = await Product.find({ category: categoryId });
+
+    res.render("categoryProducts", { category, products });
+  } catch (error) {
+    console.log(error);
+    res.redirect("/pageerror");
+  }
+};
+
+
+
+const loadProductDetails = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const product = await Product.findById(productId).populate("category");
+
+    if (!product) {
+      return res.status(404).render("page-404");
+    }
+
+    res.render("productDetails", { product });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).render("pageerror");
+  }
+};
+
+
 function generateOtp(){
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
 
 async function sendVerificationEmail(email, otp){
     try{
@@ -145,7 +189,6 @@ const verifyOtp = async(req, res) => {
 
         const {otp} = req.body;
 
-        console.log(otp);
 
         if(otp === req.session.userOtp){
             const user = req.session.userData;
@@ -187,6 +230,22 @@ const verifyOtp = async(req, res) => {
 
     }
 }
+
+
+const loadOtp = async (req, res) => {
+    try {
+        if (!req.session.userData && !req.session.forgotEmail) {
+            return res.redirect("/signup");
+        }
+
+        res.render("verify-otp");
+    } catch (error) {
+        console.log("Load OTP error:", error);
+        res.redirect("/pageNotFound");
+    }
+};
+
+
 
 const resendOtp = async (req, res) => {
     try {
@@ -232,12 +291,12 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const findUser = await User.findOne({ isAdmin: 0, email: email });
+    const findUser = await User.findOne({ isAdmin: false, email: email });
 
     if (!findUser) {
       return res.status(401).json({
         success: false,
-        message: "User not found"
+        message: "Invalid email or password"
       });
     }
 
@@ -253,11 +312,11 @@ const login = async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({
         success: false,
-        message: "Incorrect password"
+        message: "Invalid email or password"
       });
     }
 
-    req.session.user = findUser;
+    req.session.user = findUser._id;
 
     return res.json({
       success: true
@@ -434,6 +493,7 @@ module.exports ={
     loadSignup,
     signup,
     verifyOtp,
+    loadOtp,
     securePassword,
     resendOtp,
     loadLogin,
@@ -445,6 +505,8 @@ module.exports ={
     resendForgotPasswordOtp,
     loadResetPassword,
     resetPassword,
+    loadCategoryProducts,
+    loadProductDetails
 
 
 
