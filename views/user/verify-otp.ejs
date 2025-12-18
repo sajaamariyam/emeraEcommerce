@@ -75,9 +75,13 @@
             </div>
 
             <!-- Verify Button -->
-            <button class="w-full primary-btn text-white font-medium py-3.5 rounded-lg mb-4" id="verifyBtn">
-                Verify Email
-            </button>
+            <form method="POST" action="<%= otpMode === 'signup' ? '/verify-otp' : '/verify-forgot-otp' %>">
+                <input type="hidden" name="otp" id="otpHidden">
+                <button type="submit" class="w-full primary-btn text-white py-3.5 rounded-lg">
+                    Verify Email
+                </button>
+            </form>
+
 
             <!-- Divider -->
             <div class="relative my-6">
@@ -148,39 +152,21 @@
     });
 
 
+const otpHidden = document.getElementById("otpHidden");
+const otpForm = document.querySelector("form");
 
-    verifyBtn.addEventListener("click", async () => {
-        const otp = Array.from(otpInputs).map(input => input.value).join("");
+otpForm.addEventListener("submit", (e) => {
+    const otp = Array.from(otpInputs).map(input => input.value).join("");
 
-        if (otp.length !== 6) {
-            errorMsg.textContent = "Please enter all 6 digits.";
-            errorMsg.classList.remove("hidden");
-            return;
-        }
+    if (otp.length !== 6) {
+        e.preventDefault();
+        errorMsg.textContent = "Please enter all 6 digits.";
+        errorMsg.classList.remove("hidden");
+        return;
+    }
 
-        try {
-            const verifyUrl = OTP_MODE === "signup" ? "/verify-otp" : "/verify-forgot-otp";
-
-            const res = await fetch(verifyUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ otp })
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-                window.location.href = data.redirectUrl;
-            } else {
-                errorMsg.textContent = data.message;
-                errorMsg.classList.remove("hidden");
-            }
-
-        } catch (error) {
-            errorMsg.textContent = "Server error. Try again.";
-            errorMsg.classList.remove("hidden");
-        }
-    });
+    otpHidden.value = otp;
+});
 
 
 

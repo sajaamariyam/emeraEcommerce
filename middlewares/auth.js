@@ -1,15 +1,6 @@
 const User = require("../models/userSchema");
 
 
-const noCache = (req, res, next) => {
-  res.set(
-    "Cache-Control",
-    "no-store, no-cache, must-revalidate, private"
-  );
-  next();
-};
-
-
 const userAuth = (req,res, next) => {
     if(req.session.user){
         User.findById(req.session.user)
@@ -56,5 +47,4 @@ const adminAuth = async (req, res, next) => {
 module.exports = {
     userAuth,
     adminAuth,
-    noCache
 }

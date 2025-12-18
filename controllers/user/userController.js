@@ -35,21 +35,21 @@ const loadSignup = async(req, res) => {
 
 
 const loadHomepage = async (req, res) => {
-    try{
-        const user = req.session.user;
-        if(user){
-            const userData = await User.findOne({_id: user._id});
-            res.render("home", {user: userData});
-        }else{
-            return res.render("home", {user: null})
-        }
-        console.log("SESSION USER:", req.session.user);
+    try {
+        let userData = null;
 
-    }catch(error){
-        console.log("Home page not found");
-        res.status(500).send("server error");
+        if (req.session.user) {
+            userData = await User.findById(req.session.user);
+        }
+
+        res.render("home", { user: userData });
+
+    } catch (error) {
+        console.log("Home page error:", error);
+        res.status(500).send("Server error");
     }
-}
+};
+
 
 
 const loadCategoryProducts = async (req, res) => {
@@ -217,7 +217,7 @@ const verifyOtp = async(req, res) => {
             req.session.userData = null;
 
             req.session.user = saveUserData._id;
-            res.json({success: true, redirectUrl: "/"})
+            return res.redirect("/");
         }else{
             res.status(400).json({success: false, message: "Invalid OTP, Please try again"})
         }
@@ -274,17 +274,15 @@ const resendOtp = async (req, res) => {
 
 const loadLogin = async (req, res) => {
     try {
-        
-        if(!req.session.user){
-            return res.render("login");
-        }else{
-            res.redirect("/");
+        if (req.session.user) {
+            return res.redirect("/");
         }
-
+        res.render("login");
     } catch (error) {
         res.redirect("/pageNotFound");
     }
-}
+};
+
 
 
 const login = async (req, res) => {

@@ -5,17 +5,16 @@ const passport = require("passport");
 const userController = require("../controllers/user/userController");
 const { userAuth, noCache } = require("../middlewares/auth");
 
-console.log("noCache:", noCache);
 console.log("loadOtp:", userController.loadOtp);
 
 
-router.get("/login", noCache, userController.loadLogin);
+router.get("/login", userController.loadLogin);
 router.post("/login", userController.login);
 
-router.get("/signup", noCache, userController.loadSignup);
+router.get("/signup",  userController.loadSignup);
 router.post("/signup", userController.signup);
 
-router.get("/otp", noCache, userController.loadOtp);
+router.get("/otp", userController.loadOtp);
 router.post("/verify-otp", userController.verifyOtp);
 router.post("/resend-otp", userController.resendOtp);
 
@@ -37,22 +36,20 @@ router.get(
 
 
 
-router.get("/forgot-password", noCache, userController.loadForgotPassword);
+router.get("/forgot-password", userController.loadForgotPassword);
 router.post("/forgot-password", userController.sendForgotPassword);
 
 router.post("/verify-forgot-otp", userController.verifyForgotOtp);
 router.post("/forgot-resend-otp", userController.resendForgotPasswordOtp);
 
-router.get("/reset-password", noCache, userController.loadResetPassword);
+router.get("/reset-password",  userController.loadResetPassword);
 router.post("/reset-password", userController.resetPassword);
 
 
 
-router.get("/", noCache, userAuth, userController.loadHomepage);
+router.get("/", userController.loadHomepage);
 
-
-
-router.get("/logout", noCache, userController.logout);
+router.get("/logout", userController.logout);
 
 
 
