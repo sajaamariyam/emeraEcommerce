@@ -1,6 +1,6 @@
+const dotenv = require('dotenv').config()
 const express = require("express");
 const path = require("path");
-const dotenv = require('dotenv').config()
 const session = require("express-session");
 const nocache = require("nocache");
 const passport = require("./config/passport");
@@ -23,7 +23,7 @@ app.use(session({
 }))
 app.use(nocache())
 
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({extended: true, limit: "10mb"}));
 
 
 app.use(passport.initialize());
@@ -31,9 +31,11 @@ app.use(passport.session());
 
 
 app.set("view engine", "ejs")
-app.set("views", [path.join(__dirname, "views/user"), 
-    path.join(__dirname, "views/admin")])
+app.set("views", path.join(__dirname, "views"))
+
 app.use(express.static(path.join(__dirname, "public")))
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
+
 
 app.use(express.json());
 
@@ -43,6 +45,7 @@ app.use("/", userRouter);
 
 app.listen(process.env.PORT, () => {
     console.log("server running http://localhost:3000/")
+    console.log("http://localhost:3000/admin/adminLogin")
 })
 
 

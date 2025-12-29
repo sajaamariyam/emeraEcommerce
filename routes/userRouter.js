@@ -51,12 +51,15 @@ router.get("/", userController.loadHomepage);
 
 router.get("/logout", userController.logout);
 
+router.get("/products", userController.loadProducts);
+
+router.get("/products/:id", userController.loadProductDetails);
 
 
-
-router.get("/category/:id", userController.loadCategoryProducts);
-router.get("/product/:id", userController.loadProductDetails);
 
 router.get("/pageNotFound", userController.pageNotFound);
+
+
+
 
 module.exports = router;

@@ -20,26 +20,29 @@ const userAuth = (req,res, next) => {
     }
 }
 
+
+
 const adminAuth = async (req, res, next) => {
-    try {
-        if (!req.session.admin) {
-            return res.redirect("/admin/adminLogin");
-        }
-
-        const admin = await User.findById(req.session.admin);
-
-        if (!admin || !admin.isAdmin || admin.isBlocked) {
-            req.session.admin = null;
-            return res.redirect("/admin/adminLogin");
-        }
-        next();
-
-    } catch (error) {
-        console.log("AdminAuth error:", error);
-        return res.redirect("/admin/adminLogin");
+  try {
+    if (!req.session.admin) {
+      return res.redirect("/admin/adminLogin");
     }
-};
 
+    const admin = await User.findById(req.session.admin);
+
+    if (!admin || !admin.isAdmin) {
+      req.session.destroy();
+      return res.redirect("/admin/adminLogin");
+    }
+
+    res.locals.admin = admin;
+
+    next();
+  } catch (error) {
+    console.log("Admin auth error:", error);
+    res.redirect("/admin/adminLogin");
+  }
+};
 
 
 

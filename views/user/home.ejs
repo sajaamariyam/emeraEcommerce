@@ -1,201 +1,202 @@
+
 <%- include('../partials/user/header', { user: user }) %>
 
-
-    <!-- Hero Section -->
-    <header class="relative w-full h-[85vh] overflow-hidden">
-        <!-- Background Image -->
-        <div class="absolute inset-0">
-            <img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=2069&auto=format&fit=crop" 
-                 alt="Luxury Handbag" 
-                 class="w-full h-full object-cover object-center transform scale-105 animate-[fadeIn_1.5s_ease-out_forwards]">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10"></div>
+    <!-- Cinematic Hero Slideshow -->
+    <header id="hero-slideshow" class="relative w-full h-[95vh] overflow-hidden bg-stone-100">
+        <!-- Slides -->
+        <div class="slides-container absolute inset-0">
+            <!-- Slide 1: Aesthetic Shoulder Bag -->
+            <div class="hero-slide absolute inset-0 opacity-100 transition-opacity duration-1000 ease-in-out z-10">
+                <img src="https://images.unsplash.com/photo-1591561954557-26941169b49e?q=80&w=2070&auto=format&fit=crop" 
+                     alt="Aesthetic Mini Bag" 
+                     class="w-full h-full object-cover object-center transform scale-100 animate-ken-burns">
+                <div class="absolute inset-0 bg-black/20"></div>
+            </div>
+            <!-- Slide 2: Cute Tote Detail -->
+            <div class="hero-slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out z-0">
+                <img src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=2070&auto=format&fit=crop" 
+                     alt="Chic Tote" 
+                     class="w-full h-full object-cover object-center transform scale-100">
+                <div class="absolute inset-0 bg-black/25"></div>
+            </div>
+            <!-- Slide 3: Luxury Lifestyle -->
+            <div class="hero-slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out z-0">
+                <img src="https://images.unsplash.com/photo-1594223274512-ad4803739b7c?q=80&w=2070&auto=format&fit=crop" 
+                     alt="Artisan Leather" 
+                     class="w-full h-full object-cover object-center transform scale-100">
+                <div class="absolute inset-0 bg-black/20"></div>
+            </div>
         </div>
         
-        <!-- Hero Content -->
-        <div class="absolute inset-0 flex flex-col justify-end pb-24 px-4 sm:px-6 lg:px-12 items-start max-w-7xl mx-auto">
-            <span class="text-white/90 text-sm tracking-[0.2em] uppercase mb-4 animate-slide-up" style="animation-delay: 0.1s;">The Spring 2024 Collection</span>
-            <h1 class="text-4xl md:text-6xl lg:text-7xl font-serif text-white mb-6 leading-tight animate-slide-up" style="animation-delay: 0.2s;">
-                Timeless <br/><span class="italic font-light">Sophistication</span>
-            </h1>
-            <p class="text-white/80 max-w-md mb-8 text-lg font-light leading-relaxed animate-slide-up" style="animation-delay: 0.3s;">
-                Discover our latest designs, handcrafted in Italy using the finest sustainable leathers.
+        <!-- Hero Content (Large Aesthetic Typography) -->
+        <div class="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 lg:px-24 items-center text-center max-w-[1440px] mx-auto z-20">
+            <div class="overflow-hidden mb-6">
+                <span class="text-white text-[12px] tracking-[0.6em] uppercase font-bold block animate-reveal" style="animation-delay: 0.1s;">Winter Collection 2025    </span>
+            </div>                                                                  
+            <p class="text-white/90 max-w-xl mb-12 text-lg md:text-xl font-light leading-relaxed animate-reveal" style="animation-delay: 0.5s;">
+                Handcrafted in Florence. Made for women who love quality and timeless style.
             </p>
-            <a href="#collection" class="group inline-flex items-center px-8 py-4 bg-white text-emera-950 text-sm tracking-widest uppercase font-medium hover:bg-emera-950 hover:text-white transition-all duration-300 animate-slide-up" style="animation-delay: 0.4s;">
-                Shop The Collection
-                <svg class="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-            </a>
+            <div class="flex flex-col sm:flex-row gap-6 animate-reveal" style="animation-delay: 0.7s;">
+                <a href="/products" class="group px-14 py-6 bg-white text-emera-950 text-[11px] tracking-[0.4em] uppercase font-black hover:bg-emera-950 hover:text-white transition-all duration-700 shadow-2xl">
+                    Shop The Collection
+                </a>
+            </div>
+        </div>
+
+        <!-- Slide Progress Bar -->
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-30">
+            <div id="slide-progress" class="h-full bg-white transition-all duration-[5000ms] linear w-0"></div>
         </div>
     </header>
 
-    <!-- Categories Section -->
-    <section class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Category 1 -->
-                <a href="#" class="group relative h-[400px] overflow-hidden cursor-pointer block">
-                    <img src="https://images.unsplash.com/photo-1590874103328-eac38a683ce7?q=80&w=1000&auto=format&fit=crop" 
-                         alt="Shoulder Bags" 
-                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-                    <div class="absolute bottom-8 left-8">
-                        <h3 class="text-2xl font-serif text-white mb-2">Shoulder Bags</h3>
-                        <span class="text-white text-xs uppercase tracking-widest border-b border-transparent group-hover:border-white transition-all pb-1">View All</span>
-                    </div>
+    <!-- Aesthetic Categories Grid -->
+    <section class="py-32 bg-white">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-8">
+                <div class="max-w-2xl">
+                    <span class="text-emera-700 text-[11px] font-black tracking-[0.5em] uppercase mb-4 block"> </span>
+                    <h2 class="text-5xl md:text-6xl font-serif leading-tight">Choose <span class="italic font-light text-gray-400">Your Style</span></h2>
+                </div>
+             </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <% categories.slice(0,3).forEach(cat => { %>
+                <a href="/products?category=<%= cat._id %>" class="group block relative">
+                <div class="aspect-[4/5] overflow-hidden bg-stone-50">
+                    <img 
+                    src="<%= cat.image?.url %>" 
+                    alt="<%= cat.name %>" 
+                    class="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
+                    >
+                </div>
+
+                <div class="mt-8 flex justify-between items-center">
+                    <h3 class="text-2xl font-serif"><%= cat.name %></h3>
+                    <div class="w-12 h-px bg-emera-950 group-hover:w-20 transition-all duration-500"></div>
+                </div>
+
+                <p class="text-[10px] text-gray-400 uppercase tracking-widest mt-2 font-bold">
+                    Explore Collection
+                </p>
                 </a>
-                <!-- Category 2 -->
-                <a href="#" class="group relative h-[400px] overflow-hidden cursor-pointer block mt-0 md:-mt-8">
-                    <img src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1000&auto=format&fit=crop" 
-                         alt="Totes" 
-                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-                    <div class="absolute bottom-8 left-8">
-                        <h3 class="text-2xl font-serif text-white mb-2">Signature Totes</h3>
-                        <span class="text-white text-xs uppercase tracking-widest border-b border-transparent group-hover:border-white transition-all pb-1">View All</span>
-                    </div>
-                </a>
-                <!-- Category 3 -->
-                <a href="#" class="group relative h-[400px] overflow-hidden cursor-pointer block">
-                    <img src="https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?q=80&w=1000&auto=format&fit=crop" 
-                         alt="Mini Bags" 
-                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-                    <div class="absolute bottom-8 left-8">
-                        <h3 class="text-2xl font-serif text-white mb-2">Mini Bags</h3>
-                        <span class="text-white text-xs uppercase tracking-widest border-b border-transparent group-hover:border-white transition-all pb-1">View All</span>
-                    </div>
-                </a>
+            <% }) %>
             </div>
-        </div>
+
     </section>
 
-    <!-- Product Showcase -->
-    <section id="collection" class="py-16 md:py-24 bg-stone-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row justify-between items-end mb-12">
-                <div>
-                    <span class="text-emera-700 text-sm font-semibold tracking-wider uppercase mb-2 block">Curated Selection</span>
-                    <h2 class="text-3xl md:text-4xl font-serif text-gray-900">Featured Icons</h2>
-                </div>
-                <div class="hidden md:flex space-x-8 mt-4 md:mt-0">
-                    <button class="text-gray-900 font-medium border-b-2 border-gray-900 pb-1">All</button>
-                    <button class="text-gray-500 hover:text-gray-900 transition-colors pb-1">New In</button>
-                    <button class="text-gray-500 hover:text-gray-900 transition-colors pb-1">Bestsellers</button>
-                </div>
+<!-- Featured Products Showcase -->
+
+<section class="py-24 bg-white">
+  <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+
+    <!-- SECTION HEADING -->
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-serif text-gray-900 mb-4">
+        Featured Products
+      </h2>
+      <p class="text-sm text-gray-500 tracking-wide">
+        Handpicked styles crafted with care
+      </p>
+    </div>
+
+    <!-- PRODUCTS GRID -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
+      <% if (Array.isArray(products) && products.length > 0) { %>
+        <% products.forEach(p => { %>
+
+          <div class="border border-gray-200 p-4 hover:shadow-lg transition">
+
+            <a href="/products/<%= p._id %>" class="block">
+              <img
+                src="<%= p.productImage?.[0]?.url || '/images/placeholder.png' %>"
+                alt="<%= p.name %>"
+                class="w-full h-[300px] object-cover mb-4"
+              />
+            </a>
+
+            <div class="text-center">
+              <a
+                href="/products/<%= p._id %>"
+                class="block text-lg font-semibold text-gray-900 mb-1"
+              >
+                <%= p.name %>
+              </a>
+
+              <p class="text-xs uppercase tracking-widest text-gray-500 mb-2">
+                <%= p.material || 'Premium Leather' %>
+              </p>
+
+              <p class="text-base font-bold text-gray-900">
+                ₹<%= p.salePrice ? p.salePrice.toLocaleString() : '0' %>
+              </p>
             </div>
 
-            <!-- Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
-                <!-- Product 1 -->
-                <div class="group">
-                    <a href="product.html" class="block relative w-full aspect-[4/5] bg-white overflow-hidden mb-4 cursor-pointer">
-                        <img src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=870&auto=format&fit=crop" alt="Bag" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                            <button class="add-to-cart-btn w-full bg-emera-950 text-white py-3 text-xs uppercase tracking-widest hover:bg-black transition-colors">
-                                Add to Cart
-                            </button>
-                        </div>
-                        <div class="absolute top-3 right-3">
-                            <span class="bg-white/90 text-[10px] font-bold px-2 py-1 uppercase tracking-widest">New</span>
-                        </div>
-                    </a>
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <a href="product.html" class="h3 text-lg font-serif text-gray-900 group-hover:text-emera-800 transition-colors block">The Verona Tote</a>
-                            <p class="text-sm text-gray-500 mt-1">Saddle Brown Leather</p>
-                        </div>
-                        <p class="text-sm font-medium text-gray-900">$1,250</p>
-                    </div>
-                </div>
+          </div>
 
-                <!-- Product 2 -->
-                <div class="group">
-                    <div class="relative w-full aspect-[4/5] bg-white overflow-hidden mb-4">
-                        <img src="https://images.unsplash.com/photo-1591561954557-26941169b49e?q=80&w=774&auto=format&fit=crop" alt="Bag" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                            <button class="add-to-cart-btn w-full bg-emera-950 text-white py-3 text-xs uppercase tracking-widest hover:bg-black transition-colors">
-                                Add to Cart
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-lg font-serif text-gray-900 group-hover:text-emera-800 transition-colors">The Siena Crossbody</h3>
-                            <p class="text-sm text-gray-500 mt-1">Obsidian Black</p>
-                        </div>
-                        <p class="text-sm font-medium text-gray-900">$890</p>
-                    </div>
-                </div>
+        <% }) %>
+      <% } else { %>
+        <p class="col-span-full text-center text-gray-400">
+          No products available
+        </p>
+      <% } %>
 
-                <!-- Product 3 -->
-                <div class="group">
-                    <div class="relative w-full aspect-[4/5] bg-white overflow-hidden mb-4">
-                        <img src="https://images.unsplash.com/photo-1605763240004-7d93b172d7cd?q=80&w=774&auto=format&fit=crop" alt="Bag" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                            <button class="add-to-cart-btn w-full bg-emera-950 text-white py-3 text-xs uppercase tracking-widest hover:bg-black transition-colors">
-                                Add to Cart
-                            </button>
-                        </div>
-                         <div class="absolute top-3 right-3">
-                            <span class="bg-emera-900/90 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest">Best Seller</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-lg font-serif text-gray-900 group-hover:text-emera-800 transition-colors">The Amalfi Clutch</h3>
-                            <p class="text-sm text-gray-500 mt-1">Cream Canvas & Leather</p>
-                        </div>
-                        <p class="text-sm font-medium text-gray-900">$650</p>
-                    </div>
-                </div>
+    </div>
+  </div>
+</section>
 
-                <!-- Product 4 -->
-                <div class="group">
-                    <div class="relative w-full aspect-[4/5] bg-white overflow-hidden mb-4">
-                        <img src="https://images.unsplash.com/photo-1594223274512-ad4803739b7c?q=80&w=914&auto=format&fit=crop" alt="Bag" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                            <button class="add-to-cart-btn w-full bg-emera-950 text-white py-3 text-xs uppercase tracking-widest hover:bg-black transition-colors">
-                                Add to Cart
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-lg font-serif text-gray-900 group-hover:text-emera-800 transition-colors">The Roma Satchel</h3>
-                            <p class="text-sm text-gray-500 mt-1">Emerald Green</p>
-                        </div>
-                        <p class="text-sm font-medium text-gray-900">$1,450</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-16 text-center">
-                 <a href="#" class="inline-block border-b border-gray-900 text-gray-900 uppercase tracking-widest text-xs font-semibold pb-1 hover:text-emera-700 hover:border-emera-700 transition-all">View All Handbags</a>
-            </div>
-        </div>
-    </section>
 
-    <!-- Brand Story / Parallax-ish -->
-    <section class="relative py-24 bg-emera-950 text-white overflow-hidden">
+
+    <!-- Brand Legacy -->
+    <section class="relative py-48 bg-emera-950 text-white overflow-hidden">
         <div class="absolute inset-0 opacity-20">
-             <img src="https://images.unsplash.com/photo-1550614000-4b9519e02a48?q=80&w=1740&auto=format&fit=crop" class="w-full h-full object-cover" alt="Workshop">
+             <img src="https://images.unsplash.com/photo-1550614000-4b9519e02a48?q=80&w=1740&auto=format&fit=crop" class="w-full h-full object-cover" alt="Artisan">
         </div>
-        <div class="relative max-w-4xl mx-auto px-4 text-center">
-            <h2 class="text-3xl md:text-5xl font-serif mb-6">Masterful Craftsmanship</h2>
-            <p class="text-lg text-gray-300 leading-relaxed mb-10 font-light">
-                Each Emera piece is cut and stitched by hand in our Florence atelier. We preserve the tradition of Italian leather-working, creating heirlooms that transcend seasons.
+        <div class="relative max-w-5xl mx-auto px-6 text-center">
+            <h2 class="text-5xl md:text-8xl font-serif mb-12 leading-tight">Our<br/><span class="italic font-light">Craftsmanship</span></h2>
+            <p class="text-xl md:text-2xl text-gray-300 leading-relaxed mb-16 font-light max-w-2xl mx-auto italic">
+                "We create high-quality bags using traditional craftsmanship and care."
             </p>
-            <a href="#" class="inline-block border border-white px-8 py-3 text-xs uppercase tracking-widest hover:bg-white hover:text-emera-950 transition-all">Our Story</a>
+            <div class="h-16 w-px bg-white/20 mx-auto"></div>
         </div>
     </section>
-    
 
-    <script>
-  window.addEventListener("pageshow", function (event) {
-    if (event.persisted) {
-      window.location.reload();
-    }
-  });
+    <style>
+        @keyframes reveal {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-reveal { animation: reveal 1s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        
+        @keyframes kenBurns {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.15); }
+        }
+        .animate-ken-burns { animation: kenBurns 10s linear infinite alternate; }
+
+        .reveal-item { transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1); transform: translateY(50px); }
+        .reveal-item.active { opacity: 1; transform: translateY(0); }
+    </style>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const items = document.querySelectorAll('.reveal-item');
+
+  const observer = new IntersectionObserver(
+    entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    },
+    { threshold: 0.15 }
+  );
+
+  items.forEach(item => observer.observe(item));
+});
 </script>
+
 
 
 <%- include('../partials/user/footer') %>

@@ -11,7 +11,7 @@ const pageNotFound = async(req, res) => {
 
     try{
 
-        res.render("page-404");
+        res.render("user/page-404");
 
     }catch(error){
 
@@ -24,7 +24,7 @@ const loadSignup = async(req, res) => {
 
     try{
 
-        return res.render("signup");
+        return res.render("user/signup");
 
     }catch(error){
         console.log("Home page not loading", error);
@@ -35,61 +35,39 @@ const loadSignup = async(req, res) => {
 
 
 const loadHomepage = async (req, res) => {
-    try {
-        let userData = null;
-
-        if (req.session.user) {
-            userData = await User.findById(req.session.user);
-        }
-
-        res.render("home", { user: userData });
-
-    } catch (error) {
-        console.log("Home page error:", error);
-        res.status(500).send("Server error");
-    }
-};
-
-
-
-const loadCategoryProducts = async (req, res) => {
   try {
-    const categoryId = req.params.id;
+    let userData = null;
 
-    const category = await Category.findOne({ _id: categoryId, isListed: true });
-
-    if (!category) {
-      return res.redirect("/page-404");
+    if (req.session.user) {
+      userData = await User.findById(req.session.user);
     }
 
-    const products = await Product.find({ category: categoryId });
+    const products = await Product.find({
+      isListed: true,
+      isBlocked: false
+    })
+    .select("name salePrice productImage material")
+    .limit(8);
 
-    res.render("categoryProducts", { category, products });
+    const categories = await Category.find({
+      isListed: true
+    });
+
+    res.render("user/home", {
+      user: userData,
+      products,
+      categories
+    });
+
   } catch (error) {
-    console.log(error);
-    res.redirect("/pageerror");
+    console.log("Home page error:", error);
+    res.status(500).send("Server error");
   }
 };
 
 
 
-const loadProductDetails = async (req, res) => {
-  try {
-    const productId = req.params.id;
 
-    const product = await Product.findById(productId).populate("category");
-
-    if (!product) {
-      return res.status(404).render("page-404");
-    }
-
-    res.render("productDetails", { product });
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).render("pageerror");
-  }
-};
 
 
 function generateOtp(){
@@ -142,12 +120,12 @@ const signup = async(req, res)=> {
         const { name, email, phone, password, cPassword} = req.body;
 
         if(password !== cPassword){
-            return res.render("signup", {message: "Password do not match"})
+            return res.render("user/signup", {message: "Password do not match"})
         }
 
         const findUser = await User.findOne({email});
         if(findUser){
-            return res.render("signup", {message: "User with this email already exists"})
+            return res.render("user/signup", {message: "User with this email already exists"})
         }
 
         const otp = generateOtp();
@@ -161,7 +139,7 @@ const signup = async(req, res)=> {
         req.session.userOtp = otp;
         req.session.userData = {name, phone, email, password};
 
-        res.render("verify-otp", { otpMode: "signup", userEmail: email });
+        res.render("user/verify-otp", { otpMode: "signup", userEmail: email });
         console.log("OTP sent", otp)
 
     }catch(error){
@@ -238,7 +216,7 @@ const loadOtp = async (req, res) => {
             return res.redirect("/signup");
         }
 
-        res.render("verify-otp");
+        res.render("user/verify-otp");
     } catch (error) {
         console.log("Load OTP error:", error);
         res.redirect("/pageNotFound");
@@ -277,7 +255,7 @@ const loadLogin = async (req, res) => {
         if (req.session.user) {
             return res.redirect("/");
         }
-        res.render("login");
+        res.render("user/login");
     } catch (error) {
         res.redirect("/pageNotFound");
     }
@@ -348,7 +326,7 @@ const logout = async (req, res) => {
 
 const loadForgotPassword = async (req, res) => {
     try {
-        res.render("forgot-password", { message: null });
+        res.render("user/forgot-password", { message: null });
     } catch (error) {
         console.log("Forgot password page error:", error);
         res.redirect("/pageNotFound");
@@ -362,7 +340,7 @@ const sendForgotPassword = async (req, res) => {
         
         const user = await User.findOne({ email });
         if (!user) {
-            return res.render("forgot-password", { message: "No user found with this email" });
+            return res.render("user/forgot-password", { message: "No user found with this email" });
         }
 
        
@@ -370,7 +348,7 @@ const sendForgotPassword = async (req, res) => {
 
         const emailSent = await sendVerificationEmail(email, otp);
         if (!emailSent) {
-            return res.render("forgot-password", { message: "Failed to send OTP. Try again" });
+            return res.render("user/forgot-password", { message: "Failed to send OTP. Try again" });
         }
 
        req.session.forgotEmail = email;
@@ -378,7 +356,7 @@ const sendForgotPassword = async (req, res) => {
 
         console.log("Forgot Password OTP:", otp);
 
-       res.render("verify-otp", {
+       res.render("user/verify-otp", {
             otpMode: "forgot",
             userEmail: email
 });
@@ -402,7 +380,8 @@ const verifyForgotOtp = async (req, res) => {
             return res.json({ success: false, message: "Invalid OTP. Please try again." });
         }
 
-        return res.json({ success: true, redirectUrl: "/reset-password" });
+        return res.redirect("/reset-password");
+
 
     } catch (error) {
         console.log("verifyForgotOtp error:", error);
@@ -445,7 +424,7 @@ const loadResetPassword = async (req, res) => {
             return res.redirect("/forgot-password");
         }
 
-        res.render("reset-password", { message: null });
+        res.render("user/reset-password", { message: null });
 
     } catch (error) {
         console.log("Reset password page error:", error);
@@ -462,7 +441,7 @@ const resetPassword = async (req, res) => {
         }
 
         if (newPassword !== confirmPassword) {
-            return res.render("reset-password", { message: "Passwords do not match" });
+            return res.render("user/reset-password", { message: "Passwords do not match" });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -479,9 +458,129 @@ const resetPassword = async (req, res) => {
 
     } catch (error) {
         console.log("Reset password error:", error);
-        res.render("reset-password", { message: "Something went wrong. Try again." });
+        res.render("user/reset-password", { message: "Something went wrong. Try again." });
     }
 };
+
+
+const loadProducts = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 8;
+        const skip = (page - 1) * limit;
+
+        const search = req.query.search || "";
+        const category = req.query.category || "";
+        const sort = req.query.sort || "newest";
+        const maxPrice = parseInt(req.query.maxPrice) || 1000000;
+
+        let query = {
+            isBlocked: false,
+            isListed: true,
+            quantity: { $gt: 0 },
+            regularPrice: { $lte: maxPrice }
+        };
+
+         if (search) {
+            query.name = { $regex: search, $options: "i" };
+        }
+
+        if (category) {
+            query.category = category;
+        }
+
+       let sortOption = { createdAt: -1 }; 
+
+        switch (sort) {
+            case "price-asc":
+                sortOption = { regularPrice: 1 };
+                break;
+
+            case "price-desc":
+                sortOption = { regularPrice: -1 };
+                break;
+
+            case "name-asc":
+                sortOption = { name: 1 };
+                break;
+
+            case "name-desc":
+                sortOption = { name: -1 };
+                break;
+
+            case "newest":
+            default:
+                sortOption = { createdAt: -1 };
+        }
+
+
+        const products = await Product.find(query)
+            .populate("category")
+            .sort(sortOption)
+            .skip(skip)
+            .limit(limit);
+
+        const totalProducts = await Product.countDocuments(query);
+        const totalPages = Math.ceil(totalProducts / limit);
+
+        const categories = await Category.find({ isListed: true });
+
+        res.render("user/products", {
+            products,
+            categories,
+            currentPage: page,
+            totalPages,
+            search,
+            sort,
+            category,
+            maxPrice
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).render("user/error");
+    }
+};
+
+
+const loadProductDetails = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const product = await Product.findOne({
+      _id: productId,
+      isBlocked: false,
+      isListed: true
+    }).populate("category");
+
+    if (!product) {
+      return res.redirect("/products");
+    }
+
+    const relatedProducts = await Product.find({
+      category: product.category,
+      _id: { $ne: product._id },
+      isBlocked: false,
+      isListed: true
+    }).limit(4);
+
+    let userData = null;
+    if (req.session.user) {
+      userData = await User.findById(req.session.user);
+    }
+
+    res.render("user/productDetails", {
+      product,
+      relatedProducts,
+      user: userData        
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.redirect("/products");
+  }
+};
+
 
 
 
@@ -503,10 +602,6 @@ module.exports ={
     resendForgotPasswordOtp,
     loadResetPassword,
     resetPassword,
-    loadCategoryProducts,
+    loadProducts,
     loadProductDetails
-
-
-
-    
 }

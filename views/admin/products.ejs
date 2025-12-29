@@ -1,291 +1,470 @@
-  
 <%- include("../partials/admin/header") %>
+
+<!-- Include Cropper.js for image processing -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <div class="ml-52 h-screen overflow-y-auto bg-gray-50">
 
-
-  <!-- Main Content -->
-        <div class="flex-1">
-            <!-- Header -->
-            <div class="bg-white border-b px-8 py-4 flex items-center justify-between">
-                <div>
-                    <h1 class="text-xl font-semibold text-teal-700">Emera Admin — Products</h1>
+    <!-- Top bar -->
+    <div class="bg-white border-b sticky top-0 z-10">
+        <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-teal-700">Product Management</h1>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    <%= admin.name.charAt(0) %>
                 </div>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-teal-700 font-medium text-sm">
-                        JD
-                    </div>
-                    <span class="text-sm text-gray-700">John Doe</span>
-                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                </div>
-            </div>
-
-            <!-- Content -->
-            <div class="p-8">
-                <div class="flex items-center justify-between mb-8">
-                    <div>
-                        <h2 class="text-3xl font-bold text-gray-800">Product Management</h2>
-                        <p class="text-gray-600 mt-1">Create, edit, list, or unlist products.</p>
-                    </div>
-                    <button onclick="openAddModal()" class="bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium">
-                        <i class="fas fa-plus"></i>
-                        Add Product
-                    </button>
-                </div>
-
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-600 mb-1">Total Products</p>
-                                <p class="text-3xl font-bold text-gray-800" id="totalProducts">0</p>
-                                <div class="h-1 w-12 bg-yellow-400 mt-2"></div>
-                            </div>
-                            <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-box text-teal-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-600 mb-1">Listed Products</p>
-                                <p class="text-3xl font-bold text-green-600" id="listedProducts">0</p>
-                                <div class="h-1 w-12 bg-yellow-400 mt-2"></div>
-                            </div>
-                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-600 mb-1">Unlisted Products</p>
-                                <p class="text-3xl font-bold text-orange-600" id="unlistedProducts">0</p>
-                                <div class="h-1 w-12 bg-yellow-400 mt-2"></div>
-                            </div>
-                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-eye-slash text-orange-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-600 mb-1">Total Value</p>
-                                <p class="text-3xl font-bold text-gray-800" id="totalValue">₹0</p>
-                                <div class="h-1 w-12 bg-yellow-400 mt-2"></div>
-                            </div>
-                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-rupee-sign text-blue-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Search and Filters -->
-                <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <div class="flex flex-col md:flex-row gap-4 items-center">
-                        <div class="flex-1 w-full">
-                            <div class="relative">
-                                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                                <input 
-                                    type="text" 
-                                    id="searchInput"
-                                    placeholder="Search products..." 
-                                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                >
-                            </div>
-                        </div>
-                        
-                        <select id="categoryFilter" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
-                            <option value="all">All Categories</option>
-                            <option value="Designer Handbags">Designer Handbags</option>
-                            <option value="Fine Jewelry">Fine Jewelry</option>
-                            <option value="Luxury Apparel">Luxury Apparel</option>
-                            <option value="Luxury Watches">Luxury Watches</option>
-                            <option value="Premium Footwear">Premium Footwear</option>
-                        </select>
-                        
-                        <select id="statusFilter" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
-                            <option value="all">All Status</option>
-                            <option value="listed">Listed</option>
-                            <option value="unlisted">Unlisted</option>
-                        </select>
-                        
-                        <select id="sortFilter" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
-                            <option value="name-az">Name: A–Z</option>
-                            <option value="name-za">Name: Z–A</option>
-                            <option value="price-high">Price: High to Low</option>
-                            <option value="price-low">Price: Low to High</option>
-                            <option value="stock-high">Stock: High to Low</option>
-                            <option value="stock-low">Stock: Low to High</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Products Table -->
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Image</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Product Name</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Category</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Price</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Stock</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productTableBody" class="divide-y divide-gray-200">
-                            <!-- Products will be inserted here -->
-                        </tbody>
-                    </table>
-                </div>
+                <span class="text-sm text-gray-700"><%= admin.name %></span>
             </div>
         </div>
     </div>
 
-    <!-- Add/Edit Product Modal -->
-    <div id="productModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-        <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 my-8">
-            <div class="flex items-center justify-between mb-6">
-                <h3 id="modalTitle" class="text-2xl font-bold text-gray-800">Add Product</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+    <div class="p-8 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Catalogue Control</h2>
+                <p class="text-gray-600 mt-1">Manage product visibility, stock, and details.</p>
             </div>
-            
-            <form id="productForm" onsubmit="saveProduct(event)">
-                <input type="hidden" id="productId">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
-                        <input 
-                            type="text" 
-                            id="productName" 
-                            required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            placeholder="Enter product name"
-                        >
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-                        <select 
-                            id="productCategory" 
-                            required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        >
-                            <option value="">Select category</option>
-                            <option value="Designer Handbags">Designer Handbags</option>
-                            <option value="Fine Jewelry">Fine Jewelry</option>
-                            <option value="Luxury Apparel">Luxury Apparel</option>
-                            <option value="Luxury Watches">Luxury Watches</option>
-                            <option value="Premium Footwear">Premium Footwear</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
-                        <input 
-                            type="number" 
-                            id="productPrice" 
-                            required
-                            min="0"
-                            step="0.01"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            placeholder="Enter price"
-                        >
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity *</label>
-                        <input 
-                            type="number" 
-                            id="productStock" 
-                            required
-                            min="0"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            placeholder="Enter stock quantity"
-                        >
-                    </div>
+            <button onclick="openProductModal()" class="bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium shadow-md">
+                <i class="fas fa-plus"></i> Add New Product
+            </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Total Pieces</p>
+                <p class="text-3xl font-bold text-gray-800"><%= totalProducts %></p>
+                <div class="h-1 w-10 bg-teal-500 mt-3"></div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Listed</p>
+                <p class="text-3xl font-bold text-green-600"><%= listedProducts %></p>
+                <div class="h-1 w-10 bg-green-500 mt-3"></div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Unlisted</p>
+                <p class="text-3xl font-bold text-orange-600"><%= unlistedProducts %></p>
+                <div class="h-1 w-10 bg-orange-500 mt-3"></div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Out of Stock</p>
+                <p class="text-3xl font-bold text-red-600"><%= outOfStockCount %></p>
+                <div class="h-1 w-10 bg-red-500 mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <form action="/admin/products" method="GET" class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1 relative">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" name="search" value="<%= search || '' %>" placeholder="Search by name..." class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
                 </div>
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea 
-                        id="productDescription" 
-                        rows="3"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        placeholder="Enter product description"
-                    ></textarea>
-                </div>
-                
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
-                    <input 
-                        type="text" 
-                        id="productImage"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        placeholder="Enter image URL"
-                    >
-                </div>
-                
-                <div class="flex gap-3">
-                    <button 
-                        type="button"
-                        onclick="closeModal()" 
-                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        type="submit"
-                        class="flex-1 px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition font-medium"
-                    >
-                        Save Product
-                    </button>
-                </div>
+                <select name="category" onchange="this.form.submit()" class="px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="">All Categories</option>
+                    <% categories.forEach(cat => { %>
+                        <option value="<%= cat._id %>" <%= category === cat._id.toString() ? 'selected' : '' %>><%= cat.name %></option>
+                    <% }) %>
+                </select>
+                <select name="status" onchange="this.form.submit()" class="px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="all" <%= status === 'all' ? 'selected' : '' %>>All Status</option>
+                    <option value="listed" <%= status === 'listed' ? 'selected' : '' %>>Listed</option>
+                    <option value="unlisted" <%= status === 'unlisted' ? 'selected' : '' %>>Unlisted</option>
+                </select>
             </form>
         </div>
-    </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-trash text-red-600 text-2xl"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-gray-800 mb-2">Delete Product</h3>
-                <p class="text-gray-600">Are you sure you want to permanently delete this product? This action cannot be undone.</p>
-            </div>
+        <!-- Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Pricing</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Stock</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <% products.forEach(product => { %>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                   <img
+                                    src="<%= product.productImage[0]?.url %>"
+                                    alt=""
+                                    class="w-12 h-14 object-cover rounded shadow-sm"
+                                    />
+                                    <div>
+                                        <p class="font-bold text-gray-800"><%= product.name %></p>
+                                        <p class="text-xs text-gray-400">ID: <%= product._id.toString().slice(-6) %></p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600"><%= product.category.name %></td>
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-bold text-gray-900">₹<%= product.salePrice.toLocaleString() %></p>
+                                <p class="text-[10px] text-gray-400 line-through">₹<%= product.regularPrice.toLocaleString() %></p>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="<%= product.quantity < 5 ? 'text-red-600 font-bold' : 'text-gray-600' %>">
+                                    <%= product.quantity %> Items
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <% if (product.isBlocked) { %>
+                                    <span class="px-3 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase rounded-full border border-red-100">Unlisted</span>
+                                <% } else { %>
+                                    <span class="px-3 py-1 bg-green-50 text-green-700 text-[10px] font-bold uppercase rounded-full border border-green-100">Listed</span>
+                                <% } %>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex justify-end gap-3">
+                                    <button onclick="openProductModal('<%= JSON.stringify(product) %>')" class="text-teal-600 hover:text-teal-800 text-sm font-bold">Edit</button>
+                                    <button onclick="openStatusModal('<%= product._id %>', <%= product.isBlocked %>)" class="text-gray-500 hover:text-gray-700 text-sm font-bold">
+                                        <%= product.isBlocked ? 'List' : 'Unlist' %>
+                                    </button>
+                                    <button onclick="openDeleteModal('<%= product._id %>')" class="text-red-600 hover:text-red-800 text-sm font-bold">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
             
-            <div class="flex gap-3">
-                <button 
-                    onclick="closeDeleteModal()" 
-                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-                >
-                    Cancel
-                </button>
-                <button 
-                    onclick="confirmDelete()"
-                    class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
-                >
-                    Delete
-                </button>
-            </div>
+            <!-- Pagination -->
+            <% if (totalPages > 1) { %>
+                <div class="px-6 py-6 bg-gray-50 border-t border-gray-200 flex justify-center gap-2">
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <a href="/admin/products?page=<%= i %>&search=<%= search || '' %>&category=<%= category || '' %>&status=<%= status || 'all' %>" 
+                           class="w-10 h-10 flex items-center justify-center text-sm font-bold border rounded transition-all <%= currentPage === i ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-400 hover:bg-gray-100' %>">
+                            <%= i %>
+                        </a>
+                    <% } %>
+                </div>
+            <% } %>
         </div>
     </div>
-
 </div>
 
-    <%- include("../partials/admin/footer") %>
+<!-- Add/Edit Product Modal -->
+<div id="productModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/50">
+    <div class="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl p-8">
+        <div class="flex items-center justify-between mb-8">
+            <h3 id="modalTitle" class="text-2xl font-bold text-gray-900">Add New Masterpiece</h3>
+            <button onclick="closeProductModal()" class="text-gray-400 hover:text-gray-900 text-2xl">&times;</button>
+        </div>
+
+        <form id="productForm" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <input type="hidden" name="productId" id="form-productId">
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Product Name</label>
+                    <input type="text" name="name" id="form-name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Category</label>
+                    <select name="category" id="form-category" required class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat._id %>"><%= cat.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Regular Price</label>
+                        <input type="number" name="regularPrice" id="form-regularPrice" required class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Sale Price</label>
+                        <input type="number" name="salePrice" id="form-salePrice" required class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                    </div>
+                </div>
+                <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                    Brand
+                </label>
+                <input
+                    type="text"
+                    name="brand"
+                    id="form-brand"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+
+                <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                    Color
+                </label>
+                <input
+                    type="text"
+                    name="color"
+                    id="form-color"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Stock Quantity</label>
+                    <input type="number" name="quantity" id="form-quantity" required class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Description</label>
+                    <textarea name="description" id="form-description" rows="4" required class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500 resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Product Images (Min 3)</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-500 transition-colors relative">
+                        <input type="file" id="imageInput" multiple accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-xs text-gray-500 uppercase font-bold">Drop images or click to upload</p>
+                    </div>
+                    <div id="imagePreview" class="grid grid-cols-3 gap-4 mt-6"></div>
+                    <p id="imageError" class="text-red-500 text-[10px] mt-2 hidden">Please select at least 3 images.</p>
+                </div>
+            </div>
+
+            <div class="col-span-full pt-8 flex gap-4">
+                <button type="submit" class="flex-1 bg-teal-700 text-white py-4 rounded-lg font-bold uppercase tracking-widest hover:bg-teal-800 transition-all">Save Changes</button>
+                <button type="button" onclick="closeProductModal()" class="flex-1 border border-gray-300 py-4 rounded-lg font-bold uppercase tracking-widest hover:bg-gray-50 transition-all">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Action Modals -->
+<div id="confirmModal" class="fixed inset-0 z-[110] hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white rounded-xl max-w-sm w-full p-8 shadow-2xl text-center">
+        <h4 id="confirmTitle" class="text-xl font-bold mb-4">Confirm Action</h4>
+        <p id="confirmMessage" class="text-sm text-gray-600 mb-8">Are you sure you want to proceed?</p>
+        <div class="flex gap-4">
+            <form id="confirmForm" method="POST" class="flex-1">
+                <button type="submit" id="confirmActionBtn" class="w-full py-3 bg-teal-700 text-white rounded-lg font-bold uppercase text-[10px] tracking-widest">Confirm</button>
+            </form>
+            <button onclick="closeActionModals()" class="flex-1 py-3 border border-gray-300 rounded-lg font-bold uppercase text-[10px] tracking-widest">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Cropping Overlay Modal -->
+<div id="cropperOverlay" class="fixed inset-0 z-[120] hidden flex-col items-center justify-center bg-black/90 p-8">
+    <div class="w-full max-w-2xl bg-white rounded-lg overflow-hidden flex flex-col">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h5 class="font-bold">Adjust Image</h5>
+            <button onclick="cancelCrop()" class="text-gray-400">&times;</button>
+        </div>
+        <div class="h-[500px] w-full bg-stone-100 flex items-center justify-center overflow-hidden">
+            <img id="cropperImage" src="" class="max-w-full max-h-full">
+        </div>
+        <div class="p-4 flex gap-4">
+            <button onclick="applyCrop()" class="flex-1 bg-teal-700 text-white py-3 rounded font-bold">Crop & Continue</button>
+            <button onclick="cancelCrop()" class="flex-1 border py-3 rounded font-bold">Skip</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentImages = [];
+    let cropper = null;
+    let pendingFiles = [];
+    let processedImages = [];
+
+    // Modal Control
+    function openProductModal(productData = null) {
+        const modal = document.getElementById('productModal');
+        const form = document.getElementById('productForm');
+        const title = document.getElementById('modalTitle');
+        const preview = document.getElementById('imagePreview');
+        
+        preview.innerHTML = '';
+        processedImages = [];
+        form.reset();
+
+        if (productData) {
+            const product = JSON.parse(productData);
+            title.innerText = 'Refine Collection Piece';
+            document.getElementById('form-productId').value = product._id;
+            document.getElementById('form-name').value = product.name;
+            document.getElementById('form-category').value = product.category._id;
+            document.getElementById('form-regularPrice').value = product.regularPrice;
+            document.getElementById('form-salePrice').value = product.salePrice;
+            document.getElementById('form-quantity').value = product.quantity;
+            document.getElementById('form-description').value = product.description;
+            
+            // Show existing images
+            product.productImage.forEach(img => {
+                const div = document.createElement('div');
+                div.className = 'relative aspect-[3/4] border rounded overflow-hidden';
+                div.innerHTML = `<img src="/uploads/${img}" class="w-full h-full object-cover">`;
+                preview.appendChild(div);
+            });
+            form.action = '/admin/products/edit';
+        } else {
+            title.innerText = 'Enlist New Piece';
+            document.getElementById('form-productId').value = '';
+            form.action = '/admin/products/add';
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeProductModal() {
+        const modal = document.getElementById('productModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    // Cropping Logic
+    const imageInput = document.getElementById('imageInput');
+    const cropperOverlay = document.getElementById('cropperOverlay');
+    const cropperImage = document.getElementById('cropperImage');
+
+    imageInput.addEventListener('change', function(e) {
+        pendingFiles = Array.from(e.target.files);
+        if (pendingFiles.length > 0) {
+            startCroppingProcess();
+        }
+    });
+
+    function startCroppingProcess() {
+        if (pendingFiles.length === 0) return;
+        
+        const file = pendingFiles.shift();
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            cropperImage.src = event.target.result;
+            cropperOverlay.classList.remove('hidden');
+            cropperOverlay.classList.add('flex');
+            
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(cropperImage, {
+                aspectRatio: 3/4,
+                viewMode: 2,
+                autoCropArea: 1
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function applyCrop() {
+        const canvas = cropper.getCroppedCanvas({
+            width: 800,
+            height: 1067
+        });
+        
+        canvas.toBlob((blob) => {
+            processedImages.push(blob);
+            updatePreview();
+            cropperOverlay.classList.add('hidden');
+            cropperOverlay.classList.remove('flex');
+            if (pendingFiles.length > 0) {
+                startCroppingProcess();
+            }
+        }, 'image/jpeg', 0.85);
+    }
+
+    function cancelCrop() {
+        cropperOverlay.classList.add('hidden');
+        cropperOverlay.classList.remove('flex');
+        if (pendingFiles.length > 0) {
+            startCroppingProcess();
+        }
+    }
+
+    function updatePreview() {
+        const preview = document.getElementById('imagePreview');
+        preview.innerHTML = '';
+        processedImages.forEach((blob, idx) => {
+            const url = URL.createObjectURL(blob);
+            const div = document.createElement('div');
+            div.className = 'relative aspect-[3/4] border rounded overflow-hidden shadow-sm';
+            div.innerHTML = `
+                <img src="${url}" class="w-full h-full object-cover">
+                <button type="button" onclick="removeProcessedImage(${idx})" class="absolute top-1 right-1 bg-white/80 text-red-600 rounded-full w-6 h-6 flex items-center justify-center hover:bg-white">&times;</button>
+            `;
+            preview.appendChild(div);
+        });
+    }
+
+    function removeProcessedImage(idx) {
+        processedImages.splice(idx, 1);
+        updatePreview();
+    }
+
+    // Form Submission
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const isEdit = document.getElementById('form-productId').value !== '';
+        if (!isEdit && processedImages.length < 3) {
+            document.getElementById('imageError').classList.remove('hidden');
+            return;
+        }
+
+        const formData = new FormData(this);
+        // Remove standard file inputs and add our blobs
+        formData.delete('productImages');
+        processedImages.forEach((blob, i) => {
+            formData.append('productImages', blob, `product_${i}.jpg`);
+        });
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        }).then(res => {
+            if (res.ok) window.location.reload();
+            else alert('Error saving product. Please check details.');
+        });
+    });
+
+    // Action Modals
+    function openStatusModal(id, isBlocked) {
+        const modal = document.getElementById('confirmModal');
+        const title = document.getElementById('confirmTitle');
+        const msg = document.getElementById('confirmMessage');
+        const btn = document.getElementById('confirmActionBtn');
+        const form = document.getElementById('confirmForm');
+
+        title.innerText = isBlocked ? 'Protocol Restoration' : 'Catalogue Suspension';
+        msg.innerText = isBlocked ? 'Restore this piece to the active shop catalogue?' : 'Temporarily remove this piece from the public view?';
+        btn.innerText = isBlocked ? 'Restore Access' : 'Suspend Access';
+        form.action = `/admin/products/${isBlocked ? 'unblock' : 'block'}/${id}`;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function openDeleteModal(id) {
+        const modal = document.getElementById('confirmModal');
+        const title = document.getElementById('confirmTitle');
+        const msg = document.getElementById('confirmMessage');
+        const btn = document.getElementById('confirmActionBtn');
+        const form = document.getElementById('confirmForm');
+
+        title.innerText = 'Permanent Archival';
+        msg.innerText = 'This will move the piece to archived storage. This action is irreversible.';
+        btn.innerText = 'Confirm Archival';
+        btn.classList.add('bg-red-600');
+        btn.classList.remove('bg-teal-700');
+        form.action = `/admin/products/delete/${id}`;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeActionModals() {
+        document.getElementById('confirmModal').classList.add('hidden');
+        document.getElementById('confirmModal').classList.remove('flex');
+    }
+</script>
+
+<%- include("../partials/admin/footer") %>
