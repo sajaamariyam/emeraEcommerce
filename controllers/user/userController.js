@@ -558,11 +558,14 @@ const loadProductDetails = async (req, res) => {
     }
 
     const relatedProducts = await Product.find({
-      category: product.category,
-      _id: { $ne: product._id },
-      isBlocked: false,
-      isListed: true
-    }).limit(4);
+    category: product.category._id, 
+    _id: { $ne: product._id },
+    isBlocked: false,
+    isListed: true,
+    quantity: { $gt: 0 }
+    })
+    .limit(4);
+
 
     let userData = null;
     if (req.session.user) {
