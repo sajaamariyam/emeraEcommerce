@@ -3,7 +3,9 @@ const router = express.Router();
 
 const adminController = require("../controllers/admin/adminController");
 const { adminAuth } = require("../middlewares/auth");
-const { uploadCategory, uploadProduct } = require("../middlewares/upload");
+const { uploadCategory } = require("../middlewares/upload");
+const { upload } = require("../middlewares/imageUpload");
+
 
 
 router.get("/adminLogin", adminController.loadLogin);
@@ -45,13 +47,13 @@ router.get("/products", adminAuth, adminController.loadProducts);
 router.post(
   "/products/add",
   adminAuth,
-  uploadProduct.array("productImages", 5),
+  upload.array("productImages", 5),
   adminController.addProduct
 );
 router.post(
   "/products/edit",
   adminAuth,
-  uploadProduct.array("productImages", 5),
+  upload.array("productImages", 5),
   adminController.editProduct
 );
 router.post("/products/block/:id", adminAuth, adminController.blockProduct);

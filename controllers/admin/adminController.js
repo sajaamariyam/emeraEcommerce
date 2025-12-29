@@ -3,7 +3,7 @@ const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const { upload, processImages } = require("../../middlewares/imageUpload");
+const {processImages } = require("../../middlewares/imageUpload");
 
 
 const pageerror = async (req, res) => {
@@ -421,6 +421,8 @@ const loadAddProducts = async (req, res) => {
     }
 
 }
+
+
 const addProduct = async (req, res) => {
   try {
     const {
@@ -431,28 +433,18 @@ const addProduct = async (req, res) => {
       salePrice,
       quantity,
       brand,
-      color
+      color,
     } = req.body;
-
-    const images = await processImages(req.files, "products");
-
-    if (images.length < 3) {
-      return res.status(400).json({ message: "Minimum 3 images required" });
-    }
-
-product.productImage = images;
 
     if (!req.files || req.files.length < 3) {
       return res.status(400).json({
         success: false,
-        message: "Minimum 3 images required"
+        message: "Minimum 3 images required",
       });
     }
 
-    const productImages = req.files.map(file => ({
-      url: file.path,
-      public_id: file.filename
-    }));
+
+    const processedImages = await processImages(req.files);
 
     const product = new Product({
       name,
@@ -463,25 +455,27 @@ product.productImage = images;
       regularPrice,
       salePrice,
       quantity,
-      productImage: productImages,
-      isListed: true
+      productImage: processedImages,
+      isListed: true,
+      isBlocked: false,
     });
 
     await product.save();
 
     res.status(201).json({
       success: true,
-      message: "Product added successfully"
+      message: "Product added successfully",
     });
 
   } catch (error) {
-    console.log("Add product error:", error);
+    console.error("Add product error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to add product"
+      message: "Failed to add product",
     });
   }
 };
+
 
 
 const editProduct = async (req, res) => {

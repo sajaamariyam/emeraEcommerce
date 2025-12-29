@@ -1,30 +1,35 @@
 const multer = require("multer");
 const sharp = require("sharp");
-const fs = require("fs");
-const path = require("path");
+const cloudinary = require("../config/cloudinary");
 
-// temp storage
 const upload = multer({ storage: multer.memoryStorage() });
 
-const processImages = async (files, folder) => {
-  const processedImages = [];
+const processImages = async (files) => {
+  const images = [];
 
   for (const file of files) {
-    const filename = `${Date.now()}-${file.originalname.replace(/\s+/g, "")}`;
-    const outputPath = path.join("uploads", folder, filename);
-
-    await sharp(file.buffer)
-      .resize(800, 1000)
+    const buffer = await sharp(file.buffer)
+      .resize(800, 1000, { fit: "cover" })
       .jpeg({ quality: 80 })
-      .toFile(outputPath);
+      .toBuffer();
 
-    processedImages.push({
-      url: `/uploads/${folder}/${filename}`,
-      public_id: filename
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: "emera/products" },
+        (err, res) => {
+          if (err) reject(err);
+          else resolve(res);
+        }
+      ).end(buffer);
+    });
+
+    images.push({
+      url: result.secure_url,
+      public_id: result.public_id,
     });
   }
 
-  return processedImages;
+  return images;
 };
 
 module.exports = { upload, processImages };
