@@ -3,7 +3,7 @@ const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-
+const { upload, processImages } = require("../../middlewares/imageUpload");
 
 
 const pageerror = async (req, res) => {
@@ -185,7 +185,7 @@ const loadCategories = async (req, res) => {
 
     const totalCategories = await Category.countDocuments(filter);
 
-    const categories = await Category.find({isListed: true})
+    const categories = await Category.find(filter)
     .sort({createdAt: -1})
     .skip(skip)
     .limit(limit);
@@ -433,6 +433,14 @@ const addProduct = async (req, res) => {
       brand,
       color
     } = req.body;
+
+    const images = await processImages(req.files, "products");
+
+    if (images.length < 3) {
+      return res.status(400).json({ message: "Minimum 3 images required" });
+    }
+
+product.productImage = images;
 
     if (!req.files || req.files.length < 3) {
       return res.status(400).json({

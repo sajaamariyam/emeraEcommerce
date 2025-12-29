@@ -376,95 +376,84 @@
 </footer>
 
 
-    <script>
-        // Data hydration from EJS
-        const PRODUCT_GALLERY = <%- JSON.stringify(product.productImage) %>;
-        const PRODUCT_BLOCKED = <%= !!product.isBlocked %>;
+<script>
+  const PRODUCT_GALLERY = <%- JSON.stringify(product.productImage) %>;
+  const PRODUCT_BLOCKED = <%= !!product.isBlocked %>;
 
+  if (PRODUCT_BLOCKED) {
+    window.location.href = '/products';
+  }
 
-        // Security Check: Redirect if product is unlisted or blocked
-        if (PRODUCT_BLOCKED) {
-            window.location.href = '/products';
+  function changeActiveImage(idx) {
+    if (!PRODUCT_GALLERY[idx]) return;
+
+    const mainImg = document.getElementById('main-img');
+    mainImg.src = PRODUCT_GALLERY[idx].url;
+
+    document.querySelectorAll('.thumb-btn').forEach((btn, i) => {
+      btn.classList.toggle('ring-1', i === idx);
+      btn.classList.toggle('ring-emera-950', i === idx);
+      btn.classList.toggle('opacity-100', i === idx);
+      btn.classList.toggle('opacity-40', i !== idx);
+    });
+  }
+
+  // ZOOM ENGINE
+  const zoomArea = document.getElementById('main-zoom-area');
+  const zoomImg = document.getElementById('main-img');
+
+  if (zoomArea && zoomImg) {
+    zoomArea.addEventListener('mousemove', (e) => {
+      const { left, top, width, height } = zoomArea.getBoundingClientRect();
+      const x = ((e.clientX - left) / width) * 100;
+      const y = ((e.clientY - top) / height) * 100;
+      zoomImg.style.transformOrigin = `${x}% ${y}%`;
+      zoomImg.style.transform = 'scale(2.2)';
+    });
+
+    zoomArea.addEventListener('mouseleave', () => {
+      zoomImg.style.transform = 'scale(1)';
+    });
+  }
+
+  function selectShade(el) {
+    document.querySelectorAll('.shade-btn').forEach(btn =>
+      btn.classList.remove('swatch-ring')
+    );
+    el.classList.add('swatch-ring');
+  }
+
+  function addToCart(productId) {
+    fetch("/add-to-cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId })
+    })
+      .then(res => {
+        if (res.redirected) {
+          window.location.href = res.url;
+          return;
         }
+        return res.json();
+      })
+      .then(data => {
+        if (data?.success) {
+          const badge = document.getElementById("cart-count-badge");
+          if (badge && data.cartCount !== undefined) {
+            badge.textContent = data.cartCount;
+            badge.classList.remove("hidden");
 
-        function changeActiveImage(idx) {
-        const mainImg = document.getElementById('main-img');
-        mainImg.src = PRODUCT_GALLERY[idx].url;
-
-        document.querySelectorAll('.thumb-btn').forEach((btn, i) => {
-            btn.classList.toggle('ring-1', i === idx);
-            btn.classList.toggle('ring-emera-950', i === idx);
-            btn.classList.toggle('opacity-100', i === idx);
-            btn.classList.toggle('opacity-40', i !== idx);
-        });
+            // small animation
+            badge.classList.add("scale-125");
+            setTimeout(() => badge.classList.remove("scale-125"), 300);
+          }
         }
+      })
+      .catch(console.error);
+  }
+</script>
 
 
-        // Zoom Engine
-        const zoomArea = document.getElementById('main-zoom-area');
-        const zoomImg = document.getElementById('main-img');
-        
-        if (zoomArea && zoomImg) {
-            zoomArea.addEventListener('mousemove', (e) => {
-                const { left, top, width, height } = zoomArea.getBoundingClientRect();
-                const x = ((e.clientX - left) / width) * 100;
-                const y = ((e.clientY - top) / height) * 100;
-                zoomImg.style.transformOrigin = `${x}% ${y}%`;
-                zoomImg.style.transform = 'scale(2.2)';
-            });
 
-            zoomArea.addEventListener('mouseleave', () => {
-                zoomImg.style.transform = 'scale(1)';
-            });
-        }
-
-        function selectShade(el) {
-            document.querySelectorAll('.shade-btn').forEach(btn => btn.classList.remove('swatch-ring'));
-            el.classList.add('swatch-ring');
-        }
-
-        let cartCount = 0;
-
-        window.addEventListener('scroll', () => {
-            const nav = document.getElementById('navbar');
-            if (window.scrollY > 50) nav.classList.add('shadow-xl', 'bg-emera-950/98');
-            else nav.classList.remove('shadow-xl', 'bg-emera-950/98');
-        });
-
-
-   function addToCart(productId) {
-  fetch("/add-to-cart", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ productId })
-  })
-  .then(res => {
-    // If auth middleware redirects to login
-    if (res.redirected) {
-      window.location.href = res.url;
-      return;
-    }
-    return res.json();
-  })
-  .then(data => {
-    if (data?.success) {
-      // ✅ Update cart badge
-      const badge = document.getElementById("cart-count-badge");
-      if (badge && data.cartCount !== undefined) {
-        badge.textContent = data.cartCount;
-        badge.classList.remove("hidden");
-      }
-
-      // Optional UX
-      alert("Product added to cart");
-    }
-  })
-  .catch(err => console.error(err));
-}
-
-
-    </script>
 </body>
 </html>
