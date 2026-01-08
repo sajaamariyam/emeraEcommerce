@@ -3,8 +3,8 @@ const router = express.Router();
 
 const adminController = require("../controllers/admin/adminController");
 const { adminAuth } = require("../middlewares/auth");
-const { uploadCategory } = require("../middlewares/upload");
-const { upload } = require("../middlewares/imageUpload");
+const { uploadCategory, uploadProduct } = require("../middlewares/upload");
+const Product = require("../models/productSchema");
 
 
 
@@ -42,18 +42,31 @@ router.delete(
 );
 
 
+router.get(
+  "/products/:id",
+  adminAuth,
+  async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id).populate("category");
+      if (!product) return res.status(404).json({ message: "Not found" });
+      res.json(product);
+    } catch (err) {
+      res.status(500).json({ message: "Error fetching product" });
+    }
+  }
+);
 
 router.get("/products", adminAuth, adminController.loadProducts);
 router.post(
   "/products/add",
   adminAuth,
-  upload.array("productImages", 5),
+  uploadProduct.array("productImages", 5),
   adminController.addProduct
 );
 router.post(
   "/products/edit",
   adminAuth,
-  upload.array("productImages", 5),
+  uploadProduct.array("productImages", 5),
   adminController.editProduct
 );
 router.post("/products/block/:id", adminAuth, adminController.blockProduct);

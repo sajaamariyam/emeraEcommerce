@@ -3,14 +3,10 @@ const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const {processImages } = require("../../middlewares/imageUpload");
-
 
 const pageerror = async (req, res) => {
     res.render("pageerror");
 }
-
-
 
 const loadLogin = (req, res) => {
 
@@ -224,12 +220,13 @@ const addCategory = async (req, res) => {
     }
 
     const newCategory = new Category({
-      name: name.trim(),
-      image: {
-        url: req.file.path,
-        public_id: req.file.filename
-      }
-    });
+    name: name.trim(),
+    image: {
+      url: req.file.path,           
+      public_id: req.file.public_id 
+    }
+  });
+
 
     await newCategory.save();
 
@@ -254,11 +251,12 @@ const editCategory = async (req, res) => {
     };
 
     if (req.file) {
-      updateData.image = {
-        url: req.file.path,
-        public_id: req.file.filename
-      };
-    }
+    updateData.image = {
+      url: req.file.path,
+      public_id: req.file.public_id
+    };
+  }
+
 
     await Category.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -317,13 +315,10 @@ const deleteCategory = async (req, res) => {
 
 
 
-
 const loadProducts = async (req, res) => {
   try {
-    
     const admin = await User.findById(req.session.admin);
 
-    
     const {
       search = "",
       category = "",
@@ -334,7 +329,7 @@ const loadProducts = async (req, res) => {
     const limit = 5;
     const skip = (page - 1) * limit;
 
-    
+
     let filter = {};
 
     if (search) {
@@ -346,53 +341,57 @@ const loadProducts = async (req, res) => {
     }
 
     if (status === "listed") {
+      filter.isListed = true;
       filter.isBlocked = false;
-    } else if (status === "unlisted") {
-      filter.isBlocked = true;
     }
 
-    
-    let products = await Product.find(filter)
+    if (status === "unlisted") {
+      filter.isListed = false;
+    }
+
+
+    const products = await Product.find(filter)
       .populate("category")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    
-    products = products.filter(p => p.category);
-
-    
-    const totalProducts = await Product.countDocuments();
-    const listedProducts = await Product.countDocuments({ isBlocked: false });
-    const unlistedProducts = await Product.countDocuments({ isBlocked: true });
-    const outOfStockCount = await Product.countDocuments({ quantity: 0 });
-
-    
     const totalFiltered = await Product.countDocuments(filter);
     const totalPages = Math.ceil(totalFiltered / limit);
 
-   
+
+    const totalProducts = await Product.countDocuments();
+
+    const listedProducts = await Product.countDocuments({
+      isBlocked: false
+    });
+
+    const unlistedProducts = await Product.countDocuments({
+      isBlocked: true
+    });
+
+
+    const outOfStockCount = await Product.countDocuments({
+      quantity: 0,
+      isListed: true,
+      isBlocked: false
+    });
+
     const categories = await Category.find({ isListed: true });
 
-    
     res.render("admin/products", {
       admin,
       products,
       categories,
-
-      
       totalProducts,
       listedProducts,
       unlistedProducts,
       outOfStockCount,
-
-      
       currentPage: Number(page),
       totalPages,
       search,
       category,
       status,
-
       activePage: "products"
     });
 
@@ -401,6 +400,8 @@ const loadProducts = async (req, res) => {
     res.redirect("/admin/pageerror");
   }
 };
+
+
 
 
 
@@ -425,56 +426,57 @@ const loadAddProducts = async (req, res) => {
 
 const addProduct = async (req, res) => {
   try {
+    console.log("FILES:", req.files);
+    console.log("BODY:", req.body);
+
     const {
       name,
       description,
       category,
       regularPrice,
       salePrice,
-      quantity,
       brand,
-      color,
+      variants
     } = req.body;
 
     if (!req.files || req.files.length < 3) {
-      return res.status(400).json({
-        success: false,
-        message: "Minimum 3 images required",
-      });
+      return res.status(400).json({ message: "Minimum 3 images required" });
     }
 
+    const productImages = req.files.map(file => ({
+      url: file.path,
+      public_id: file.filename
+    }));
 
-    const processedImages = await processImages(req.files);
+    const parsedVariants = variants
+      ? JSON.parse(variants)
+      : [];
 
     const product = new Product({
       name,
       description,
       category,
       brand,
-      color,
       regularPrice,
       salePrice,
-      quantity,
-      productImage: processedImages,
+      variants: parsedVariants,
+      productImage: productImages,
       isListed: true,
-      isBlocked: false,
+      isBlocked: false
     });
 
     await product.save();
 
-    res.status(201).json({
-      success: true,
-      message: "Product added successfully",
-    });
+    res.status(201).json({ success: true });
 
   } catch (error) {
     console.error("Add product error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to add product",
-    });
+    res.status(500).json({ success: false });
   }
 };
+
+
+
 
 
 
@@ -487,33 +489,49 @@ const editProduct = async (req, res) => {
       category,
       regularPrice,
       salePrice,
-      quantity
+      brand,
+      variants
     } = req.body;
+
+
+    const parsedVariants = variants ? JSON.parse(variants) : [];
+
+    if (!parsedVariants.length) {
+      return res.status(400).json({ message: "At least one variant is required" });
+    }
 
     const updateData = {
       name,
       description,
       category,
+      brand,
       regularPrice,
       salePrice,
-      quantity
+      variants: parsedVariants
     };
+
 
     if (req.files && req.files.length > 0) {
       updateData.productImage = req.files.map(file => ({
         url: file.path,
-        public_id: file.filename
+        public_id: file.filename  
       }));
     }
 
-    await Product.findByIdAndUpdate(productId, updateData);
-    res.redirect("/admin/products");
+    await Product.findByIdAndUpdate(
+      productId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({ success: true });
 
   } catch (error) {
-    console.log("Edit product error:", error);
-    res.status(500).send("Failed to update product");
+    console.error("Edit product error:", error);
+    res.status(500).json({ success: false });
   }
 };
+
 
 const blockProduct = async (req, res) => {
   await Product.findByIdAndUpdate(req.params.id, { isBlocked: true });

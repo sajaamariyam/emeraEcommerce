@@ -2,6 +2,7 @@ const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../config/cloudinary");
 
+
 const categoryStorage = new CloudinaryStorage({
   cloudinary,
   params: {
@@ -12,4 +13,18 @@ const categoryStorage = new CloudinaryStorage({
 
 const uploadCategory = multer({ storage: categoryStorage });
 
-module.exports = { uploadCategory };
+
+const productStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "emera/products",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  },
+});
+
+const uploadProduct = multer({ storage: productStorage });
+
+module.exports = {
+  uploadCategory,
+  uploadProduct,
+};

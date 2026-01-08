@@ -43,11 +43,13 @@ const loadHomepage = async (req, res) => {
     }
 
     const products = await Product.find({
-      isListed: true,
-      isBlocked: false
+    isListed: true,
+    isBlocked: false,
+    "variants.quantity": { $gt: 0 }
     })
-    .select("name salePrice productImage material")
+    .select("name salePrice productImage")
     .limit(8);
+
 
     const categories = await Category.find({
       isListed: true
@@ -475,11 +477,12 @@ const loadProducts = async (req, res) => {
         const maxPrice = parseInt(req.query.maxPrice) || 1000000;
 
         let query = {
-            isBlocked: false,
-            isListed: true,
-            quantity: { $gt: 0 },
-            regularPrice: { $lte: maxPrice }
+        isBlocked: false,
+        isListed: true,
+        "variants.quantity": { $gt: 0 },
+        salePrice: { $lte: maxPrice }
         };
+
 
          if (search) {
             query.name = { $regex: search, $options: "i" };
@@ -489,15 +492,16 @@ const loadProducts = async (req, res) => {
             query.category = category;
         }
 
+
        let sortOption = { createdAt: -1 }; 
 
         switch (sort) {
             case "price-asc":
-                sortOption = { regularPrice: 1 };
+                sortOption = { salePrice: 1 };
                 break;
 
             case "price-desc":
-                sortOption = { regularPrice: -1 };
+                sortOption = { salePrice: -1 };
                 break;
 
             case "name-asc":
@@ -562,9 +566,10 @@ const loadProductDetails = async (req, res) => {
     _id: { $ne: product._id },
     isBlocked: false,
     isListed: true,
-    quantity: { $gt: 0 }
+    "variants.quantity": { $gt: 0 }
     })
     .limit(4);
+
 
 
     let userData = null;
