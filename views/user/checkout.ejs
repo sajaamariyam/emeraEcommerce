@@ -1,0 +1,358 @@
+<%- include('../partials/user/header') %>
+    
+    <main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-20 animate-reveal">
+        
+        <!-- Breadcrumb & Header -->
+        <div class="mb-24 space-y-6">
+            <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-400">
+                <a href="/" class="hover:text-black transition-colors">Home</a> / 
+                <a href="/cart" class="hover:text-black transition-colors">Cart</a> / 
+                <span class="text-black">Checkout</span>
+            </nav>
+            <h1 class="text-6xl md:text-7xl font-serif text-gray-900 leading-none">Secure <span class="italic font-light">Checkout</span></h1>
+            <p class="text-[11px] uppercase tracking-[0.3em] text-gray-400 font-bold">Complete Your Order</p>
+        </div>
+        
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-24">
+            
+            <!-- Checkout Form -->
+            <div class="lg:col-span-2 space-y-12">
+                
+                <!-- Contact Information -->
+                <div class="bg-stone-50 p-10 border border-stone-100">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-3xl font-serif text-gray-900">Contact Information</h2>
+                        <span class="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-bold">Step 1 of 3</span>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Email Address *</label>
+                            <input type="email" id="email" required class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Phone Number *</label>
+                            <input type="tel" id="phone" required class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Shipping Address -->
+                <div class="bg-stone-50 p-10 border border-stone-100">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-3xl font-serif text-gray-900">Shipping Address</h2>
+                        <span class="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-bold">Step 2 of 3</span>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">First Name *</label>
+                                <input type="text" id="firstName" required class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Last Name *</label>
+                                <input type="text" id="lastName" required class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Street Address *</label>
+                            <input type="text" id="address1" required placeholder="House number and street name" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white mb-4">
+                            <input type="text" id="address2" placeholder="Apartment, suite, unit etc. (optional)" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">City *</label>
+                                <input type="text" id="city" required class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">State / Province *</label>
+                                <select id="state" required class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                                    <option value="">Select State</option>
+                                    <option value="AN">Andaman and Nicobar Islands</option>
+                                    <option value="AP">Andhra Pradesh</option>
+                                    <option value="AR">Arunachal Pradesh</option>
+                                    <option value="AS">Assam</option>
+                                    <option value="BR">Bihar</option>
+                                    <option value="CH">Chandigarh</option>
+                                    <option value="CT">Chhattisgarh</option>
+                                    <option value="DH">Dadra and Nagar Haveli and Daman and Diu</option>
+                                    <option value="DL">Delhi</option>
+                                    <option value="GA">Goa</option>
+                                    <option value="GJ">Gujarat</option>
+                                    <option value="HR">Haryana</option>
+                                    <option value="HP">Himachal Pradesh</option>
+                                    <option value="JK">Jammu and Kashmir</option>
+                                    <option value="JH">Jharkhand</option>
+                                    <option value="KA">Karnataka</option>
+                                    <option value="KL">Kerala</option>
+                                    <option value="LA">Ladakh</option>
+                                    <option value="LD">Lakshadweep</option>
+                                    <option value="MP">Madhya Pradesh</option>
+                                    <option value="MH">Maharashtra</option>
+                                    <option value="MN">Manipur</option>
+                                    <option value="ML">Meghalaya</option>
+                                    <option value="MZ">Mizoram</option>
+                                    <option value="NL">Nagaland</option>
+                                    <option value="OR">Odisha</option>
+                                    <option value="PY">Puducherry</option>
+                                    <option value="PB">Punjab</option>
+                                    <option value="RJ">Rajasthan</option>
+                                    <option value="SK">Sikkim</option>
+                                    <option value="TN">Tamil Nadu</option>
+                                    <option value="TG">Telangana</option>
+                                    <option value="TR">Tripura</option>
+                                    <option value="UP">Uttar Pradesh</option>
+                                    <option value="UT">Uttarakhand</option>
+                                    <option value="WB">West Bengal</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">PIN Code *</label>
+                                <input type="text" id="pincode" required maxlength="6" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Country *</label>
+                                <input type="text" id="country" value="India" readonly class="w-full border border-stone-300 px-6 py-4 text-sm bg-stone-100 text-gray-500">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" id="saveAddress" class="mt-1">
+                                <span class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Save this address for future orders</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Method -->
+                <div class="bg-stone-50 p-10 border border-stone-100">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-3xl font-serif text-gray-900">Payment Method</h2>
+                        <span class="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-bold">Step 3 of 3</span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- Credit/Debit Card -->
+                        <label class="flex items-start gap-4 p-6 border border-stone-300 cursor-pointer hover:border-emera-950 transition-colors bg-white">
+                            <input type="radio" name="payment" value="card" class="radio-custom mt-1" checked>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold">Credit / Debit Card</span>
+                                    <div class="flex gap-2">
+                                        <svg class="h-6" viewBox="0 0 48 32" fill="none"><rect width="48" height="32" rx="4" fill="#1434CB"/><circle cx="18" cy="16" r="9" fill="#EB001B"/><circle cx="30" cy="16" r="9" fill="#F79E1B"/><path d="M24 10.5c1.8 1.5 3 3.7 3 6s-1.2 4.5-3 6c-1.8-1.5-3-3.7-3-6s1.2-4.5 3-6z" fill="#FF5F00"/></svg>
+                                        <svg class="h-6" viewBox="0 0 48 32" fill="none"><rect width="48" height="32" rx="4" fill="#0066B2"/><rect x="8" y="12" width="32" height="8" rx="1" fill="white"/><rect x="8" y="12" width="6" height="8" fill="#F7B600"/></svg>
+                                    </div>
+                                </div>
+                                <p class="text-[9px] uppercase tracking-[0.3em] text-gray-400">Secure payment via Stripe</p>
+                            </div>
+                        </label>
+                        
+                        <!-- UPI -->
+                        <label class="flex items-start gap-4 p-6 border border-stone-300 cursor-pointer hover:border-emera-950 transition-colors bg-white">
+                            <input type="radio" name="payment" value="upi" class="radio-custom mt-1">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold">UPI Payment</span>
+                                    <span class="text-[9px] uppercase tracking-[0.3em] text-emera-700 font-bold">Popular</span>
+                                </div>
+                                <p class="text-[9px] uppercase tracking-[0.3em] text-gray-400">Google Pay, PhonePe, Paytm & more</p>
+                            </div>
+                        </label>
+                        
+                        <!-- Net Banking -->
+                        <label class="flex items-start gap-4 p-6 border border-stone-300 cursor-pointer hover:border-emera-950 transition-colors bg-white">
+                            <input type="radio" name="payment" value="netbanking" class="radio-custom mt-1">
+                            <div class="flex-1">
+                                <span class="text-sm font-semibold">Net Banking</span>
+                                <p class="text-[9px] uppercase tracking-[0.3em] text-gray-400">All major banks supported</p>
+                            </div>
+                        </label>
+                        
+                        <!-- Cash on Delivery -->
+                        <label class="flex items-start gap-4 p-6 border border-stone-300 cursor-pointer hover:border-emera-950 transition-colors bg-white">
+                            <input type="radio" name="payment" value="cod" class="radio-custom mt-1">
+                            <div class="flex-1">
+                                <span class="text-sm font-semibold">Cash on Delivery</span>
+                                <p class="text-[9px] uppercase tracking-[0.3em] text-gray-400">Pay when you receive</p>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <!-- Card Details (shown when card is selected) -->
+                    <div id="cardDetails" class="mt-8 pt-8 border-t border-stone-200 space-y-6">
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Card Number *</label>
+                            <input type="text" id="cardNumber" maxlength="19" placeholder="1234 5678 9012 3456" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Cardholder Name *</label>
+                            <input type="text" id="cardName" placeholder="Name on card" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                        </div>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Expiry Date *</label>
+                                <input type="text" id="cardExpiry" maxlength="5" placeholder="MM/YY" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">CVV *</label>
+                                <input type="text" id="cardCVV" maxlength="3" placeholder="123" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-stone-50 p-10 border border-stone-100 sticky top-32">
+                    <h2 class="text-3xl font-serif text-gray-900 mb-8">Order Summary</h2>
+                    
+                    <!-- Order Items -->
+                    <div class="space-y-6 mb-8 pb-8 border-b border-stone-200">
+                        <div class="flex gap-4">
+                            <div class="w-20 h-20 bg-stone-200 flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-gray-900 mb-1">Classic Leather Bag</h4>
+                                <p class="text-[9px] uppercase tracking-widest text-gray-400">Qty: 1</p>
+                                <p class="text-sm font-bold text-gray-900 mt-2">₹12,500</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-20 h-20 bg-stone-200 flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-gray-900 mb-1">Artisan Wallet</h4>
+                                <p class="text-[9px] uppercase tracking-widest text-gray-400">Qty: 2</p>
+                                <p class="text-sm font-bold text-gray-900 mt-2">₹8,000</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Price Breakdown -->
+                    <div class="space-y-6 mb-8 pb-8 border-b border-stone-200">
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Subtotal</span>
+                            <span class="font-bold text-gray-900">₹20,500</span>
+                        </div>
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Shipping</span>
+                            <span class="font-bold text-emera-700">Complimentary</span>
+                        </div>
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Tax (GST 18%)</span>
+                            <span class="font-bold text-gray-900">₹3,690</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between mb-8 pb-8 border-b border-stone-200">
+                        <span class="text-xl font-serif text-gray-900">Total</span>
+                        <span class="text-2xl font-serif text-gray-900">₹24,190</span>
+                    </div>
+                    
+                    <button id="placeOrderBtn" class="block text-center btn-hover w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold mb-6">
+                        Place Order
+                    </button>
+                    
+                    <div class="space-y-4 text-center">
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Secure Checkout • 256-bit SSL</p>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Free Returns Within 30 Days</p>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Authenticity Guaranteed</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+    </main>
+
+    <script>
+        // Toggle card details visibility
+        const paymentRadios = document.querySelectorAll('input[name="payment"]');
+        const cardDetails = document.getElementById('cardDetails');
+        
+        paymentRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'card') {
+                    cardDetails.style.display = 'block';
+                } else {
+                    cardDetails.style.display = 'none';
+                }
+            });
+        });
+        
+        // Format card number
+        const cardNumber = document.getElementById('cardNumber');
+        cardNumber.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+        
+        // Format expiry date
+        const cardExpiry = document.getElementById('cardExpiry');
+        cardExpiry.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+        
+        // Only allow numbers in CVV
+        const cardCVV = document.getElementById('cardCVV');
+        cardCVV.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+        
+        // Only allow numbers in PIN code
+        const pincode = document.getElementById('pincode');
+        pincode.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+        
+        // Place order validation
+        const placeOrderBtn = document.getElementById('placeOrderBtn');
+        placeOrderBtn.addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const address1 = document.getElementById('address1').value;
+            const city = document.getElementById('city').value;
+            const state = document.getElementById('state').value;
+            const pincodeVal = document.getElementById('pincode').value;
+            
+            if (!email || !phone || !firstName || !lastName || !address1 || !city || !state || !pincodeVal) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const selectedPayment = document.querySelector('input[name="payment"]:checked').value;
+            
+            if (selectedPayment === 'card') {
+                const cardNum = document.getElementById('cardNumber').value;
+                const cardNameVal = document.getElementById('cardName').value;
+                const expiryVal = document.getElementById('cardExpiry').value;
+                const cvvVal = document.getElementById('cardCVV').value;
+                
+                if (!cardNum || !cardNameVal || !expiryVal || !cvvVal) {
+                    alert('Please fill in all card details');
+                    return;
+                }
+            }
+            
+            // Simulate order placement
+            alert('Order placed successfully! Thank you for shopping with EMERA.');
+            // window.location.href = '/order-confirmation';
+        });
+    </script>
+
+<%- include('../partials/user/footer') %>

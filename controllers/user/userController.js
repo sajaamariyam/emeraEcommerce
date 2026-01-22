@@ -35,6 +35,9 @@ const loadSignup = async(req, res) => {
 
 
 const loadHomepage = async (req, res) => {
+
+    console.log("SESSION USER AFTER LOGIN:", req.session.user);
+
   try {
     let userData = null;
 
@@ -58,7 +61,8 @@ const loadHomepage = async (req, res) => {
     res.render("user/home", {
       user: userData,
       products,
-      categories
+      categories,
+      showAnnouncement: true
     });
 
   } catch (error) {
@@ -296,9 +300,9 @@ const login = async (req, res) => {
 
     req.session.user = findUser._id;
 
-    return res.json({
-      success: true
-    });
+    req.session.save( () => {
+        return res.redirect("/");
+    })
 
   } catch (error) {
     console.error("Login error", error);
@@ -318,7 +322,7 @@ const logout = async (req, res) => {
             }
 
             res.clearCookie("connect.sid");
-            return res.redirect("/login");
+            res.redirect("/login");
         });
     } catch (error) {
         console.log("Logout error", error);
@@ -345,6 +349,11 @@ const sendForgotPassword = async (req, res) => {
             return res.render("user/forgot-password", { message: "No user found with this email" });
         }
 
+        if (user.googleId) {
+            return res.render("user/forgot-password", {
+                message: "This account is linked with Google. Please login using Google."
+            });
+        }
        
         const otp = generateOtp();
 
@@ -352,6 +361,7 @@ const sendForgotPassword = async (req, res) => {
         if (!emailSent) {
             return res.render("user/forgot-password", { message: "Failed to send OTP. Try again" });
         }
+
 
        req.session.forgotEmail = email;
         req.session.forgotOtp = otp;
@@ -483,13 +493,15 @@ const loadProducts = async (req, res) => {
         salePrice: { $lte: maxPrice }
         };
 
+        let categoryName = null;
 
          if (search) {
             query.name = { $regex: search, $options: "i" };
         }
 
         if (category) {
-            query.category = category;
+            const cat = await Category.findById(category);
+            categoryName = cat ? cat.name : null;
         }
 
 
@@ -537,12 +549,14 @@ const loadProducts = async (req, res) => {
             search,
             sort,
             category,
-            maxPrice
+            categoryName,
+            maxPrice,
+            showAnnouncement: false
         });
 
     } catch (error) {
         console.log(error);
-        res.status(500).render("user/error");
+        res.status(500).render("pageNotFound");
     }
 };
 
@@ -580,7 +594,8 @@ const loadProductDetails = async (req, res) => {
     res.render("user/productDetails", {
       product,
       relatedProducts,
-      user: userData        
+      user: userData,
+      showAnnouncement: false        
     });
 
   } catch (error) {
@@ -589,7 +604,396 @@ const loadProductDetails = async (req, res) => {
   }
 };
 
+const loadProfile = async (req, res) => {
 
+
+    try{
+
+        const userData = await User.findById(req.session.user);
+
+        if(!userData){
+            return res.redirect("/login");
+        }
+
+        res.render("user/profile", {
+            user: userData,
+            showAnnouncement: false
+        });
+
+
+    }catch(error){
+
+        console.log("PROFILE LOAD ERROR", error);
+        res.status(500).json({ message: "Profile update failed" });
+
+
+    }
+
+};
+
+
+const editProfile = async (req, res) => {
+
+    try{
+
+        const userId = req.session.user;
+
+
+        console.log("UserID:", userId);
+        console.log("Body:", req.body);
+        console.log("File:", req.file);
+
+        const {firstName, lastName, phone} = req.body;
+
+        const updateData = {
+            name: `${firstName} ${lastName}`.trim(),
+            phone
+        }
+
+    
+        if(req.file){
+            updateData.profileImage = req.file.path;
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true, runValidators: true });
+
+        console.log("Updated User:", updatedUser);
+
+        res.json({ success: true, user: updatedUser });
+
+    } catch (error) {
+
+        console.log("EDIT PROFILE ERROR:", error);
+
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const requestEmailOtp = async (req, res) => {
+
+    try{
+
+        const {newEmail} = req.body;
+
+        if(!newEmail){
+            return res.status(400).json({message: "New email is required"});
+        }
+
+        const user = await User.findById(req.session.user);
+
+        if(!user){
+            return res.status(404).json({message: "User not found"});
+        }
+
+        if(user.googleId){
+            return res.status(403).json({
+                message: "Email cannot be changed for Google accounts"
+            });
+        }
+
+        const emailExists = await User.findOne({
+            email: newEmail,
+            _id: {$ne: user._id}
+        });
+
+        if(emailExists){
+            return res.status(409).json({message: "This email is already in use"})
+        }
+
+        const otp = generateOtp();
+
+        req.session.emailChangeOtp = otp;
+        req.session.newEmail = newEmail;
+        req.session.emailVerified = false;
+
+        await sendVerificationEmail(newEmail, otp);
+
+        res.json({success: true});
+
+    }catch(error){
+
+        console.log("Request email OTP error: ",error);
+        res.status(500).json({message: "failed to send OTP"});
+
+    }
+
+};
+
+const verifyEmailOtp = async (req, res) => {
+
+    const {otp} = req.body;
+
+    if(otp !== req.session.emailChangeOtp){
+        return res.status(400).json({message: "Invalid OTP"});
+    }
+
+    req.session.emailVerified = true;
+    res.json({success: true});
+
+};
+
+const updateProfileAfterOtp = async (req, res) => {
+    
+
+
+
+    if(!req.session.emailVerified){
+        return res.status(403).json({message: "Email not verified"});
+    }
+
+    const newEmail = req.session.newEmail;
+
+    if(!newEmail){
+        return res.status(400).json({message: "No email found in session"});
+    }
+
+        console.log("Saving email:", newEmail);
+
+    const emailExists = await User.findOne({
+        email: newEmail,
+        _id: {$ne: req.session.user}
+    });
+
+    if(emailExists){
+        return res.status(409).json({
+            message: "This email is already in use"
+        });
+    }
+
+    const user = await User.findById(req.session.user);
+    if(!user){
+        return res.status(404).json({message: "User not found"});
+    }
+
+    user.email = newEmail;
+
+    await user.save();
+
+    req.session.user = user._id;
+
+    req.session.emailVerified = false;
+    req.session.emailChangeOtp = null;
+    req.session.newEmail = null;
+
+    res.json({success: true});
+
+};
+
+const getAddresses = async (req, res) => {
+
+    try{
+
+        const user = await User.findById(req.session.user).lean();
+
+        if(!user){
+            return res.status(404).json({message: "User not found"});
+        }
+
+        res.json(user.addresses || []);
+
+    }catch(error){
+        console.log("GET ADDRESSES ERROR", error);
+        res.status(500).json({message: "failed to load addresses"});
+    }
+
+};
+
+const addAddress = async (req, res) =>{
+
+    try{
+
+        const user = await User.findById(req.session.user);
+        if(!user){
+            return res.status(404).json({message: "User not found"});
+        }
+
+        const{
+            fullName,
+            phone,
+            street,
+            city,
+            state,
+            zipCode,
+            country,
+            isDefault
+        } = req.body;
+
+        if(!fullName || !phone || !street || !city || !state || !zipCode || !country){
+            return res.status(400).json({message : "All fields are required"});
+        }
+
+        if(isDefault){
+            user.addresses.forEach(a => {
+                a.isDefault = false
+            });
+        }
+
+        const newAddress = {
+            fullName,
+            phone,
+            street,
+            city,
+            state,
+            zipCode,
+            country,
+            isDefault: user.addresses.length === 0 ? true : !!isDefault        };
+
+        user.addresses.push(newAddress);
+        await user.save();
+
+        res.json({success: true})
+
+    }catch(error){
+
+        console.log("ADD ADDRESS ERROR", error);
+        res.status(500).json({message: "Failed to add address"});
+
+    }
+
+};
+
+const setDefaultAddress = async (req, res) => {
+
+    try{
+
+        const user = await User.findById(req.session.user);
+        if(!user){
+            return res.status(404).json({message: "User not found"});
+        }
+
+        user.addresses.forEach(address => {
+            address.isDefault = address._id.toString() === req.params.id;
+        });
+
+        await user.save();
+        res.json({success: true});
+
+    }catch(error){
+
+        console.error("SET DEFAULT ADDRESS ERROR:", error);
+        res.status(500).json({message: "Failed to update default address"});
+
+    }
+
+};
+
+const updateAddress = async (req, res) => {
+
+    try{
+
+        const user = await User.findById(req.session.user);
+        if(!user){
+            return res.status(404).json({message: "User not found"});
+        }
+
+        const address = user.addresses.id(req.params.id);
+
+        if(!address){
+            return res.status(404).json({message: "Address not found"});
+        }
+
+        const {
+            fullName,
+            phone,
+            street,
+            city,
+            state,
+            zipCode,
+            country
+        } = req.body;
+
+        address.fullName = fullName;
+        address.phone = phone;
+        address.street = street;
+        address.city = city;
+        address.state = state;
+        address.zipCode = zipCode;
+        address.country = country;
+
+        await user.save();
+
+        res.json({success: true});
+
+    }catch(error){
+
+        console.error("UPDATE ADDRESS ERROR:", error);
+        res.status(500).json({message: "Failed to update address"});
+
+    }
+
+}
+
+const deleteAddress = async (req, res) => {
+    
+    try{
+
+        const user = await User.findById(req.session.user);
+        if(!user){
+            return res.status(404).json({message: "User not found"});
+        }
+
+        if(!Array.isArray(user.addresses)){
+            user.addresses = [];
+        }
+
+        user.addresses = user.addresses.filter(
+            address => address._id.toString() !== req.params.id
+        );
+
+        if(user.addresses.length > 0 && !user.addresses.some(a => a.isDefault)){
+            user.addresses[0].isDefault = true;
+        }
+
+        await user.save();
+
+        res.json({success: true});
+
+    }catch(error){
+
+        console.error("DELETE ADDRESS ERROR:", error);
+        res.status(500).json({message: "Failed to delete address"});
+
+    }
+
+};
+
+
+const changePassword = async (req, res) => {
+
+    try{
+
+        const userId = req.session.user;
+
+        const {currentPassword, newPassword} = req.body;
+
+        const user = await User.findById(userId);
+        if(!user){
+            return res.status(404).json({message: "User not found"});
+        }
+
+        if(user.googleId){
+            return res.status(403).json({message: "Password can't be changed for Google accounts"});
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if(!isMatch){
+            return res.status(400).json({message: "Current password is incorrect"});
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.json({success: true});
+
+    }catch(error){
+
+        console.error("CHANGE PASSW0RD ERROR", error);
+        res.status(500).json({message: "Something went wrong"});
+
+    }
+
+};
 
 
 module.exports ={
@@ -611,5 +1015,16 @@ module.exports ={
     loadResetPassword,
     resetPassword,
     loadProducts,
-    loadProductDetails
+    loadProductDetails,
+    loadProfile,
+    editProfile,
+    requestEmailOtp,
+    verifyEmailOtp,
+    updateProfileAfterOtp,
+    getAddresses,
+    addAddress,
+    setDefaultAddress,
+    updateAddress,
+    deleteAddress,
+    changePassword
 }

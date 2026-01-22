@@ -1,0 +1,205 @@
+<%- include('../partials/user/header', { user, cartItems }) %>
+
+
+<body class="bg-white text-gray-900 selection:bg-emera-950 selection:text-white">
+
+
+    <!-- Header Spacer -->
+    <div class="h-24 bg-emera-950"></div>
+    
+    <main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-20 animate-reveal">
+        
+        <!-- Breadcrumb & Header -->
+        <div class="mb-24 space-y-6">
+            <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-400">
+                <a href="/" class="hover:text-black transition-colors">Home</a> / <span class="text-black">Shopping Cart</span>
+            </nav>
+            <h1 class="text-6xl md:text-7xl font-serif text-gray-900 leading-none">Shopping <span class="italic font-light">Cart</span></h1>
+            <p class="text-[11px] uppercase tracking-[0.3em] text-gray-400 font-bold"><%= cartItems.length %> Items Selected</p>
+        </div>
+        
+        <% if (cartItems.length === 0) { %>
+            <!-- Empty Cart -->
+            <div class="text-center py-20">
+                <h2 class="text-3xl font-serif text-gray-900 mb-6">Your cart is empty</h2>
+                <a href="/products" class="inline-block border border-emera-950 px-10 py-5 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500">Start Shopping</a>
+            </div>
+        <% } else { %>
+        
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-24">
+            
+            <!-- Cart Items -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <% cartItems.forEach((item, index) => { %>
+                <!-- Cart Item <%= index + 1 %> -->
+                <div class="bg-stone-50 p-8 border border-stone-100">
+                    <div class="flex flex-col sm:flex-row gap-8">
+                    
+                        <div class="w-full sm:w-48 h-48 bg-stone-200 overflow-hidden flex-shrink-0">
+                            <img
+                                src="<%= item.product.productImage[0].url %>"
+                                alt="<%= item.product.name %>"
+                                class="w-full h-full object-cover"
+                            >
+                        </div>
+
+                        
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+
+                                <h3 class="text-2xl font-serif text-gray-900 mb-2">
+                                <%= item.product.name %>
+                                </h3>
+
+                                <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-6 font-bold">
+                                <%= item.product.material || 'Premium Leather' %>
+                                </p>
+
+                                
+                                <p class="text-lg font-bold text-gray-900 tracking-widest mb-1">₹<%= item.price.toLocaleString('en-IN') %></p>
+                                <% if (item.color || item.size) { %>
+                                <p class="text-[9px] text-gray-400 uppercase tracking-widest">
+                                    <% if (item.color) { %>Color: <%= item.color %><% } %>
+                                    <% if (item.color && item.size) { %> / <% } %>
+                                    <% if (item.size) { %>Size: <%= item.size %><% } %>
+                                </p>
+                                <% } %>
+                            </div>
+
+                            <% if (item.product.stock === 0) { %>
+                            <p class="text-red-500 text-[10px] uppercase tracking-widest mt-2">
+                                Out of stock
+                            </p>
+                            <% } %>
+
+                            
+                            <div class="flex items-center justify-between mt-8">
+                                <div class="flex items-center gap-4 border border-stone-300 px-6 py-3">
+                                    <button
+                                    class="qty-btn"
+                                    data-action="decrease"
+                                    data-item-id="<%= item.product._id %>"
+                                    >
+                                    −
+                                    </button>
+
+                                   <span class="text-sm font-light w-8 text-center"><%= item.quantity %></span>
+
+                                   <button
+                                    class="qty-btn"
+                                    data-action="increase"
+                                    data-item-id="<%= item.product._id %>"
+                                    <%= item.product.stock === 0 ? "disabled" : "" %>
+                                    >
+                                    +
+                                    </button>
+
+                                </div>
+                                
+                                <button class="remove-btn text-[10px] tracking-[0.3em] uppercase text-gray-400 font-bold hover:text-gray-900 transition-colors" data-item-id="<%= item.product._id %>">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+                
+                <!-- Continue Shopping -->
+                <div class="pt-8">
+                    <a href="/products" class="inline-block border border-emera-950 px-10 py-5 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500">Continue Shopping</a>
+                </div>
+                
+            </div>
+            
+            <!-- Cart Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-stone-50 p-10 border border-stone-100 sticky top-32">
+                    <h2 class="text-3xl font-serif text-gray-900 mb-12">Order Summary</h2>
+                    
+                    <div class="space-y-6 mb-8 pb-8 border-b border-stone-200">
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Subtotal</span>
+                            <span class="font-bold text-gray-900">₹<%= subtotal.toLocaleString('en-IN') %></span>
+                        </div>
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Shipping</span>
+                            <span class="font-bold text-emera-700">Complimentary</span>
+                        </div>
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Tax (GST 18%)</span>
+                            <span class="font-bold text-gray-900">₹<%= tax.toLocaleString('en-IN') %></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Discount Code -->
+                    <div class="mb-8 pb-8 border-b border-stone-200">
+                        <button class="w-full text-left text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-emera-950 transition-colors mb-4">+ Apply Discount Code</button>
+                    </div>
+                    
+                    <div class="flex justify-between mb-12 pb-8 border-b border-stone-200">
+                        <span class="text-xl font-serif text-gray-900">Total</span>
+                        <span class="text-2xl font-serif text-gray-900">₹<%= total.toLocaleString('en-IN') %></span>
+                    </div>
+                    
+                    <%
+                    let hasOutOfStock = false;
+                    for (let i = 0; i < cartItems.length; i++) {
+                    if (cartItems[i].product.stock === 0) {
+                        hasOutOfStock = true;
+                        break;
+                    }
+                    }
+                    %>
+
+
+                    <a
+                    href="/checkout"
+                    class="block text-center btn-hover w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold"
+                    >
+                    Proceed to Checkout
+                    </a>
+
+
+                    
+                    <div class="space-y-4 text-center">
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Secure Checkout &bull; 256-bit SSL</p>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Free Returns Within 30 Days</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <% } %>
+        
+    </main>
+
+
+<script>
+  document.querySelectorAll(".qty-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const action = btn.dataset.action;
+      const productId = btn.dataset.itemId;
+
+      const url =
+        action === "increase"
+          ? `/cart/increment/${productId}`
+          : `/cart/decrement/${productId}`;
+
+      await fetch(url, { method: "PUT" });
+      location.reload();
+    });
+  });
+
+  document.querySelectorAll(".remove-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const productId = btn.dataset.itemId;
+
+      await fetch(`/cart/remove/${productId}`, { method: "DELETE" });
+      location.reload();
+    });
+  });
+</script>
+
+<%- include('../partials/user/footer') %>

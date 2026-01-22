@@ -1,541 +1,357 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= product.name %> | Emera Luxury Atelier</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        .font-serif { font-family: 'Playfair Display', serif; }
-        
-        /* Interactive Zoom */
-        .zoom-container { position: relative; overflow: hidden; cursor: crosshair; background: #f9f8f6; border-radius: 4px; }
-        .zoom-img { transition: transform 0.1s ease-out; transform-origin: center center; }
-        
-        /* Star Rating */
-        .star { color: #e5e7eb; font-size: 14px; }
-        .star.filled { color: #022c22; }
+<%- include('../partials/user/header') %>
 
-        /* Stock Status */
-        .stock-pill { 
-            font-size: 10px; 
-            font-weight: 600; 
-            padding: 6px 14px; 
-            text-transform: uppercase; 
-            letter-spacing: 0.1em; 
-            display: inline-block; 
-            border-radius: 2px;
-        }
-        .stock-in { color: #166534; background: #f0fdf4; border: 1px solid #86efac; }
-        .stock-low { color: #ea580c; background: #fff7ed; border: 1px solid #fdba74; }
-        .stock-out { color: #dc2626; background: #fef2f2; border: 1px solid #fca5a5; }
+<main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-12 lg:py-20">
+    <!-- Breadcrumbs -->
+    <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-500 mb-12 flex items-center space-x-3">
+        <a href="/" class="hover:text-emera-950 transition-colors">Home</a>
+        <span class="opacity-40">/</span>
+        <a href="/products?category=<%= product.category?._id %>" class="hover:text-emera-950 transition-colors">
+            <%= product.category?.name || 'Products' %>
+        </a>
+        <span class="opacity-40">/</span>
+        <span class="text-emera-950 font-bold"><%= product.name %></span>
+    </nav>
 
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-reveal { animation: slideUp 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
-        
-        .thumbnail { 
-            transition: all 0.2s ease; 
-            border: 2px solid transparent; 
-            cursor: pointer;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .thumbnail:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .thumbnail.active { border-color: #022c22; box-shadow: 0 0 0 1px #022c22; }
-        
-        .variant-btn {
-            position: relative;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .variant-btn.selected::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-        }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        .btn-primary {
-            background: #022c22;
-            color: white;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover:not(:disabled) {
-            background: #000;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        }
-        .btn-primary:active:not(:disabled) {
-            transform: translateY(0);
-        }
-        
-        /* Badge Animation */
-        @keyframes pulse-badge {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-        }
-        .pulse-badge { animation: pulse-badge 0.3s ease-in-out; }
-    </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        emera: { 50: '#fafaf9', 700: '#15803d', 900: '#14532d', 950: '#022c22' }
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-white text-gray-900">
-
-    <!-- Navigation -->
-    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-emera-950 py-5 transition-all duration-300 shadow-lg">
-        <div class="max-w-[1440px] mx-auto px-6 lg:px-12 flex justify-between items-center text-white">
-            <div class="flex space-x-12 items-center">
-                <a href="/" class="text-[10px] uppercase tracking-[0.3em] font-semibold hover:opacity-70 transition-opacity">Home</a>
-                <a href="/products" class="text-[10px] uppercase tracking-[0.3em] font-semibold hover:opacity-70 transition-opacity">Collections</a>
+    <div class="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
+        <!-- Left: Gallery -->
+        <div class="lg:w-3/5 flex flex-col-reverse lg:flex-row gap-6 w-full">
+            <!-- Thumbnails -->
+            <div id="thumb-container" class="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible no-scrollbar pb-4 lg:pb-0">
+                <% if (product.productImage && product.productImage.length > 0) { %>
+                    <% product.productImage.forEach((img, index) => { %>
+                        <div class="thumbnail <%= index === 0 ? 'active' : '' %> w-20 h-24 lg:w-24 lg:h-28 flex-shrink-0" onclick="changeImage(<%= index %>)">
+                            <img src="<%= img.url %>" class="w-full h-full object-cover" alt="View <%= index + 1 %>">
+                        </div>
+                    <% }) %>
+                <% } %>
             </div>
-            <a href="/" class="text-3xl font-serif tracking-tighter hover:opacity-90 transition-opacity">EMERA</a>
-            <div class="flex space-x-8 items-center">
-                <div class="relative cursor-pointer hover:opacity-70 transition-opacity group">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                    <span id="cart-count-badge" class="absolute -top-2 -right-2 bg-white text-emera-950 text-[9px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-lg">3</span>
+
+            <!-- Main Display with Fixed Zoom -->
+            <div class="flex-1 aspect-[4/5] relative overflow-hidden shadow-md cursor-zoom-in" id="main-zoom-area">
+                <img
+                    id="main-img"
+                    src="<%= product.productImage && product.productImage.length > 0 ? product.productImage[0].url : 'https://via.placeholder.com/800x1000?text=No+Image' %>"
+                    alt="<%= product.name %>"
+                    class="w-full h-full object-cover transition-transform duration-100"
+                    style="transform-origin: center center;"
+                />
+
+                <div class="absolute top-6 right-6 pointer-events-none">
+                    <% if (product.quantity > 0 && product.quantity < 5) { %>
+                    <span class="bg-white/95 text-emera-950 text-[9px] font-bold px-5 py-2.5 uppercase tracking-widest shadow-lg rounded-sm">
+                        Limited Stock
+                    </span>
+                    <% } %>
                 </div>
             </div>
         </div>
-    </nav>
 
-    <div class="h-24 bg-emera-950"></div>
-
-    <main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-12 lg:py-20">
-        <!-- Breadcrumbs -->
-        <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-500 mb-12 flex items-center space-x-3">
-            <a href="/" class="hover:text-emera-950 transition-colors">Home</a>
-            <span class="opacity-40">/</span>
-            <a href="/products?category=<%= product.category?._id %>" class="hover:text-emera-950 transition-colors">
-                <%= product.category?.name || 'Products' %>
-            </a>
-            <span class="opacity-40">/</span>
-            <span class="text-emera-950 font-bold"><%= product.name %></span>
-        </nav>
-
-        <div class="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
-            <!-- Left: Gallery -->
-            <div class="lg:w-3/5 flex flex-col-reverse lg:flex-row gap-6 w-full">
-                <!-- Thumbnails -->
-                <div id="thumb-container" class="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible no-scrollbar pb-4 lg:pb-0">
-                    <% if (product.productImage && product.productImage.length > 0) { %>
-                        <% product.productImage.forEach((img, index) => { %>
-                            <div class="thumbnail <%= index === 0 ? 'active' : '' %> w-20 h-24 lg:w-24 lg:h-28 flex-shrink-0" onclick="changeImage(<%= index %>)">
-                                <img src="<%= img.url %>" class="w-full h-full object-cover" alt="View <%= index + 1 %>">
-                            </div>
-                        <% }) %>
-                    <% } %>
-                </div>
-
-                <!-- Main Display -->
-                <div class="flex-1 aspect-[4/5] relative zoom-container group shadow-md" id="main-zoom-area">
-                    <img id="main-img" class="w-full h-full object-cover zoom-img" 
-                        src="<%= product.productImage && product.productImage.length > 0 ? product.productImage[0].url : 'https://via.placeholder.com/800x1000?text=No+Image' %>" 
-                        alt="<%= product.name %>">
-                    <div class="absolute top-6 right-6 pointer-events-none">
-                        <% if (product.quantity > 0 && product.quantity < 5) { %>
-                            <span class="bg-white/95 text-emera-950 text-[9px] font-bold px-5 py-2.5 uppercase tracking-widest shadow-lg rounded-sm">Limited Stock</span>
+        <!-- Right: Product Information -->
+        <div class="lg:w-2/5 space-y-10 animate-reveal w-full">
+            <div class="space-y-6">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                    <h1 class="text-4xl lg:text-5xl font-serif text-gray-900 leading-tight">
+                        <%= product.name.split(' ').slice(0, -1).join(' ') %> <br>
+                        <span class="italic font-light"><%= product.name.split(' ').slice(-1) %></span>
+                    </h1>
+                    
+                    <div id="stock-status-pill">
+                        <% if (product.quantity === 0) { %>
+                            <div class="stock-pill stock-out">Sold Out</div>
+                        <% } else if (product.quantity < 5) { %>
+                            <div class="stock-pill stock-low">Only <%= product.quantity %> Left</div>
+                        <% } else { %>
+                            <div class="stock-pill stock-in">In Stock</div>
                         <% } %>
                     </div>
                 </div>
-            </div>
-
-            <!-- Right: Product Information -->
-            <div class="lg:w-2/5 space-y-10 animate-reveal w-full">
-                <div class="space-y-6">
-                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                        <h1 class="text-4xl lg:text-5xl font-serif text-gray-900 leading-tight">
-                            <%= product.name.split(' ').slice(0, -1).join(' ') %> <br>
-                            <span class="italic font-light"><%= product.name.split(' ').slice(-1) %></span>
-                        </h1>
-                        
-                        <div id="stock-status-pill">
-                            <% if (product.quantity === 0) { %>
-                                <div class="stock-pill stock-out">Sold Out</div>
-                            <% } else if (product.quantity < 5) { %>
-                                <div class="stock-pill stock-low">Only <%= product.quantity %> Left</div>
-                            <% } else { %>
-                                <div class="stock-pill stock-in">In Stock</div>
+                
+                <div class="flex items-center justify-between border-b border-gray-200 pb-6">
+                    <div class="flex flex-col">
+                        <div class="flex items-center space-x-4">
+                            <p class="text-3xl font-semibold text-gray-900">₹<%= product.salePrice.toLocaleString() %></p>
+                            <% if (product.salePrice < product.regularPrice) { %>
+                                <p class="text-lg text-gray-400 line-through font-light">₹<%= product.regularPrice.toLocaleString() %></p>
+                                <span class="text-[10px] bg-red-600 text-white px-3 py-1.5 uppercase font-bold tracking-tight rounded-sm">
+                                    Save <%= Math.round((1 - product.salePrice/product.regularPrice) * 100) %>%
+                                </span>
                             <% } %>
                         </div>
+                        <span class="text-[10px] text-emera-700 font-bold uppercase tracking-[0.15em] mt-3">✓ Certified Premium Product</span>
                     </div>
                     
-                    <div class="flex items-center justify-between border-b border-gray-200 pb-6">
-                        <div class="flex flex-col">
-                            <div class="flex items-center space-x-4">
-                                <p class="text-3xl font-semibold text-gray-900">₹<%= product.salePrice.toLocaleString() %></p>
-                                <% if (product.salePrice < product.regularPrice) { %>
-                                    <p class="text-lg text-gray-400 line-through font-light">₹<%= product.regularPrice.toLocaleString() %></p>
-                                    <span class="text-[10px] bg-red-600 text-white px-3 py-1.5 uppercase font-bold tracking-tight rounded-sm">
-                                        Save <%= Math.round((1 - product.salePrice/product.regularPrice) * 100) %>%
-                                    </span>
-                                <% } %>
-                            </div>
-                            <span class="text-[10px] text-emera-700 font-bold uppercase tracking-[0.15em] mt-3">✓ Certified Premium Product</span>
+                    <div class="text-right">
+                        <div class="flex gap-0.5 justify-end mb-2">
+                            <span class="star filled">★</span>
+                            <span class="star filled">★</span>
+                            <span class="star filled">★</span>
+                            <span class="star filled">★</span>
+                            <span class="star filled">★</span>
                         </div>
-                        
-                        <div class="text-right">
-                            <div class="flex gap-0.5 justify-end mb-2">
-                                <span class="star filled">★</span>
-                                <span class="star filled">★</span>
-                                <span class="star filled">★</span>
-                                <span class="star filled">★</span>
-                                <span class="star filled">★</span>
-                            </div>
-                            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">5.0 Rating</p>
-                        </div>
+                        <p class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">5.0 Rating</p>
                     </div>
-                </div>
-
-                <!-- Offers Card -->
-                <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-6 rounded-lg space-y-3 shadow-sm">
-                    <div class="flex items-center space-x-3 text-emera-950">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
-                        <span class="text-[11px] uppercase tracking-[0.25em] font-bold">Special Offer</span>
-                    </div>
-                    <p class="text-xs text-gray-700 leading-relaxed">
-                        Complimentary premium care kit <span class="font-semibold text-emera-950">included with purchases</span> over ₹50,000
-                    </p>
-                </div>
-
-                <!-- Description -->
-                <div class="space-y-4">
-                    <h4 class="text-[11px] uppercase tracking-widest font-bold text-gray-500">Product Description</h4>
-                    <p class="text-sm text-gray-700 leading-relaxed font-light">
-                        <%= product.description %>
-                    </p>
-                </div>
-
-                <!-- Variant Colors -->
-                <div class="space-y-5">
-                    <label class="text-[11px] uppercase tracking-widest font-bold text-gray-500 block">
-                        Available Colors
-                    </label>
-                    <div class="flex gap-4">
-                        <% product.variants.forEach((variant, index) => { %>
-                            <button type="button" onclick="selectVariant(<%= index %>)" 
-                                class="variant-btn <%= index === 0 ? 'selected' : '' %> w-12 h-12 rounded-full border-4 border-white transition-all 
-                                <%= variant.quantity === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:scale-110' %>" 
-                                style="background-color: <%= variant.color %>" 
-                                title="<%= variant.color %>">
-                            </button>
-                        <% }) %>
-                    </div>
-                    <p id="stock-text" class="text-xs text-gray-600 font-medium"></p>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex flex-col gap-5 pt-4">
-                    <% if (!user) { %>
-                        <a href="/login" 
-                            class="block text-center btn-primary w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg">
-                            Add to Cart
-                        </a>
-                    <% } else { %>
-                        <button id="add-btn" onclick="addToCart('<%= product._id %>')" 
-                            class="btn-primary w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg">
-                            Add to Cart
-                        </button>
-                    <% } %>
-                    
-                    <div class="flex gap-4">
-                        <button class="flex-1 border-2 border-gray-900 text-gray-900 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-gray-900 hover:text-white transition-all rounded-sm">
-                            Add to Wishlist
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Trust Badges -->
-                <div class="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
-                    <div class="text-center space-y-2">
-                        <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Authentic</p>
-                    </div>
-                    <div class="text-center space-y-2">
-                        <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                        <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Secure Pay</p>
-                    </div>
-                    <div class="text-center space-y-2">
-                        <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                        <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Free Ship</p>
-                    </div>
-                </div>
-
-                <!-- Specifications Accordion -->
-                <div class="border-t border-gray-200 pt-8">
-                    <details class="group" open>
-                        <summary class="flex justify-between items-center cursor-pointer list-none text-[11px] uppercase tracking-[0.3em] font-bold text-gray-900 py-4">
-                            <span>Product Specifications</span>
-                            <span class="group-open:rotate-45 transition-transform duration-300 text-2xl font-light text-gray-400">+</span>
-                        </summary>
-                        <div class="pt-8 grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-10 text-xs">
-                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Materials</p>
-                                <p class="text-gray-600">100% Full-grain Calfskin</p>
-                            </div>
-                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Hardware</p>
-                                <p class="text-gray-600">24k Gold-Finished Palladium</p>
-                            </div>
-                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Architecture</p>
-                                <p class="text-gray-600">Structured with Suede Lining</p>
-                            </div>
-                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Origin</p>
-                                <p class="text-gray-600">Handcrafted in Florence</p>
-                            </div>
-                        </div>
-                    </details>
                 </div>
             </div>
-        </div>
 
-        <!-- Related Products -->
-        <% if (relatedProducts && relatedProducts.length > 0) { %>
-        <section class="mt-32 border-t border-gray-200 pt-24">
-            <div class="flex justify-between items-end mb-16">
-                <div class="space-y-3">
-                    <span class="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 block">You May Also Like</span>
-                    <h2 class="text-4xl font-serif text-gray-900">Related Products</h2>
+            <!-- Offers Card -->
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-6 rounded-lg space-y-3 shadow-sm">
+                <div class="flex items-center space-x-3 text-emera-950">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
+                    <span class="text-[11px] uppercase tracking-[0.25em] font-bold">Special Offer</span>
                 </div>
-                <a href="/products" class="text-[10px] uppercase tracking-widest border-b-2 border-gray-900 pb-1 font-bold hover:text-emera-700 hover:border-emera-700 transition-colors">Browse Collection</a>
+                <p class="text-xs text-gray-700 leading-relaxed">
+                    Complimentary premium care kit <span class="font-semibold text-emera-950">included with purchases</span> over ₹50,000
+                </p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
-                <% relatedProducts.forEach(rp => { %>
-                    <a href="/products/<%= rp._id %>" class="block group space-y-5">
-                        <div class="aspect-[4/5] bg-stone-50 overflow-hidden relative rounded-sm shadow-sm">
-                            <img src="<%= rp.productImage?.[0]?.url || '/images/placeholder.png' %>" 
-                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                alt="<%= rp.name %>">
-                        </div>
-                        <div class="space-y-2">
-                            <h3 class="text-sm font-serif group-hover:text-emera-950 transition-colors"><%= rp.name %></h3>
-                            <div class="flex justify-between items-center">
-                                <p class="text-xs font-bold tracking-wide">₹<%= rp.salePrice.toLocaleString() %></p>
-                                <span class="text-[9px] uppercase tracking-widest text-gray-500 group-hover:text-emera-950 transition-colors">View Details →</span>
-                            </div>
-                        </div>
+            <!-- Description -->
+            <div class="space-y-4">
+                <h4 class="text-[11px] uppercase tracking-widest font-bold text-gray-500">Product Description</h4>
+                <p class="text-sm text-gray-700 leading-relaxed font-light">
+                    <%= product.description %>
+                </p>
+            </div>
+
+            <!-- Variant Colors -->
+            <div class="space-y-5">
+                <label class="text-[11px] uppercase tracking-widest font-bold text-gray-500 block">
+                    Available Colors
+                </label>
+                <div class="flex gap-4">
+                    <% product.variants.forEach((variant, index) => { %>
+                        <button type="button" onclick="selectVariant(<%= index %>)" 
+                            class="variant-btn <%= index === 0 ? 'selected' : '' %> w-12 h-12 rounded-full border-4 border-white transition-all 
+                            <%= variant.quantity === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:scale-110' %>" 
+                            style="background-color: <%= variant.color %>" 
+                            title="<%= variant.color %>">
+                        </button>
+                    <% }) %>
+                </div>
+                <p id="stock-text" class="text-xs text-gray-600 font-medium"></p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col gap-5 pt-4">
+                <% if (!user) { %>
+                    <a href="/login" 
+                        class="block text-center bg-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:bg-emera-700 transition-all duration-300">
+                        Add to Cart
                     </a>
-                <% }) %>
-            </div>
-        </section>
-        <% } %>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-50 border-t border-gray-200 mt-32 pt-24 pb-12">
-        <div class="max-w-[1440px] mx-auto px-6 lg:px-12 grid grid-cols-1 md:grid-cols-4 gap-16 mb-16">
-            <div class="col-span-1">
-                <h2 class="text-4xl font-serif mb-8 tracking-tighter">EMERA</h2>
-                <p class="text-xs text-gray-600 leading-relaxed max-w-xs">
-                    Premium leather bags designed for everyday elegance. Crafted with quality materials and modern design standards.
-                </p>
-            </div>
-
-            <div>
-                <h4 class="text-[11px] uppercase tracking-[0.3em] font-bold mb-8 text-gray-900">Shop</h4>
-                <ul class="space-y-4 text-xs text-gray-600">
-                    <li><a href="/products" class="hover:text-emera-950 transition-colors">All Products</a></li>
-                    <li><a href="/products?featured=true" class="hover:text-emera-950 transition-colors">Featured Items</a></li>
-                </ul>
-            </div>
-
-            <div>
-                <h4 class="text-[11px] uppercase tracking-[0.3em] font-bold mb-8 text-gray-900">Company</h4>
-                <ul class="space-y-4 text-xs text-gray-600">
-                    <li><a href="/about" class="hover:text-emera-950 transition-colors">About Us</a></li>
-                    <li><a href="/contact" class="hover:text-emera-950 transition-colors">Contact</a></li>
-                </ul>
-            </div>
-
-            <div>
-                <h4 class="text-[11px] uppercase tracking-[0.3em] font-bold mb-8 text-gray-900">Newsletter</h4>
-                <p class="text-xs text-gray-600 mb-5 leading-relaxed">
-                    Subscribe to receive updates on new arrivals and exclusive offers.
-                </p>
-                <form class="flex border-b-2 border-gray-300 pb-2 group focus-within:border-emera-950 transition-colors">
-                    <input type="email" placeholder="Enter your email" 
-                        class="flex-1 bg-transparent border-none py-2 text-xs outline-none placeholder:text-gray-400" />
-                    <button type="submit" class="text-[10px] uppercase tracking-widest font-bold hover:text-emera-950 transition">
-                        Subscribe
+                <% } else { %>
+                    <button id="add-btn" onclick="addToCart('<%= product._id %>')" 
+                        class="bg-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:bg-emera-700 transition-all duration-100">
+                        Add to Cart
                     </button>
-                </form>
+                <% } %>
+                
+                <button
+                onclick="buyNow('<%= product._id %>')"
+                class="flex-1 border-2 border-emera-950 text-emera-950 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-300 rounded-sm"
+                >
+                Buy Now
+                </button>
+
+                <div class="flex gap-4">
+                    <button class="flex-1 border-2 border-emera-950 text-emera-950 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-300 rounded-sm">
+                        Add to Wishlist
+                    </button>
+                </div>
+            </div>
+
+            <!-- Trust Badges -->
+            <div class="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
+                <div class="text-center space-y-2">
+                    <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Authentic</p>
+                </div>
+                <div class="text-center space-y-2">
+                    <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Secure Pay</p>
+                </div>
+                <div class="text-center space-y-2">
+                    <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                    <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Free Ship</p>
+                </div>
+            </div>
+
+            <!-- Specifications Accordion -->
+            <div class="border-t border-gray-200 pt-8">
+                <details class="group" open>
+                    <summary class="flex justify-between items-center cursor-pointer list-none text-[11px] uppercase tracking-[0.3em] font-bold text-gray-900 py-4">
+                        <span>Product Specifications</span>
+                        <span class="group-open:rotate-45 transition-transform duration-300 text-2xl font-light text-gray-400">+</span>
+                    </summary>
+                    <div class="pt-8 grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-10 text-xs">
+                        <div class="border-l-2 border-emera-700 pl-5 space-y-1">
+                            <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Materials</p>
+                            <p class="text-gray-600">100% Full-grain Calfskin</p>
+                        </div>
+                        <div class="border-l-2 border-emera-700 pl-5 space-y-1">
+                            <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Hardware</p>
+                            <p class="text-gray-600">24k Gold-Finished Palladium</p>
+                        </div>
+                        <div class="border-l-2 border-emera-700 pl-5 space-y-1">
+                            <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Architecture</p>
+                            <p class="text-gray-600">Structured with Suede Lining</p>
+                        </div>
+                        <div class="border-l-2 border-emera-700 pl-5 space-y-1">
+                            <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Origin</p>
+                            <p class="text-gray-600">Handcrafted in Florence</p>
+                        </div>
+                    </div>
+                </details>
             </div>
         </div>
+    </div>
 
-        <div class="max-w-[1440px] mx-auto px-6 lg:px-12 pt-8 border-t border-gray-300 text-[9px] uppercase tracking-[0.25em] text-gray-500 text-center font-semibold">
-            © 2025 EMERA Pvt. Ltd. India. All rights reserved.
+    <!-- Related Products -->
+    <% if (relatedProducts && relatedProducts.length > 0) { %>
+    <section class="mt-32 border-t border-gray-200 pt-24">
+        <div class="flex justify-between items-end mb-16">
+            <div class="space-y-3">
+                <span class="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 block">You May Also Like</span>
+                <h2 class="text-4xl font-serif text-gray-900">Related Products</h2>
+            </div>
+            <a href="/products" class="text-[10px] uppercase tracking-widest border-b-2 border-gray-900 pb-1 font-bold hover:text-emera-700 hover:border-emera-700 transition-colors">Browse Collection</a>
         </div>
-    </footer>
 
-    <script>
-        /* ---------------- BASIC SECURITY ---------------- */
-        const PRODUCT_BLOCKED = <%= !!product.isBlocked %>;
-        if (PRODUCT_BLOCKED) {
-            window.location.href = "/products";
-        }
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+            <% relatedProducts.forEach(rp => { %>
+                <a href="/products/<%= rp._id %>" class="block group space-y-5">
+                    <div class="aspect-[4/5] bg-stone-50 overflow-hidden relative rounded-sm shadow-sm">
+                        <img src="<%= rp.productImage?.[0]?.url || '/images/placeholder.png' %>" 
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            alt="<%= rp.name %>">
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-sm font-serif group-hover:text-emera-950 transition-colors"><%= rp.name %></h3>
+                        <div class="flex justify-between items-center">
+                            <p class="text-xs font-bold tracking-wide">₹<%= rp.salePrice.toLocaleString() %></p>
+                            <span class="text-[9px] uppercase tracking-widest text-gray-500 group-hover:text-emera-950 transition-colors">View Details →</span>
+                        </div>
+                    </div>
+                </a>
+            <% }) %>
+        </div>
+    </section>
+    <% } %>
+</main>
 
-        /* ---------------- DATA ---------------- */
-        const variants = <%- JSON.stringify(product.variants) %>;
-        const productImages = <%- JSON.stringify(product.productImage || []) %>;
-        let selectedVariantIndex = 0;
+<script>
+if (<%= !!product.isBlocked %>) location.href = "/products";
 
-        /* ---------------- IMAGE HANDLING ---------------- */
-        function changeImage(index) {
-            if (!productImages[index]) return;
-            
-            const mainImg = document.getElementById('main-img');
-            const thumbnails = document.querySelectorAll('.thumbnail');
-            
-            mainImg.src = productImages[index].url;
-            
-            thumbnails.forEach((thumb, i) => {
-                thumb.classList.toggle('active', i === index);
-            });
-        }
+const variants = <%- JSON.stringify(product.variants) %>;
+const images = <%- JSON.stringify(product.productImage || []) %>;
+let activeVariant = 0;
 
-        function loadVariantImages(variantIndex) {
-            const variant = variants[variantIndex];
-            if (!variant || !variant.images || variant.images.length === 0) return;
-            
-            const thumbContainer = document.getElementById('thumb-container');
-            const mainImg = document.getElementById('main-img');
-            
-            thumbContainer.innerHTML = '';
-            
-            variant.images.forEach((img, index) => {
-                const thumbDiv = document.createElement('div');
-                thumbDiv.className = `thumbnail ${index === 0 ? 'active' : ''} w-20 h-24 lg:w-24 lg:h-28 flex-shrink-0`;
-                thumbDiv.onclick = () => {
-                    mainImg.src = img.url;
-                    document.querySelectorAll('.thumbnail').forEach((t, i) => {
-                        t.classList.toggle('active', i === index);
-                    });
-                };
-                
-                const imgEl = document.createElement('img');
-                imgEl.src = img.url;
-                imgEl.className = 'w-full h-full object-cover';
-                imgEl.alt = `View ${index + 1}`;
-                
-                thumbDiv.appendChild(imgEl);
-                thumbContainer.appendChild(thumbDiv);
-            });
-            
-            if (variant.images[0]) {
-                mainImg.src = variant.images[0].url;
-            }
-        }
 
-        /* ---------------- VARIANT SELECTION ---------------- */
-        function selectVariant(index) {
-            const variant = variants[index];
-            if (!variant || variant.quantity === 0) return;
-            
-            selectedVariantIndex = index;
 
-            document.querySelectorAll(".variant-btn").forEach((btn, i) => {
-                btn.classList.toggle("selected", i === index);
-            });
+function changeImage(i) {
+  if (!images[i]) return;
+  const mainImg = document.getElementById("main-img");
+  mainImg.src = images[i].url;
+  
+  let zoomed;
+  // Reset zoom when changing images
+  mainImg.style.transform = "scale(1)";
+  mainImg.style.transformOrigin = "center center";
+  const zoomArea = document.getElementById("main-zoom-area");
+  if (zoomArea) {
+    zoomArea.classList.remove("cursor-zoom-out");
+    zoomArea.classList.add("cursor-zoom-in");
+  }
+  zoomed = false;
 
-            loadVariantImages(index);
-            updateVariantStock();
-        }
+  document.querySelectorAll(".thumbnail").forEach((t, idx) =>
+    t.classList.toggle("active", idx === i)
+  );
+}
 
-        /* ---------------- STOCK HANDLING ---------------- */
-        function updateVariantStock() {
-            const variant = variants[selectedVariantIndex];
-            const stockText = document.getElementById("stock-text");
-            const addBtn = document.getElementById("add-btn");
+function selectVariant(i) {
+  if (!variants[i] || variants[i].quantity === 0) return;
 
-            if (!variant || !stockText) return;
+  activeVariant = i;
 
-            if (variant.quantity === 0) {
-                stockText.textContent = "Out of stock for this color";
-                if (addBtn) {
-                    addBtn.disabled = true;
-                    addBtn.classList.add("opacity-50", "cursor-not-allowed");
-                }
-            } else {
-                stockText.textContent = `${variant.quantity} pieces available`;
-                if (addBtn) {
-                    addBtn.disabled = false;
-                    addBtn.classList.remove("opacity-50", "cursor-not-allowed");
-                }
-            }
-        }
+  document.querySelectorAll(".variant-btn").forEach((b, idx) =>
+    b.classList.toggle("selected", idx === i)
+  );
 
-        /* ---------------- ZOOM EFFECT ---------------- */
-        const zoomArea = document.getElementById("main-zoom-area");
-        const zoomImg = document.getElementById("main-img");
+  document.getElementById("stock-text").textContent =
+    variants[i].quantity + " pieces available";
 
-        if (zoomArea && zoomImg) {
-            zoomArea.addEventListener("mousemove", e => {
-                const { left, top, width, height } = zoomArea.getBoundingClientRect();
-                const x = ((e.clientX - left) / width) * 100;
-                const y = ((e.clientY - top) / height) * 100;
-                zoomImg.style.transformOrigin = `${x}% ${y}%`;
-                zoomImg.style.transform = "scale(2.2)";
-            });
+  const btn = document.getElementById("add-btn");
+  if (btn) btn.disabled = false;
+}
 
-            zoomArea.addEventListener("mouseleave", () => {
-                zoomImg.style.transform = "scale(1)";
-            });
-        }
+// Improved Zoom Functionality
+const zoomArea = document.getElementById("main-zoom-area");
+const zoomImg = document.getElementById("main-img");let zoomed = false;
 
-        /* ---------------- ADD TO CART ---------------- */
-        function addToCart(productId) {
-            fetch("/add-to-cart", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    productId,
-                    variantIndex: selectedVariantIndex
-                })
-            })
-            .then(res => {
-                if (res.redirected) {
-                    window.location.href = res.url;
-                    return;
-                }
-                return res.json();
-            })
-            .then(data => {
-                if (data?.success) {
-                    const badge = document.getElementById("cart-count-badge");
-                    if (badge && data.cartCount !== undefined) {
-                        badge.textContent = data.cartCount;
-                        badge.classList.remove("hidden");
-                        badge.classList.add("pulse-badge");
-                        setTimeout(() => badge.classList.remove("pulse-badge"), 300);
-                    }
-                }
-            })
-            .catch(console.error);
-        }
+if (zoomArea && zoomImg) {
+  zoomArea.addEventListener("click", () => {
+    if (window.innerWidth < 768) return;
 
-        /* ---------------- INIT ---------------- */
-        if (variants.length > 0) {
-            selectVariant(0);
-        }
-    </script>
+    zoomed = !zoomed;
+    zoomArea.style.cursor = zoomed ? "zoom-out" : "zoom-in";
+
+    if (!zoomed) {
+      zoomImg.style.transform = "scale(1)";
+      zoomImg.style.transformOrigin = "center center";
+    }
+  });
+
+  zoomArea.addEventListener("mousemove", (e) => {
+    if (!zoomed) return;
+
+    const rect = zoomArea.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    zoomImg.style.transformOrigin = `${x}% ${y}%`;
+    zoomImg.style.transform = "scale(1.8)";
+  });
+
+  zoomArea.addEventListener("mouseleave", () => {
+    if (!zoomed) return;
+
+    zoomed = false;
+    zoomImg.style.transform = "scale(1)";
+    zoomImg.style.transformOrigin = "center center";
+    zoomArea.style.cursor = "zoom-in";
+  });
+}
+
+
+function addToCart(id) {
+  fetch("/cart/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      productId: id,
+      variantIndex: activeVariant
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.success) return alert(d.message || "Failed");
+    const badge = document.getElementById("cart-count-badge");
+    if (badge) badge.textContent = d.cartCount;
+  });
+}
+
+function buyNow(id) {
+  fetch("/cart/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      productId: id,
+      variantIndex: activeVariant,
+      buyNow: true
+    })
+  }).then(() => location.href = "/checkout");
+}
+
+if (variants.length) selectVariant(0);
+</script>
+
+<%- include('../partials/user/footer') %>

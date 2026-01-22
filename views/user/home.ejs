@@ -1,53 +1,49 @@
 
-<%- include('../partials/user/header', { user: user }) %>
+<%- include('../partials/user/header') %>
 
     <!-- Cinematic Hero Slideshow -->
-    <header id="hero-slideshow" class="relative w-full h-[95vh] overflow-hidden bg-stone-100">
-        <!-- Slides -->
-        <div class="slides-container absolute inset-0">
-            <!-- Slide 1: Aesthetic Shoulder Bag -->
-            <div class="hero-slide absolute inset-0 opacity-100 transition-opacity duration-1000 ease-in-out z-10">
-                <img src="https://images.unsplash.com/photo-1591561954557-26941169b49e?q=80&w=2070&auto=format&fit=crop" 
-                     alt="Aesthetic Mini Bag" 
-                     class="w-full h-full object-cover object-center transform scale-100 animate-ken-burns">
-                <div class="absolute inset-0 bg-black/20"></div>
-            </div>
-            <!-- Slide 2: Cute Tote Detail -->
-            <div class="hero-slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out z-0">
-                <img src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=2070&auto=format&fit=crop" 
-                     alt="Chic Tote" 
-                     class="w-full h-full object-cover object-center transform scale-100">
-                <div class="absolute inset-0 bg-black/25"></div>
-            </div>
-            <!-- Slide 3: Luxury Lifestyle -->
-            <div class="hero-slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out z-0">
-                <img src="https://images.unsplash.com/photo-1594223274512-ad4803739b7c?q=80&w=2070&auto=format&fit=crop" 
-                     alt="Artisan Leather" 
-                     class="w-full h-full object-cover object-center transform scale-100">
-                <div class="absolute inset-0 bg-black/20"></div>
-            </div>
-        </div>
-        
-        <!-- Hero Content (Large Aesthetic Typography) -->
-        <div class="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 lg:px-24 items-center text-center max-w-[1440px] mx-auto z-20">
-            <div class="overflow-hidden mb-6">
-                <span class="text-white text-[12px] tracking-[0.6em] uppercase font-bold block animate-reveal" style="animation-delay: 0.1s;">Winter Collection 2025    </span>
-            </div>                                                                  
-            <p class="text-white/90 max-w-xl mb-12 text-lg md:text-xl font-light leading-relaxed animate-reveal" style="animation-delay: 0.5s;">
-                Handcrafted in Florence. Made for women who love quality and timeless style.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-6 animate-reveal" style="animation-delay: 0.7s;">
-                <a href="/products" class="group px-14 py-6 bg-white text-emera-950 text-[11px] tracking-[0.4em] uppercase font-black hover:bg-emera-950 hover:text-white transition-all duration-700 shadow-2xl">
-                    Shop The Collection
-                </a>
-            </div>
-        </div>
+   <header id="hero-video" class="relative w-full h-[95vh] overflow-hidden bg-stone-100">
 
-        <!-- Slide Progress Bar -->
-        <div class="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-30">
-            <div id="slide-progress" class="h-full bg-white transition-all duration-[5000ms] linear w-0"></div>
-        </div>
-    </header>
+    <!-- Video Background -->
+    <div class="absolute inset-0 z-0">
+        <video
+            class="w-full h-full object-cover"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+        >
+            <source src="/videos/hero.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+
+        <!-- Dark overlay for readability -->
+        <div class="absolute inset-0 bg-black/30"></div>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="relative z-10 flex flex-col justify-center items-center text-center px-6 sm:px-12 lg:px-24 h-full max-w-[1440px] mx-auto">
+
+        <span class="text-white text-[12px] tracking-[0.6em] uppercase font-bold mb-6 animate-reveal">
+            Winter Collection 2025
+        </span>
+
+        <p class="text-white/90 max-w-xl mb-12 text-lg md:text-xl font-light leading-relaxed animate-reveal">
+            Handcrafted in Florence. Made for women who love quality and timeless style.
+        </p>
+
+        <a
+            href="/products"
+            class="group px-14 py-6 bg-white text-emera-950 text-[11px] tracking-[0.4em] uppercase font-black hover:bg-emera-950 hover:text-white transition-all duration-700 shadow-2xl animate-reveal"
+        >
+            Shop The Collection
+        </a>
+
+    </div>
+
+</header>
+
 
     <!-- Aesthetic Categories Grid -->
     <section class="py-32 bg-white">
@@ -198,18 +194,36 @@
 
 
     <!-- Brand Legacy -->
+<section class="relative py-48 bg-emera-950 text-white overflow-hidden">
+
+  <div class="absolute inset-0 bg-gradient-to-b from-emera-900/40 via-transparent to-black/30"></div>
+
+  <div class="relative max-w-5xl mx-auto px-6 text-center">
+    
     <section class="relative py-48 bg-emera-950 text-white overflow-hidden">
-        <div class="absolute inset-0 opacity-20">
-             <img src="https://images.unsplash.com/photo-1550614000-4b9519e02a48?q=80&w=1740&auto=format&fit=crop" class="w-full h-full object-cover" alt="Artisan">
-        </div>
-        <div class="relative max-w-5xl mx-auto px-6 text-center">
-            <h2 class="text-5xl md:text-8xl font-serif mb-12 leading-tight">Our<br/><span class="italic font-light">Craftsmanship</span></h2>
-            <p class="text-xl md:text-2xl text-gray-300 leading-relaxed mb-16 font-light max-w-2xl mx-auto italic">
-                "We create high-quality bags using traditional craftsmanship and care."
-            </p>
-            <div class="h-16 w-px bg-white/20 mx-auto"></div>
-        </div>
-    </section>
+
+  <div class="max-w-5xl mx-auto px-6 text-center">
+    <h2 class="text-5xl md:text-8xl font-serif mb-12 leading-tight">
+      Our<br/>
+      <span class="italic font-light">Craftsmanship</span>
+    </h2>
+
+    <p class="text-xl md:text-2xl text-gray-300 leading-relaxed mb-16 font-light max-w-2xl mx-auto italic">
+      "We create high-quality bags using traditional craftsmanship and care."
+    </p>
+
+    <div class="h-16 w-px bg-white/20 mx-auto"></div>
+  </div>
+
+</section>
+
+
+  </div>
+
+</section>
+
+
+
 
     <style>
         @keyframes reveal {

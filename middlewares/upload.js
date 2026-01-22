@@ -24,7 +24,19 @@ const productStorage = new CloudinaryStorage({
 
 const uploadProduct = multer({ storage: productStorage });
 
+const profileStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "emera/profiles",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  },
+});
+
+const uploadProfile = multer({ storage: profileStorage });
+
+
 module.exports = {
   uploadCategory,
   uploadProduct,
+  uploadProfile
 };

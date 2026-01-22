@@ -3,6 +3,9 @@ const User = require("../models/userSchema");
 
 const userAuth = async (req,res, next) => {
   
+  console.log("SESSION USER ID:", req.session.user);
+
+
   try{
 
     if(!req.session.user){
@@ -30,6 +33,14 @@ const userAuth = async (req,res, next) => {
   }
 
 }
+
+const noCache = (req, res, next) => {
+
+  res.set("Cache-control", "no-store, no-cache, must-revalidate, private");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  next()
+};
 
 
 
@@ -61,4 +72,5 @@ const adminAuth = async (req, res, next) => {
 module.exports = {
     userAuth,
     adminAuth,
+    noCache
 }

@@ -1,181 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Emera - Luxury Leather Goods</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              serif: ['Playfair Display', 'serif'],
-            },
-            colors: {
-              emera: {
-                50: '#f2fbf7',
-                100: '#e1f5eb',
-                200: '#c3ead9',
-                300: '#94d8c0',
-                400: '#5cbea3',
-                500: '#36a389',
-                600: '#26836d',
-                700: '#206958',
-                800: '#1d5448',
-                900: '#19453c',
-                950: '#062c26', // Deep luxury green
-              },
-              gold: {
-                400: '#d4af37',
-                500: '#c5a028',
-              }
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.8s ease-out forwards',
-              'slide-up': 'slideUp 0.8s ease-out forwards',
-            },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
-              },
-              slideUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              }
-            }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EMERA</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
           },
-        },
+          colors: {
+            emera: {
+              950: '#062c26'
+            },
+            gold: {
+              400: '#d4af37',
+              500: '#c5a028'
+            }
+          }
+        }
       }
-    </script>
+    }
+  </script>
+
     <style>
-      /* Smooth scrolling */
-      html { scroll-behavior: smooth; }
-      /* Hide scrollbar for clean horizontal scroll */
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+        
+        .font-serif {
+            font-family: 'Crimson Text', serif;
+        }
+        
+        @keyframes reveal {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-reveal {
+            animation: reveal 0.6s ease-out;
+        }
+        
+        .btn-hover {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-hover:hover {
+            background-color: #0a1a0f;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #0f2419;
+        }
+        
+        .radio-custom {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d6d3d1;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .radio-custom:checked {
+            border-color: #0f2419;
+        }
+        
+        .radio-custom:checked::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: #0f2419;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
+
 </head>
 
+<body class="font-sans">
 
-<!-- Announcement -->
-<div class="bg-emera-950 text-white text-xs tracking-widest text-center py-2 uppercase font-medium">
-  Complimentary Shipping on Orders Over ₹500
-</div>
+<!-- ================= ANNOUNCEMENT ================= -->
+<% if (showAnnouncement) { %>
+  <div class="bg-emera-950 text-white text-xs uppercase tracking-widest text-center py-2 font-medium">
+    Complimentary Shipping on Orders Over ₹500
+  </div>
+<% } %>
 
-<!-- NAVBAR -->
-<nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
+<!-- ================= NAVBAR ================= -->
+<nav class="sticky top-0 z-50 bg-emera-950 border-b border-white/10">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-20">
-
-      <!-- Mobile Menu Button -->
-      <div class="flex items-center md:hidden">
-        <button id="mobile-menu-btn" class="p-2 text-gray-900">
-          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
+    <div class="flex items-center justify-between h-20">
 
       <!-- Logo -->
-      <div class="flex-shrink-0 flex items-center justify-center flex-1 md:flex-none md:justify-start">
-        <a href="/" class="font-serif text-3xl tracking-tighter text-emera-950 font-bold">
-          EMERA.
+      <a href="/" class="font-serif text-3xl text-white tracking-tight">
+        EMERA.
+      </a>
+
+      <!-- Desktop Menu -->
+      <div class="hidden md:flex items-center space-x-8">
+        <a href="/products" class="text-sm uppercase tracking-wide text-white/80 hover:text-white">
+          New Arrivals
+        </a>
+        <a href="/products" class="text-sm uppercase tracking-wide text-white/80 hover:text-white">
+          Handbags
+        </a>
+        <a href="/products" class="text-sm uppercase tracking-wide text-white/80 hover:text-white">
+          Accessories
+        </a>
+        <a href="/about" class="text-sm uppercase tracking-wide text-white/80 hover:text-white">
+          World of Emera
         </a>
       </div>
 
-      <!-- ✅ DESKTOP NAV (THIS WAS MISSING) -->
-      <div class="hidden md:flex space-x-8 items-center justify-center flex-1">
-        <a href="#" class="text-sm uppercase tracking-wide font-medium text-gray-600 hover:text-emera-900 transition-colors">New Arrivals</a>
-        <a href="#" class="text-sm uppercase tracking-wide font-medium text-gray-600 hover:text-emera-900 transition-colors">Handbags</a>
-        <a href="#" class="text-sm uppercase tracking-wide font-medium text-gray-600 hover:text-emera-900 transition-colors">Small Leather Goods</a>
-        <a href="#" class="text-sm uppercase tracking-wide font-medium text-gray-600 hover:text-emera-900 transition-colors">World of Emera</a>
-      </div>
+      <!-- Right Section -->
+      <div class="flex items-center space-x-6">
 
-      <!-- Right Side (Auth / Icons) -->
-      <div class="flex items-center space-x-4 sm:space-x-6">
-<!-- Icons (ALWAYS VISIBLE) -->
-<div class="flex items-center space-x-4 sm:space-x-6">
+        <!-- Search -->
+        <button class="text-white/80 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </button>
 
-  <!-- Search -->
-  <button class="text-gray-900 hover:text-emera-700 transition-colors">
-    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-  </button>
+        <!-- Cart -->
+        <a href="/cart" class="relative text-white/80 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+          </svg>
 
-  <!-- Cart -->
-  <button class="text-gray-900 hover:text-emera-700 transition-colors relative group">
-    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-    </svg>
-    <span id="cart-badge"
-          class="absolute -top-1.5 -right-1.5 bg-emera-900 text-white text-[10px] font-bold
-                 w-4 h-4 rounded-full flex items-center justify-center opacity-0 scale-0
-                 transition-all duration-300">
-      0
-    </span>
-  </button>
-
-  <!-- AUTH SECTION -->
-  <% if (!user) { %>
-    <!-- Guest -->
-    <a href="/login"
-       class="hidden sm:block text-sm font-medium text-gray-600 hover:text-emera-900">
-      Login
-    </a>
-    <a href="/signup"
-       class="hidden sm:block px-4 py-2 bg-emera-900 text-white text-sm font-medium rounded
-              hover:bg-emera-800">
-      Sign Up
-    </a>
-  <% } else { %>
-    <!-- Logged User -->
-    <div class="relative hidden sm:block group">
-      <button class="text-sm font-medium text-gray-700 hover:text-emera-900">
-        <%= user.name %>
-      </button>
-
-      <div class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg
-                  opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-        <a href="/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-          Profile
+          <% if (cartCount && cartCount > 0) { %>
+            <span class="absolute -top-2 -right-2 bg-white text-emera-950 text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+              <%= cartCount %>
+            </span>
+          <% } %>
         </a>
-        <a href="/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-100">
-          Logout
-        </a>
+
+        <!-- Auth -->
+        <% if (!user) { %>
+          <a href="/login" class="text-sm text-white/80 hover:text-white">
+            Login
+          </a>
+          <a href="/signup"
+             class="hidden sm:block px-4 py-2 bg-gold-400 text-emera-950 text-sm font-medium rounded hover:bg-gold-500">
+            Sign Up
+          </a>
+        <% } else { %>
+          <div class="relative group">
+            <button class="text-sm text-white/80 hover:text-white">
+              <%= user.name %>
+            </button>
+
+            <div class="absolute right-0 mt-2 w-40 bg-white rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition">
+              <a href="/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                Profile
+              </a>
+              <a href="/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-100">
+                Logout
+              </a>
+            </div>
+          </div>
+        <% } %>
+
       </div>
-    </div>
-  <% } %>
-
-</div>
-
-  </div>
-
-  <!-- ✅ MOBILE MENU (ALWAYS PRESENT) -->
-  <div id="mobile-menu"
-       class="fixed inset-0 z-40 bg-white transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden flex flex-col h-screen w-full">
-
-    <div class="flex justify-between items-center p-4 border-b">
-      <span class="font-serif text-2xl font-bold text-emera-950">EMERA.</span>
-      <button id="close-menu-btn" class="p-2 text-gray-500">
-        ✕
-      </button>
-    </div>
-
-    <div class="flex flex-col p-6 space-y-6 overflow-y-auto">
-      <a href="#" class="text-2xl font-serif text-gray-900">New Arrivals</a>
-      <a href="#" class="text-2xl font-serif text-gray-900">Handbags</a>
-      <a href="#" class="text-2xl font-serif text-gray-900">Travel</a>
-      <a href="#" class="text-2xl font-serif text-gray-900">Accessories</a>
     </div>
   </div>
 </nav>

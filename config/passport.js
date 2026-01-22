@@ -11,29 +11,45 @@ passport.use(
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "http://localhost:3000/auth/google/callback",
-
     },
 
 async (accessToken, refreshToken, profile, done) => {
 
     try {
-        let user = await User.findOne({googleId:profile.id});
+       
+        const email = profile.emails[0].value;
+
+        let user = await User.findOne({email});
 
         if(user){
-            return done(null, user);
-        }else{
-            user = new User({
-                name: profile.displayName,
-                email: profile.emails[0].value,
-                googleId: profile.id,
-            });
+            if(!user.googleId){
+                user.googleId = profile.id;
+                user.profileImage = 
+                user.profileImage || profile.photos?.[0]?.value || "";
+                await user.save();
+            }
 
-            await user.save();
-            return done(null, user)
+            return done(null, user);
         }
+
+        const newUser = new User({
+            name: profile.displayName,
+            email: email,
+            googleId: profile.id,
+            profileImage: profile.photos?.[0]?.value || "",
+            isAdmin: false,
+            isBlocked: false,
+        });
+
+        await newUser.save();
+        return done(null, newUser);
+
+
     } catch (error) {
         
-        return done(error, null)
+        console.error("Google Auth Error", error);
+        return done(error, null);
+
     }
 }
 

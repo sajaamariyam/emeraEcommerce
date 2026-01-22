@@ -213,6 +213,8 @@ const loadCategories = async (req, res) => {
 
 const addCategory = async (req, res) => {
   try {
+
+
     const { name } = req.body;
 
     if (!name || !req.file) {
