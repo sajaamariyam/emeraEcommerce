@@ -1,66 +1,98 @@
 const mongoose = require("mongoose");
-const {Scehma} = mongoose;
-const {v4:uuidv4} = require("uuid");
 
-const orderSchema = new Schema({
-    orderId: {
-        type: String,
-        default: ()=> uuidv4(),
-        unique: true
-    },
-    orderedItems: [{
+const orderSchema = new mongoose.Schema({
+  orderId: {
+    type: String,
+    required: true,
+    unique: true
+  },
 
-        product: {
-            type: Schema.Types.ObjectId,
-            ref: "Product",
-            required: true
-        },
-        quantity: {
-            type: Number,
-            required: true
-        },
-        price: {
-            type: Number,
-            default: 0
-        }
-    }], 
-    totalPrice: {
-        type: Number,
-        required: true
-    },
-    discount: {
-        type: Number,
-        required: true
-    },
-    finalAmount: {
-        type: Number,
-        required: true
-    },
-    address: {
-        type: Schema.Types.Objectid,
-        ref: "User",
-        required: true
-    },
-    invoiceDate: {
-        type: Date
-    },
-    status: {
-        type: String,
-        required: true,
-        enum: ["Pending", "Processing", "Shipped", 'Delivered', "Cancelled", "Return Request", "Retured"]
-    },
-    createdOn: {
-        type: Date,
-        default: Date.now,
-        required: true
-    },
-    couponApplied:{
-        type: Boolean,
-        default: false
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+
+  orderedItems: [
+    {
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product"
+      },
+      color: String,
+      quantity: Number,
+      price: Number
     }
+  ],
 
-})
+  finalAmount: Number,
 
-const Order = mongoose.model("Order", orderSchema);
+  totalPrice: Number,
 
-module.exports = Order;
+  discount: {
+    type: Number,
+    default: 0
+  },
+  
+  status: {
+    type: String,
+    enum: [
+      'pending',
+      'shipped',
+      'out-for-delivery',
+      'delivered',
+      'cancelled'
+    ],
+    default: 'pending'
+  },
+
+  paymentMethod: {
+    type: String,
+    enum: ['COD', 'ONLINE'],
+    default: "COD"
+  },
+
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid'],
+    default: 'pending'
+  },
+
+  shippingAddress: {
+  name: {
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String
+  },
+  address: {
+    type: String,
+    required: true
+  },
+  city: {
+    type: String,
+    required: true
+  },
+  state: {
+    type: String,
+    required: true
+  },
+  pincode: {
+    type: String,
+    required: true
+  },
+  country: {
+    type: String,
+    default: "India"
+  }
+}
+
+
+}, { timestamps: true });
+
+module.exports = mongoose.model("Order", orderSchema);

@@ -1,0 +1,375 @@
+<%- include('../partials/user/header') %>
+    
+    <main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-20 animate-reveal">
+        
+        <!-- Breadcrumb & Header -->
+        <div class="mb-24 space-y-6">
+            <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-400">
+                <a href="/" class="hover:text-black transition-colors">Home</a> / 
+                <a href="/cart" class="hover:text-black transition-colors">Cart</a> / 
+                <a href="/checkout" class="hover:text-black transition-colors">Checkout</a> / 
+                <span class="text-black">Confirmation</span>
+            </nav>
+            
+            <!-- Success Icon -->
+            <div class="flex justify-center mb-8">
+                <div class="w-24 h-24 rounded-full bg-emera-50 flex items-center justify-center">
+                    <svg class="w-12 h-12 text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+            </div>
+            
+            <h1 class="text-6xl md:text-7xl font-serif text-gray-900 leading-none text-center">Order <span class="italic font-light">Confirmed</span></h1>
+            <p class="text-[11px] uppercase tracking-[0.3em] text-gray-400 font-bold text-center">Thank you for your purchase</p>
+            <p class="text-center text-sm text-gray-600 max-w-2xl mx-auto">Your order has been successfully placed. We've sent a confirmation email to <strong><%= order.shippingAddress.email %></strong> with your order details.</p>
+        </div>
+        
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-24">
+            
+            <!-- Order Details -->
+            <div class="lg:col-span-2 space-y-12">
+                
+                <!-- Order Information -->
+                <div class="bg-stone-50 p-10 border border-stone-100">
+                    <h2 class="text-3xl font-serif text-gray-900 mb-8">Order Information</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Order Number</p>
+                            <p class="text-lg font-semibold text-gray-900">#<%= order.orderId %></p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Order Date</p>
+                            <p class="text-lg font-semibold text-gray-900"><%= new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) %></p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Payment Method</p>
+                            <p class="text-lg font-semibold text-gray-900 capitalize"><%= order.paymentMethod.replace(/_/g, ' ') %></p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Estimated Delivery</p>
+                            <p class="text-lg font-semibold text-gray-900"><%= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) %></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Shipping Address -->
+                <div class="bg-stone-50 p-10 border border-stone-100">
+                    <h2 class="text-3xl font-serif text-gray-900 mb-8">Shipping Address</h2>
+                    
+                    <div class="space-y-2">
+                        <p class="text-lg font-semibold text-gray-900"><%= order.shippingAddress.name %></p>
+                        <p class="text-sm text-gray-600"><%= order.shippingAddress.address %></p>
+                        <% if (order.shippingAddress.address) { %>
+                            <p class="text-sm text-gray-600"><%= order.shippingAddress.address %></p>
+                        <% } %>
+                        <p class="text-sm text-gray-600"><%= order.shippingAddress.city %>, <%= order.shippingAddress.state %> <%= order.shippingAddress.pincode %></p>
+                        <p class="text-sm text-gray-600"><%= order.shippingAddress.country %></p>
+                        <p class="text-sm text-gray-600 mt-4"><strong>Phone:</strong> <%= order.shippingAddress.phone %></p>
+                        <p class="text-sm text-gray-600"><strong>Email:</strong> <%= order.shippingAddress.email %></p>
+                    </div>
+                </div>
+                
+                <!-- Order Items -->
+                            
+                <div class="bg-stone-50 p-10 border border-stone-100">
+                    <h2 class="text-3xl font-serif text-gray-900 mb-8">Order Items</h2>
+                    
+                    <div class="space-y-6">
+                        <% order.orderedItems.forEach(item => { %>
+                            <div class="flex gap-6 pb-6 border-b border-stone-200 last:border-0 last:pb-0">
+                                <div class="w-32 h-32 bg-stone-200 flex-shrink-0 overflow-hidden">
+                                    <img src="<%= item.productId.productImage?.[0]?.url || '/images/placeholder.png' %>" 
+                                        alt="<%= item.productId.name %>" 
+                                        class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-lg font-semibold text-gray-900 mb-2"><%= item.productId.name %></h4>
+                                    <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Quantity: <%= item.quantity %></p>
+                                    <% if (item.productId.description) { %>
+                                        <p class="text-sm text-gray-600 mb-3 line-clamp-2"><%= item.productId.description %></p>
+                                    <% } %>
+                                    <p class="text-xl font-serif text-gray-900">₹<%= item.price.toLocaleString('en-IN') %></p>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+                
+                <!-- Order Tracking -->
+                <div class="bg-stone-50 p-10 border border-stone-100">
+                    <h2 class="text-3xl font-serif text-gray-900 mb-8">Order Status</h2>
+                    
+                    <div class="relative">
+                        <!-- Progress Line -->
+                        <div class="absolute left-6 top-6 bottom-6 w-0.5 bg-stone-200"></div>
+                        <div class="absolute left-6 top-6 w-0.5 bg-emera-700 transition-all duration-1000" style="height: 0%" id="progressLine"></div>
+                        
+                        <!-- Steps -->
+                        <div class="space-y-8 relative">
+                            <!-- Order Placed -->
+                            <div class="flex gap-6 items-start">
+                                <div class="w-12 h-12 rounded-full bg-emera-700 flex items-center justify-center flex-shrink-0 z-10 step-circle" data-step="Pending">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 pt-2">
+                                    <h4 class="text-sm font-bold text-gray-900 uppercase tracking-[0.2em]">Order Placed</h4>
+                                    <p class="text-xs text-gray-500 mt-1"><%= new Date(order.createdAt).toLocaleString('en-IN') %></p>
+                                </div>
+                            </div>
+                            
+                            <!-- Order Confirmed -->
+                            <div class="flex gap-6 items-start">
+                                <div class="w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center flex-shrink-0 z-10 step-circle" data-step="Processing" id="step2">
+                                    <div class="w-3 h-3 rounded-full bg-gray-400"></div>
+                                </div>
+                                <div class="flex-1 pt-2">
+                                    <h4 class="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] step-title">Order Confirmed</h4>
+                                    <p class="text-xs text-gray-400 mt-1 step-status">Pending</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Shipped -->
+                            <div class="flex gap-6 items-start">
+                                <div class="w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center flex-shrink-0 z-10 step-circle" data-step="Shipped" id="step3">
+                                    <div class="w-3 h-3 rounded-full bg-gray-400"></div>
+                                </div>
+                                <div class="flex-1 pt-2">
+                                    <h4 class="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] step-title">Shipped</h4>
+                                    <p class="text-xs text-gray-400 mt-1 step-status">Pending</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Out for Delivery -->
+                            <div class="flex gap-6 items-start">
+                                <div class="w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center flex-shrink-0 z-10 step-circle" data-step="Out for Delivery" id="step4">
+                                    <div class="w-3 h-3 rounded-full bg-gray-400"></div>
+                                </div>
+                                <div class="flex-1 pt-2">
+                                    <h4 class="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] step-title">Out for Delivery</h4>
+                                    <p class="text-xs text-gray-400 mt-1 step-status">Pending</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Delivered -->
+                            <div class="flex gap-6 items-start">
+                                <div class="w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center flex-shrink-0 z-10 step-circle" data-step="Delivered" id="step5">
+                                    <div class="w-3 h-3 rounded-full bg-gray-400"></div>
+                                </div>
+                                <div class="flex-1 pt-2">
+                                    <h4 class="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] step-title">Delivered</h4>
+                                    <p class="text-xs text-gray-400 mt-1 step-status">Pending</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Order Summary Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="bg-stone-50 p-10 border border-stone-100 sticky top-32">
+                    <h2 class="text-3xl font-serif text-gray-900 mb-8">Order Summary</h2>
+                    
+                    <!-- Price Breakdown -->
+                    <div class="space-y-6 mb-8 pb-8 border-b border-stone-200">
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Subtotal</span>
+                            <span class="font-bold text-gray-900">₹<%= subtotal.toLocaleString('en-IN') %></span>
+                        </div>
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Shipping</span>
+                            <span class="font-bold text-emera-700">Complimentary</span>
+                        </div>
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Tax (GST 18%)</span>
+                            <span class="font-bold text-gray-900">₹<%= tax.toLocaleString('en-IN') %></span>
+                        </div>
+                        <% if (order.discount > 0) { %>
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Discount</span>
+                            <span class="font-bold text-emera-700">-₹<%= order.discount.toLocaleString('en-IN') %></span>
+                        </div>
+                        <% } %>
+                    </div>
+                    
+                    <div class="flex justify-between mb-8 pb-8 border-b border-stone-200">
+                        <span class="text-xl font-serif text-gray-900">Total Paid</span>
+                        <span class="text-2xl font-serif text-gray-900">₹<%= total.toLocaleString('en-IN') %></span>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="space-y-4 mb-8">
+                        <a href="/orders/<%= order.orderId %>" class="block text-center w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-700 transition-all duration-300">
+                            Track Order
+                        </a>
+                        <button onclick="window.print()" class="block text-center w-full border-2 border-emera-950 text-emera-950 py-6 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-300">
+                            Print Receipt
+                        </button>
+                        <a href="/" class="block text-center w-full border-2 border-stone-300 text-gray-900 py-6 text-[10px] uppercase tracking-[0.4em] font-bold hover:border-stone-900 transition-all duration-300">
+                            Continue Shopping
+                        </a>
+                    </div>
+                    
+                    <!-- Support Information -->
+                    <div class="space-y-4 text-center pt-8 border-t border-stone-200">
+                        <p class="text-[10px] uppercase tracking-[0.3em] text-gray-900 font-bold mb-4">Need Help?</p>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Email: support@emera.com</p>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Phone: +91 1800 123 4567</p>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest mt-6">Free Returns Within 30 Days</p>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Authenticity Guaranteed</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Additional Information -->
+        <div class="mt-24 grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div class="text-center p-8 bg-stone-50 border border-stone-100">
+                <div class="w-16 h-16 bg-emera-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-8 h-8 text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-bold uppercase tracking-[0.2em] text-gray-900 mb-3">Order Updates</h3>
+                <p class="text-xs text-gray-600 leading-relaxed">We'll send you shipping confirmation and updates to your email address.</p>
+            </div>
+            
+            <div class="text-center p-8 bg-stone-50 border border-stone-100">
+                <div class="w-16 h-16 bg-emera-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-8 h-8 text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-bold uppercase tracking-[0.2em] text-gray-900 mb-3">Quality Assured</h3>
+                <p class="text-xs text-gray-600 leading-relaxed">Every item is carefully inspected before shipping to ensure perfection.</p>
+            </div>
+            
+            <div class="text-center p-8 bg-stone-50 border border-stone-100">
+                <div class="w-16 h-16 bg-emera-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-8 h-8 text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-bold uppercase tracking-[0.2em] text-gray-900 mb-3">Easy Returns</h3>
+                <p class="text-xs text-gray-600 leading-relaxed">Not satisfied? Return within 30 days for a full refund, no questions asked.</p>
+            </div>
+        </div>
+        
+    </main>
+
+    <script>
+        // Status progression map
+        const statusMap = {
+            'Pending': { progress: '0%', step: 0 },
+            'Processing': { progress: '25%', step: 1 },
+            'Shipped': { progress: '50%', step: 2 },
+            'Out for Delivery': { progress: '75%', step: 3 },
+            'Delivered': { progress: '100%', step: 4 },
+            'Cancelled': { progress: '0%', step: 0 },
+            'Return Request': { progress: '0%', step: 0 },
+            'Returned': { progress: '0%', step: 0 }
+        };
+
+        // Get current order status from server
+        const currentStatus = '<%= order.status %>';
+        
+        // Animate progress line on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const progressLine = document.getElementById('progressLine');
+                const statusInfo = statusMap[currentStatus] || statusMap['Pending'];
+                progressLine.style.height = statusInfo.progress;
+                
+                // Update step circles based on current status
+                const stepCircles = document.querySelectorAll('.step-circle');
+                const stepTitles = document.querySelectorAll('.step-title');
+                const stepStatuses = document.querySelectorAll('.step-status');
+                
+                stepCircles.forEach((circle, index) => {
+                    if (index <= statusInfo.step) {
+                        // Completed or current step
+                        circle.classList.remove('bg-stone-200');
+                        circle.classList.add('bg-emera-700');
+                        circle.innerHTML = `
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        `;
+                        
+                        if (stepTitles[index]) {
+                            stepTitles[index].classList.remove('text-gray-400');
+                            stepTitles[index].classList.add('text-gray-900');
+                        }
+                        
+                        if (stepStatuses[index]) {
+                            if (index === statusInfo.step) {
+                                stepStatuses[index].textContent = 'In Progress';
+                                stepStatuses[index].classList.remove('text-gray-400');
+                                stepStatuses[index].classList.add('text-emera-700');
+                            } else {
+                                stepStatuses[index].textContent = 'Completed';
+                                stepStatuses[index].classList.remove('text-gray-400');
+                                stepStatuses[index].classList.add('text-gray-500');
+                            }
+                        }
+                    }
+                });
+            }, 500);
+        });
+        
+        // Print functionality
+        window.onbeforeprint = () => {
+            document.body.classList.add('printing');
+        };
+        
+        window.onafterprint = () => {
+            document.body.classList.remove('printing');
+        };
+    </script>
+    
+    <style>
+        @media print {
+            header, footer, nav, .sticky, button, a[href="/"] {
+                display: none !important;
+            }
+            
+            .animate-reveal {
+                animation: none !important;
+            }
+            
+            main {
+                padding: 20px !important;
+            }
+        }
+        
+        .animate-reveal {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+
+<%- include('../partials/user/footer') %>

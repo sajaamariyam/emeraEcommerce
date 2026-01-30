@@ -1,0 +1,553 @@
+<%- include("../partials/admin/header") %>
+
+<div class="ml-52 h-screen overflow-y-auto bg-gray-50">
+
+    <!-- Top bar -->
+    <div class="bg-white border-b sticky top-0 z-10">
+        <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-teal-700">Inventory Management</h1>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    <%= admin.name.charAt(0) %>
+                </div>
+                <span class="text-sm text-gray-700"><%= admin.name %></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-8 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Stock Control</h2>
+                <p class="text-gray-600 mt-1">Monitor and manage product inventory levels.</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Total Products</p>
+                <p class="text-3xl font-bold text-gray-800"><%= totalStock %></p>
+                <div class="h-1 w-10 bg-teal-500 mt-3"></div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Low Stock</p>
+                <p class="text-3xl font-bold text-orange-600"><%= lowStock %></p>
+                <div class="h-1 w-10 bg-orange-500 mt-3"></div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Out of Stock</p>
+                <p class="text-3xl font-bold text-red-600"><%= outOfStock %></p>
+                <div class="h-1 w-10 bg-red-500 mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <form action="/admin/inventory" method="GET" class="space-y-4">
+
+                <!-- SEARCH ROW -->
+                <div class="flex gap-2 w-full">
+                    <input
+                        type="text"
+                        name="search"
+                        value="<%= search %>"
+                        placeholder="Search by product name or brand"
+                        class="w-full border px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-black"
+                    />
+
+                    <button
+                        type="submit"
+                        class="bg-black text-white px-6 rounded-lg"
+                    >
+                        Search
+                    </button>
+
+                    <% if (search || stockLevel !== 'all' || sortBy !== 'name-asc') { %>
+                        <a
+                            href="/admin/inventory"
+                            class="bg-gray-300 px-5 py-2 rounded-lg text-black flex items-center"
+                        >
+                            Clear
+                        </a>
+                    <% } %>
+                </div>
+
+                <!-- FILTER ROW -->
+                <div class="flex flex-col md:flex-row gap-4">
+
+                    <!-- STOCK LEVEL FILTER -->
+                    <select
+                        name="stockLevel"
+                        onchange="this.form.submit()"
+                        class="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
+                    >
+                        <option value="all" <%= stockLevel === 'all' ? 'selected' : '' %>>
+                            All Stock Levels
+                        </option>
+                        <option value="in-stock" <%= stockLevel === 'in-stock' ? 'selected' : '' %>>
+                            In Stock (5+)
+                        </option>
+                        <option value="low" <%= stockLevel === 'low' ? 'selected' : '' %>>
+                            Low Stock (1-4)
+                        </option>
+                        <option value="out" <%= stockLevel === 'out' ? 'selected' : '' %>>
+                            Out of Stock (0)
+                        </option>
+                    </select>
+
+                    <!-- SORT BY -->
+                    <select
+                        name="sortBy"
+                        onchange="this.form.submit()"
+                        class="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
+                    >
+                        <option value="name-asc" <%= sortBy === 'name-asc' ? 'selected' : '' %>>
+                            Name: A to Z
+                        </option>
+                        <option value="name-desc" <%= sortBy === 'name-desc' ? 'selected' : '' %>>
+                            Name: Z to A
+                        </option>
+                        <option value="stock-desc" <%= sortBy === 'stock-desc' ? 'selected' : '' %>>
+                            Stock: High to Low
+                        </option>
+                        <option value="stock-asc" <%= sortBy === 'stock-asc' ? 'selected' : '' %>>
+                            Stock: Low to High
+                        </option>
+                    </select>
+
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Brand</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Total Stock</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Variants</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <% products.forEach(product => { %>
+                        <% 
+                        // ✅ FIX ISSUE 1: Calculate total stock from variants
+                        const totalStock = product.variants && product.variants.length > 0
+                            ? product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)
+                            : (product.quantity || 0);
+                        %>
+                        
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                    <img
+                                        src="<%= product.productImage && product.productImage.length > 0
+                                                ? product.productImage[0].url
+                                                : 'https://via.placeholder.com/80x100?text=No+Image' %>"
+                                        alt="<%= product.name %>"
+                                        class="w-12 h-14 object-cover rounded shadow-sm"
+                                    />
+                                    <div>
+                                        <p class="font-bold text-gray-800"><%= product.name %></p>
+                                        <p class="text-xs text-gray-400">ID: <%= product._id.toString().slice(-6) %></p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <%= product.category?.name || "Uncategorized" %>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <%= product.brand %>
+                            </td>
+                            <td class="px-6 py-4">
+                                <% 
+                                // Use calculated totalStock instead of product.quantity
+                                let stockClass = '';
+                                if (totalStock === 0) {
+                                    stockClass = 'text-red-600 font-bold';
+                                } else if (totalStock < 5) {
+                                    stockClass = 'text-orange-600 font-bold';
+                                } else {
+                                    stockClass = 'text-green-600 font-semibold';
+                                }
+                                %>
+                                <span class="text-sm <%= stockClass %>">
+                                    <%= totalStock %> Units
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-wrap gap-1">
+                                    <% if (product.variants && product.variants.length > 0) { %>
+                                        <% product.variants.slice(0, 3).forEach(variant => { %>
+                                            <span class="px-2 py-1 bg-gray-100 text-gray-700 text-[10px] font-semibold rounded">
+                                                <%= variant.color %>: <%= variant.quantity %>
+                                            </span>
+                                        <% }) %>
+                                        <% if (product.variants.length > 3) { %>
+                                            <span class="px-2 py-1 bg-gray-200 text-gray-600 text-[10px] font-semibold rounded">
+                                                +<%= product.variants.length - 3 %> more
+                                            </span>
+                                        <% } %>
+                                    <% } else { %>
+                                        <span class="text-xs text-gray-400">No variants</span>
+                                    <% } %>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <% 
+                                // Use calculated totalStock for status
+                                let statusClass = '';
+                                let statusText = '';
+                                
+                                if (totalStock === 0) {
+                                    statusClass = 'bg-red-50 text-red-700 border-red-100';
+                                    statusText = 'Out of Stock';
+                                } else if (totalStock < 5) {
+                                    statusClass = 'bg-orange-50 text-orange-700 border-orange-100';
+                                    statusText = 'Low Stock';
+                                } else {
+                                    statusClass = 'bg-green-50 text-green-700 border-green-100';
+                                    statusText = 'In Stock';
+                                }
+                                %>
+                                <span class="px-3 py-1 <%= statusClass %> text-[10px] font-bold uppercase rounded-full border">
+                                    <%= statusText %>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <%# ✅ FIX ISSUE 2: Use data attributes instead of inline JSON %>
+                                <button 
+                                    class="text-teal-600 hover:text-teal-800 text-sm font-bold"
+                                    data-product-id="<%= product._id %>"
+                                    data-variants='<%- JSON.stringify(product.variants || []) %>'
+                                    onclick="handleOpenStock(this)">
+                                    Update Stock
+                                </button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            
+            <!-- Pagination -->
+            <% if (totalPages > 1) { %>
+                <div class="px-6 py-6 bg-gray-50 border-t border-gray-200 flex justify-center gap-2">
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <a href="/admin/inventory?page=<%= i %>&search=<%= search || '' %>&stockLevel=<%= stockLevel || 'all' %>&sortBy=<%= sortBy || 'name-asc' %>" 
+                           class="w-10 h-10 flex items-center justify-center text-sm font-bold border rounded transition-all <%= currentPage === i ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-400 hover:bg-gray-100' %>">
+                            <%= i %>
+                        </a>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+
+<!-- UPDATE STOCK MODAL -->
+<div id="stockModal"
+     class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+
+  <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-8">
+
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-boxes text-teal-600 text-2xl"></i>
+      </div>
+      <h3 class="text-xl font-bold text-gray-900 mb-2">
+        Update Stock Levels
+      </h3>
+      <p class="text-sm text-gray-600">
+        Adjust inventory for individual variants or total stock
+      </p>
+    </div>
+
+    <form id="stockForm">
+      <input type="hidden" name="productId" id="stock-productId">
+      
+      <!-- Variants Stock -->
+      <div id="variantsContainer" class="mb-6 space-y-3">
+        <!-- Variants will be loaded dynamically -->
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-gray-50 rounded-lg p-4 mb-6">
+        <p class="text-xs font-bold uppercase tracking-widest text-gray-700 mb-3">Quick Actions</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-gray-600 mb-1 block">Add to Total Stock</label>
+            <div class="flex gap-2">
+              <input type="number" id="addStock" min="0" placeholder="0" 
+                     class="flex-1 px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+              <button type="button" onclick="quickStockUpdate('add')" 
+                      class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold">
+                Add
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-gray-600 mb-1 block">Remove from Total Stock</label>
+            <div class="flex gap-2">
+              <input type="number" id="removeStock" min="0" placeholder="0" 
+                     class="flex-1 px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+              <button type="button" onclick="quickStockUpdate('remove')" 
+                      class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold">
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" id="saveStockBtn"
+                class="flex-1 bg-teal-700 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Save Changes
+        </button>
+        <button type="button"
+                onclick="closeStockModal()"
+                class="flex-1 border border-gray-300 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-50 transition">
+          Cancel
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed top-4 right-4 z-[200] space-y-2"></div>
+
+<script>
+let currentVariants = [];
+
+/* ---------------- TOAST NOTIFICATION (✅ FIX ISSUE 3) ---------------- */
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  
+  const bgColor = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
+  const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+  
+  toast.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px] animate-slide-in`;
+  toast.innerHTML = `
+    <i class="fas ${icon}"></i>
+    <span class="font-medium">${message}</span>
+  `;
+  
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slide-out 0.3s ease-out';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+/* ---------------- STOCK UPDATE MODAL ---------------- */
+function handleOpenStock(button) {
+  const productId = button.dataset.productId;
+  const variants = JSON.parse(button.dataset.variants);
+  openStockModal(productId, variants);
+}
+
+function openStockModal(productId, variants) {
+  const modal = document.getElementById("stockModal");
+  const container = document.getElementById("variantsContainer");
+  
+  document.getElementById("stock-productId").value = productId;
+  currentVariants = variants;
+  
+  // Build variants HTML
+  container.innerHTML = '';
+  if (variants && variants.length > 0) {
+    container.innerHTML = `
+      <p class="text-xs font-bold uppercase tracking-widest text-gray-700 mb-2">Variant Stock Levels</p>
+    `;
+    
+    variants.forEach(variant => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-3';
+      row.innerHTML = `
+        <div class="flex-1">
+          <p class="font-semibold text-gray-800">${escapeHtml(variant.color)}</p>
+          <p class="text-xs text-gray-500">Current: ${variant.quantity} units</p>
+        </div>
+        <input type="number" 
+               min="0" 
+               value="${variant.quantity}"
+               data-color="${escapeHtml(variant.color)}"
+               class="variant-stock w-24 px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+      `;
+      container.appendChild(row);
+    });
+  } else {
+    container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No variants available</p>';
+  }
+  
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function closeStockModal() {
+  const modal = document.getElementById("stockModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  
+  // Reset inputs
+  document.getElementById("addStock").value = '';
+  document.getElementById("removeStock").value = '';
+}
+
+// ✅ Helper function to prevent XSS
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/* ---------------- UPDATE VARIANT STOCK ---------------- */
+document.getElementById("stockForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const productId = document.getElementById("stock-productId").value;
+  const variantInputs = document.querySelectorAll(".variant-stock");
+  const saveBtn = document.getElementById("saveStockBtn");
+  
+  const updates = [];
+  let hasError = false;
+  
+  // ✅ Validate inputs
+  variantInputs.forEach(input => {
+    const quantity = parseInt(input.value);
+    
+    if (isNaN(quantity) || quantity < 0) {
+      showToast('Stock quantity cannot be negative', 'error');
+      hasError = true;
+      return;
+    }
+    
+    updates.push({
+      color: input.dataset.color,
+      quantity: quantity
+    });
+  });
+  
+  if (hasError) return;
+  
+  // ✅ Disable button during submission
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+  
+  try {
+    // Update each variant
+    for (const update of updates) {
+      const formData = new FormData();
+      formData.append('productId', productId);
+      formData.append('action', 'set');
+      formData.append('color', update.color);
+      formData.append('quantity', update.quantity);
+      
+      const response = await fetch('/admin/inventory/update-stock', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update stock');
+      }
+    }
+    
+    showToast('Stock updated successfully', 'success');
+    setTimeout(() => location.reload(), 1000);
+    
+  } catch (err) {
+    showToast('Failed to update stock. Please try again.', 'error');
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Changes';
+  }
+});
+
+/* ---------------- QUICK STOCK UPDATE ---------------- */
+async function quickStockUpdate(action) {
+  const productId = document.getElementById("stock-productId").value;
+  const addValue = document.getElementById("addStock").value;
+  const removeValue = document.getElementById("removeStock").value;
+  
+  const quantity = action === 'add' ? parseInt(addValue) : parseInt(removeValue);
+  
+  // ✅ Better validation
+  if (!quantity || isNaN(quantity) || quantity <= 0) {
+    showToast('Please enter a valid positive quantity', 'error');
+    return;
+  }
+  
+  // ✅ Optional: Confirmation for large changes
+  if (quantity > 100) {
+    if (!confirm(`Are you sure you want to ${action} ${quantity} units?`)) {
+      return;
+    }
+  }
+  
+  const formData = new FormData();
+  formData.append('productId', productId);
+  formData.append('action', action);
+  formData.append('quantity', quantity);
+  
+  try {
+    const res = await fetch('/admin/inventory/update-stock', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (res.ok) {
+      showToast(`Stock ${action === 'add' ? 'added' : 'removed'} successfully`, 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      throw new Error('Update failed');
+    }
+  } catch (err) {
+    showToast('Failed to update stock. Please try again.', 'error');
+  }
+}
+
+// ✅ Add CSS animation for toast
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slide-out {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+  
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+`;
+document.head.appendChild(style);
+</script>
+
+<%- include("../partials/admin/footer") %>

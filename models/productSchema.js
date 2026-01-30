@@ -56,7 +56,6 @@ const productSchema = new Schema(
       min: 0
     },
 
-  
     productImage: [
       {
         url: {

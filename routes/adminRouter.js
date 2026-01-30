@@ -2,11 +2,13 @@ const express = require("express");
 const router = express.Router();
 
 const adminController = require("../controllers/admin/adminController");
-const { adminAuth } = require("../middlewares/auth");
+const orderController = require("../controllers/admin/orderController");
+const productController = require("../controllers/admin/productController");
+
+
+const upload = require("../middlewares/multer");
+const { adminAuth, noCache } = require("../middlewares/auth");
 const { uploadCategory, uploadProduct } = require("../middlewares/upload");
-const Product = require("../models/productSchema");
-
-
 
 router.get("/adminLogin", adminController.loadLogin);
 router.post("/adminLogin", adminController.login);
@@ -41,7 +43,8 @@ router.delete(
   adminController.deleteCategory
 );
 
-
+router.get("/products", adminAuth, productController.loadProducts);
+router.get('/products/:id', productController.getProduct);
 router.get(
   "/products/:id",
   adminAuth,
@@ -56,21 +59,28 @@ router.get(
   }
 );
 
-router.get("/products", adminAuth, adminController.loadProducts);
 router.post(
   "/products/add",
   adminAuth,
   uploadProduct.array("productImages", 5),
-  adminController.addProduct
+  productController.addProduct
 );
 router.post(
   "/products/edit",
   adminAuth,
   uploadProduct.array("productImages", 5),
-  adminController.editProduct
+  productController.editProduct
 );
-router.post("/products/block/:id", adminAuth, adminController.blockProduct);
-router.post("/products/unblock/:id", adminAuth, adminController.unblockProduct);
-router.post("/products/delete/:id", adminAuth, adminController.deleteProduct);
+router.post("/products/update-stock", adminAuth, productController.updateStock)
+router.post("/products/block/:id", adminAuth, productController.blockProduct);
+router.post("/products/unblock/:id", adminAuth, productController.unblockProduct);
+router.post("/products/delete/:id", adminAuth, productController.deleteProduct);
+
+//ORDER ROUTES
+
+router.get("/orders", adminAuth, noCache, orderController.loadOrders);
+router.get("/orders/:id", adminAuth, orderController.getOrderDetails);
+router.post("/orders/update-status", adminAuth, upload.none(), orderController.updateOrderStatus);
+
 
 module.exports = router;

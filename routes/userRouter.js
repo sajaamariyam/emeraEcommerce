@@ -4,11 +4,14 @@ const passport = require("passport");
 
 const userController = require("../controllers/user/userController");
 const cartController = require("../controllers/user/cartController");
-const { userAuth, noCache } = require("../middlewares/auth");
+const { userAuth, noCache, saveRedirect } = require("../middlewares/auth");
 const { uploadProduct, uploadProfile } = require("../middlewares/upload");
+const checkoutController = require("../controllers/user/checkoutController");
+const orderController = require("../controllers/user/orderController");
 
 console.log("loadOtp:", userController.loadOtp);
 
+//AUTHENTICATION ROUTES
 
 router.get("/login", userController.loadLogin);
 router.post("/login", userController.login);
@@ -20,24 +23,18 @@ router.get("/otp", userController.loadOtp);
 router.post("/verify-otp", userController.verifyOtp);
 router.post("/resend-otp", userController.resendOtp);
 
+router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
-
-router.get(
-  "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-router.get(
-  "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
-  (req, res) => {
+router.get("/auth/google/callback",passport.authenticate("google", {
+   failureRedirect: "/login" }),(req, res) => {
     req.session.user = req.user._id; 
-    res.redirect("/");
-  }
-);
 
+    const redirectTo = req.session.redirectTo || "/";
+    delete req.session.redirectTo;
 
-//AUTHENTICATION ROUTES
+    res.redirect(redirectTo);
+  });
+
 router.get("/forgot-password", userController.loadForgotPassword);
 router.post("/forgot-password", userController.sendForgotPassword);
 
@@ -47,13 +44,12 @@ router.post("/forgot-resend-otp", userController.resendForgotPasswordOtp);
 router.get("/reset-password",  userController.loadResetPassword);
 router.post("/reset-password", userController.resetPassword);
 
-
 router.get("/", userController.loadHomepage);
 router.get("/logout", noCache, userController.logout);
 
 //PRODUCT ROUTES
 router.get("/products", userController.loadProducts);
-router.get("/products/:id", userController.loadProductDetails);
+router.get("/products/:id", saveRedirect, userController.loadProductDetails);
 
 router.get("/pageNotFound", userController.pageNotFound);
 
@@ -78,6 +74,18 @@ router.put("/cart/increment/:productId", userAuth, cartController.incrementQty);
 router.put("/cart/decrement/:productId", userAuth, cartController.decrementQty);
 router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
 
+//CHECKOUT ROUTES
+router.get("/checkout", userAuth, checkoutController.loadCheckout);
+router.post("/checkout", userAuth, checkoutController.placeOrder);
+
+//ORDER ROUTES
+router.get("/orderConfirmation/:orderId", userAuth, orderController.loadOrderConfirmation);
+router.get("/orders/:orderId", userAuth, orderController.loadOrderDetails);
+router.get("/orders", userAuth, orderController.loadOrder);
+
+router.post("/orders/:orderId/cancel", userAuth, orderController.cancelOrder);
+router.post("/orders/:orderId/return", userAuth, orderController.returnOrder);
+router.post("/orders/:orderId/invoice", userAuth, orderController.downloadInvoice);
 
 
 module.exports = router;

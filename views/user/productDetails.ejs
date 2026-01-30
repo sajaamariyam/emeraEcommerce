@@ -321,35 +321,78 @@ if (zoomArea && zoomImg) {
   });
 }
 
-
-function addToCart(id) {
+function addToCart(productId) {
   fetch("/cart/add", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      productId: id,
-      variantIndex: activeVariant
+      productId,
+      color: variants[activeVariant]?.color
     })
   })
-  .then(r => r.json())
-  .then(d => {
-    if (!d.success) return alert(d.message || "Failed");
-    const badge = document.getElementById("cart-count-badge");
-    if (badge) badge.textContent = d.cartCount;
-  });
+    .then(res => {
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        window.location.href = "/login";
+        return;
+      }
+      return res.json();
+    })
+    .then(data => {
+      if (!data) return;
+
+      if (data.code === "AUTH_REQUIRED") {
+        window.location.href = "/login";
+        return;
+      }
+
+      if (data.success) {
+        document.getElementById("cart-count-badge").textContent = data.cartCount;
+      }
+    });
 }
 
-function buyNow(id) {
+
+function buyNow(productId) {
   fetch("/cart/add", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      productId: id,
-      variantIndex: activeVariant,
+      productId,
+      color: variants[activeVariant]?.color,
       buyNow: true
     })
-  }).then(() => location.href = "/checkout");
+  })
+    .then(res => {
+      const contentType = res.headers.get("content-type");
+
+      if (!contentType || !contentType.includes("application/json")) {
+        // backend returned HTML → redirect happened
+        window.location.href = "/login";
+        return;
+      }
+
+      return res.json();
+    })
+    .then(data => {
+      if (!data) return;
+
+      if (data.code === "AUTH_REQUIRED") {
+        window.location.href = `/login`;
+        return;
+      }
+
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      }
+    })
+    .catch(err => {
+      console.error("BUY NOW ERROR", err);
+    });
 }
+
+
+
 
 if (variants.length) selectVariant(0);
 </script>

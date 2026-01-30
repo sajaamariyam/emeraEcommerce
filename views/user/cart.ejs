@@ -38,8 +38,7 @@
                     <div class="flex flex-col sm:flex-row gap-8">
                     
                         <div class="w-full sm:w-48 h-48 bg-stone-200 overflow-hidden flex-shrink-0">
-                            <img
-                                src="<%= item.product.productImage[0].url %>"
+                            <img src="<%= item.product.productImage?.[0]?.url || '/images/placeholder.png' %>">
                                 alt="<%= item.product.name %>"
                                 class="w-full h-full object-cover"
                             >

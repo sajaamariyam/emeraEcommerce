@@ -43,8 +43,8 @@
                 <div class="h-1 w-10 bg-green-500 mt-3"></div>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Unlisted</p>
-                <p class="text-3xl font-bold text-orange-600"><%= unlistedProducts %></p>
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Low Stock</p>
+                <p class="text-3xl font-bold text-orange-600"><%= lowStockCount || 0 %></p>
                 <div class="h-1 w-10 bg-orange-500 mt-3"></div>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
@@ -91,7 +91,7 @@
         <select
             name="category"
             onchange="this.form.submit()"
-            class="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
+            class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
         >
             <option value="">All Categories</option>
             <% categories.forEach(cat => { %>
@@ -108,7 +108,7 @@
         <select
             name="status"
             onchange="this.form.submit()"
-            class="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
+            class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
         >
             <option value="all" <%= status === 'all' ? 'selected' : '' %>>
             All Status
@@ -118,6 +118,46 @@
             </option>
             <option value="unlisted" <%= status === 'unlisted' ? 'selected' : '' %>>
             Unlisted
+            </option>
+        </select>
+
+        <!-- STOCK LEVEL FILTER -->
+        <select
+            name="stockLevel"
+            onchange="this.form.submit()"
+            class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
+        >
+            <option value="all" <%= (stockLevel || 'all') === 'all' ? 'selected' : '' %>>
+            All Stock Levels
+            </option>
+            <option value="in-stock" <%= stockLevel === 'in-stock' ? 'selected' : '' %>>
+            In Stock (5+)
+            </option>
+            <option value="low" <%= stockLevel === 'low' ? 'selected' : '' %>>
+            Low Stock (1-4)
+            </option>
+            <option value="out" <%= stockLevel === 'out' ? 'selected' : '' %>>
+            Out of Stock
+            </option>
+        </select>
+
+        <!-- SORT BY -->
+        <select
+            name="sortBy"
+            onchange="this.form.submit()"
+            class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
+        >
+            <option value="name-asc" <%= (sortBy || 'name-asc') === 'name-asc' ? 'selected' : '' %>>
+            Name (A-Z)
+            </option>
+            <option value="name-desc" <%= sortBy === 'name-desc' ? 'selected' : '' %>>
+            Name (Z-A)
+            </option>
+            <option value="stock-asc" <%= sortBy === 'stock-asc' ? 'selected' : '' %>>
+            Stock (Low to High)
+            </option>
+            <option value="stock-desc" <%= sortBy === 'stock-desc' ? 'selected' : '' %>>
+            Stock (High to Low)
             </option>
         </select>
 
@@ -142,7 +182,11 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                    <% products.forEach(product => { %>
+                    <% products.forEach(product => { 
+                        const totalStock = product.variants?.length
+                            ? product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)
+                            : product.quantity || 0;
+                    %>
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-4">
@@ -170,9 +214,26 @@
                                 <p class="text-[10px] text-gray-400 line-through">₹<%= product.regularPrice.toLocaleString() %></p>
                             </td>
                             <td class="px-6 py-4 text-sm">
-                                <span class="<%= product.quantity < 5 ? 'text-red-600 font-bold' : 'text-gray-600' %>">
-                                    <%= product.quantity %> Items
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="<%= totalStock === 0 ? 'text-red-600 font-bold' : totalStock < 5 ? 'text-orange-600 font-bold' : 'text-gray-600' %>">
+                                        <%= totalStock %> Items
+                                    </span>
+                                    <button onclick="openStockModal('<%= product._id %>', '<%= product.name %>', <%= JSON.stringify(product.variants || []) %>)" 
+                                            class="text-teal-600 hover:text-teal-800 text-xs">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                                <!-- Show variant breakdown if exists -->
+                                <% if (product.variants && product.variants.length > 0) { %>
+                                    <div class="mt-1 text-[10px] text-gray-400">
+                                        <% product.variants.slice(0, 2).forEach(v => { %>
+                                            <div><%= v.color %>: <%= v.quantity %></div>
+                                        <% }) %>
+                                        <% if (product.variants.length > 2) { %>
+                                            <div class="text-teal-600">+<%= product.variants.length - 2 %> more</div>
+                                        <% } %>
+                                    </div>
+                                <% } %>
                             </td>
                             <td class="px-6 py-4">
                                 <% if (product.isBlocked) { %>
@@ -199,7 +260,7 @@
             <% if (totalPages > 1) { %>
                 <div class="px-6 py-6 bg-gray-50 border-t border-gray-200 flex justify-center gap-2">
                     <% for(let i = 1; i <= totalPages; i++) { %>
-                        <a href="/admin/products?page=<%= i %>&search=<%= search || '' %>&category=<%= category || '' %>&status=<%= status || 'all' %>" 
+                        <a href="/admin/products?page=<%= i %>&search=<%= search || '' %>&category=<%= category || '' %>&status=<%= status || 'all' %>&stockLevel=<%= stockLevel || 'all' %>&sortBy=<%= sortBy || 'name-asc' %>" 
                            class="w-10 h-10 flex items-center justify-center text-sm font-bold border rounded transition-all <%= currentPage === i ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-400 hover:bg-gray-100' %>">
                             <%= i %>
                         </a>
@@ -208,6 +269,83 @@
             <% } %>
         </div>
     </div>
+</div>
+
+
+<!-- STOCK MANAGEMENT MODAL -->
+<div id="stockModal"
+     class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+
+  <div class="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-8">
+
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h3 class="text-xl font-bold text-gray-900">Manage Stock</h3>
+        <p id="stockProductName" class="text-sm text-gray-500 mt-1"></p>
+      </div>
+      <button onclick="closeStockModal()"
+              class="w-10 h-10 flex items-center justify-center rounded-full
+                     text-gray-400 hover:text-gray-900 hover:bg-gray-200 transition text-2xl">
+        &times;
+      </button>
+    </div>
+
+    <input type="hidden" id="stockProductId">
+
+    <!-- BULK ACTIONS -->
+    <div class="bg-gray-50 rounded-xl p-6 mb-6">
+      <h4 class="text-sm font-bold text-gray-700 mb-4">Bulk Stock Operations</h4>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs text-gray-600 mb-2 block">Add Stock</label>
+          <div class="flex gap-2">
+            <input type="number" 
+                   id="bulkAddQuantity" 
+                   min="1" 
+                   placeholder="Quantity"
+                   class="flex-1 px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+            <button onclick="bulkUpdateStock('add')"
+                    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium">
+              <i class="fas fa-plus"></i> Add
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-gray-600 mb-2 block">Remove Stock</label>
+          <div class="flex gap-2">
+            <input type="number" 
+                   id="bulkRemoveQuantity" 
+                   min="1" 
+                   placeholder="Quantity"
+                   class="flex-1 px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+            <button onclick="bulkUpdateStock('remove')"
+                    class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-medium">
+              <i class="fas fa-minus"></i> Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIANT-WISE STOCK -->
+    <div>
+      <h4 class="text-sm font-bold text-gray-700 mb-4">Stock by Variant</h4>
+      <div id="variantStockList" class="space-y-3">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+
+    <div class="mt-6 flex justify-end">
+      <button onclick="closeStockModal()"
+              class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+        Close
+      </button>
+    </div>
+
+  </div>
 </div>
 
 
@@ -425,6 +563,52 @@
 </div>
 
 
+<!-- NOTIFICATION MODAL (SUCCESS/ERROR) -->
+<div id="notificationModal"
+     class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8">
+
+    <div class="text-center mb-6">
+      <div id="notificationIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i id="notificationIconElement" class="text-2xl"></i>
+      </div>
+      <h3 id="notificationTitle" class="text-xl font-bold text-gray-900 mb-2"></h3>
+      <p id="notificationMessage" class="text-sm text-gray-600"></p>
+    </div>
+
+    <button onclick="closeNotificationModal()"
+            class="w-full bg-teal-700 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition">
+      OK
+    </button>
+
+  </div>
+</div>
+
+
+<!-- VALIDATION MODAL (FOR INPUT ERRORS) -->
+<div id="validationModal"
+     class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8">
+
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-exclamation-circle text-orange-600 text-2xl"></i>
+      </div>
+      <h3 class="text-xl font-bold text-gray-900 mb-2">Validation Error</h3>
+      <p id="validationMessage" class="text-sm text-gray-600"></p>
+    </div>
+
+    <button onclick="closeValidationModal()"
+            class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-orange-700 transition">
+      OK
+    </button>
+
+  </div>
+</div>
+
+
 <!-- CROPPER OVERLAY -->
 <div id="cropperOverlay"
      class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
@@ -461,16 +645,229 @@
 
 
 <script>
+/* ---------------- IMAGE CROPPER STATE ---------------- */
 let cropper = null;
 let pendingFiles = [];
 let processedImages = [];
 
+/* ---------------- NOTIFICATION MODAL FUNCTIONS ---------------- */
+function showNotificationModal(title, message, isSuccess = true) {
+  const modal = document.getElementById("notificationModal");
+  const icon = document.getElementById("notificationIcon");
+  const iconElement = document.getElementById("notificationIconElement");
+  
+  document.getElementById("notificationTitle").textContent = title;
+  document.getElementById("notificationMessage").textContent = message;
+  
+  if (isSuccess) {
+    icon.className = "w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4";
+    iconElement.className = "fas fa-check-circle text-green-600 text-2xl";
+  } else {
+    icon.className = "w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4";
+    iconElement.className = "fas fa-times-circle text-red-600 text-2xl";
+  }
+  
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function closeNotificationModal() {
+  const modal = document.getElementById("notificationModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+function showValidationModal(message) {
+  const modal = document.getElementById("validationModal");
+  document.getElementById("validationMessage").textContent = message;
+  
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function closeValidationModal() {
+  const modal = document.getElementById("validationModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+/* ---------------- STOCK MANAGEMENT ---------------- */
+function openStockModal(productId, productName, variants) {
+  const modal = document.getElementById("stockModal");
+  document.getElementById("stockProductId").value = productId;
+  document.getElementById("stockProductName").textContent = productName;
+  
+  const variantList = document.getElementById("variantStockList");
+  variantList.innerHTML = "";
+  
+  if (variants && variants.length > 0) {
+    variants.forEach(variant => {
+      const div = document.createElement("div");
+      div.className = "flex items-center justify-between bg-gray-50 p-4 rounded-lg";
+      div.innerHTML = `
+        <div class="flex-1">
+          <p class="font-bold text-gray-800">${variant.color}</p>
+          <p class="text-xs text-gray-500">Current Stock: ${variant.quantity} items</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="number" 
+                 min="0" 
+                 value="${variant.quantity}"
+                 data-color="${variant.color}"
+                 class="variant-stock-input w-20 px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+          <button onclick="updateVariantStock('${productId}', '${variant.color}', this.previousElementSibling.value)"
+                  class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 text-sm font-medium">
+            Update
+          </button>
+        </div>
+      `;
+      variantList.appendChild(div);
+    });
+  } else {
+    variantList.innerHTML = `
+      <p class="text-center text-gray-500 py-4">No variants found for this product</p>
+    `;
+  }
+  
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function closeStockModal() {
+  const modal = document.getElementById("stockModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+async function updateVariantStock(productId, color, quantity) {
+  try {
+    const res = await fetch("/admin/products/update-stock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId,
+        action: "set",
+        color,
+        quantity: parseInt(quantity)
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showNotificationModal("Success!", "Stock updated successfully", true);
+      setTimeout(() => {
+        closeNotificationModal();
+        location.reload();
+      }, 1500);
+    } else {
+      showNotificationModal("Error", "Failed to update stock", false);
+    }
+  } catch (error) {
+    console.error("Error updating stock:", error);
+    showNotificationModal("Error", "Something went wrong", false);
+  }
+}
+
+async function bulkUpdateStock(action) {
+  const productId = document.getElementById("stockProductId").value;
+  const quantityInput = action === "add" 
+    ? document.getElementById("bulkAddQuantity")
+    : document.getElementById("bulkRemoveQuantity");
+  
+  const quantity = parseInt(quantityInput.value);
+  
+  if (!quantity || quantity <= 0) {
+    showValidationModal("Please enter a valid quantity");
+    return;
+  }
+  
+  try {
+    const res = await fetch("/admin/products/update-stock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId,
+        action,
+        quantity
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      const actionText = action === 'add' ? 'added' : 'removed';
+      showNotificationModal("Success!", `Stock ${actionText} successfully!`, true);
+      setTimeout(() => {
+        closeNotificationModal();
+        location.reload();
+      }, 1500);
+    } else {
+      showNotificationModal("Error", "Failed to update stock", false);
+    }
+  } catch (error) {
+    console.error("Error updating stock:", error);
+    showNotificationModal("Error", "Something went wrong", false);
+  }
+}
+
+/* ---------------- STATUS & DELETE MODALS ---------------- */
+function openStatusModal(productId, isBlocked) {
+  const modal = document.getElementById("confirmModal");
+  const form = document.getElementById("confirmForm");
+  const title = document.getElementById("confirmTitle");
+  const message = document.getElementById("confirmMessage");
+  const btn = document.getElementById("confirmActionBtn");
+  
+  if (isBlocked) {
+    title.textContent = "List Product";
+    message.textContent = "Are you sure you want to list this product?";
+    form.action = `/admin/products/unblock/${productId}`;
+    btn.textContent = "List Product";
+    btn.className = "flex-1 bg-green-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-green-700 transition";
+  } else {
+    title.textContent = "Unlist Product";
+    message.textContent = "Are you sure you want to unlist this product?";
+    form.action = `/admin/products/block/${productId}`;
+    btn.textContent = "Unlist Product";
+    btn.className = "flex-1 bg-orange-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-orange-700 transition";
+  }
+  
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function openDeleteModal(productId) {
+  const modal = document.getElementById("confirmModal");
+  const form = document.getElementById("confirmForm");
+  const title = document.getElementById("confirmTitle");
+  const message = document.getElementById("confirmMessage");
+  const btn = document.getElementById("confirmActionBtn");
+  
+  title.textContent = "Delete Product";
+  message.textContent = "Are you sure you want to delete this product? This action cannot be undone.";
+  form.action = `/admin/products/delete/${productId}`;
+  btn.textContent = "Delete";
+  btn.className = "flex-1 bg-red-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-red-700 transition";
+  
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function closeActionModals() {
+  const confirmModal = document.getElementById("confirmModal");
+  confirmModal.classList.add("hidden");
+  confirmModal.classList.remove("flex");
+}
+
+/* ---------------- OPEN PRODUCT MODAL ---------------- */
 async function openProductModal(productId = null) {
   const modal = document.getElementById("productModal");
   const form = document.getElementById("productForm");
   const preview = document.getElementById("imagePreview");
   const variantContainer = document.getElementById("variantContainer");
 
+  // Reset UI
   form.reset();
   preview.innerHTML = "";
   variantContainer.innerHTML = "";
@@ -478,52 +875,49 @@ async function openProductModal(productId = null) {
   pendingFiles = [];
 
   if (productId) {
-
+    /* ---------- EDIT MODE ---------- */
     form.action = "/admin/products/edit";
     document.getElementById("form-productId").value = productId;
 
     const res = await fetch(`/admin/products/${productId}`);
     const product = await res.json();
 
+    // Basic fields
+    document.getElementById("form-name").value = product.name || "";
+    document.getElementById("form-regularPrice").value = product.regularPrice || "";
+    document.getElementById("form-salePrice").value = product.salePrice || "";
+    document.getElementById("form-brand").value = product.brand || "";
+    document.getElementById("form-description").value = product.description || "";
 
-    document.getElementById("form-name").value = product.name;
-    document.getElementById("form-regularPrice").value = product.regularPrice;
-    document.getElementById("form-salePrice").value = product.salePrice;
-    document.getElementById("form-brand").value = product.brand;
-    document.getElementById("form-description").value = product.description;
-
-    const categorySelect = document.getElementById("form-category");
-
+    // Category
     if (product.category) {
-      categorySelect.value =
+      document.getElementById("form-category").value =
         typeof product.category === "object"
           ? product.category._id
           : product.category;
     }
 
+    // Existing images preview
+    if (Array.isArray(product.productImage)) {
+      product.productImage.forEach(img => {
+        const div = document.createElement("div");
+        div.className = "aspect-[3/4] border rounded-xl overflow-hidden";
+        div.innerHTML = `<img src="${img.url}" class="w-full h-full object-cover">`;
+        preview.appendChild(div);
+      });
+    }
 
-    product.productImage.forEach(img => {
-      const div = document.createElement("div");
-      div.className = "aspect-[3/4] border rounded-xl overflow-hidden";
-      div.innerHTML = `<img src="${img.url}" class="w-full h-full object-cover">`;
-      preview.appendChild(div);
-    });
-
-    
-    product.variants.forEach(v => {
-      const row = document.createElement("div");
-      row.className = "grid grid-cols-2 gap-3";
-      row.innerHTML = `
-        <input type="text" class="variant-color px-4 py-2 border rounded-lg" value="${v.color}">
-        <input type="number" class="variant-qty px-4 py-2 border rounded-lg" value="${v.quantity}">
-      `;
-      variantContainer.appendChild(row);
-    });
+    // Variants
+    if (Array.isArray(product.variants)) {
+      product.variants.forEach(v => {
+        addVariantRow(v.color, v.quantity);
+      });
+    }
 
   } else {
+    /* ---------- ADD MODE ---------- */
     form.action = "/admin/products/add";
     document.getElementById("form-productId").value = "";
-
     addVariantRow();
   }
 
@@ -531,231 +925,168 @@ async function openProductModal(productId = null) {
   modal.classList.add("flex");
 }
 
-  function closeProductModal() {
-    const modal = document.getElementById('productModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-  }
+/* ---------------- CLOSE PRODUCT MODAL ---------------- */
+function closeProductModal() {
+  const modal = document.getElementById("productModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
 
+/* ---------------- VARIANT ROW ---------------- */
+function addVariantRow(color = "", qty = "") {
+  const container = document.getElementById("variantContainer");
 
+  const row = document.createElement("div");
+  row.className = "grid grid-cols-2 gap-3";
 
+  row.innerHTML = `
+    <input type="text"
+      placeholder="Color (e.g. Black)"
+      value="${color}"
+      class="variant-color px-4 py-2 border rounded-lg outline-none">
+    <input type="number"
+      placeholder="Stock Qty"
+      min="0"
+      value="${qty}"
+      class="variant-qty px-4 py-2 border rounded-lg outline-none">
+  `;
 
-  const cropperOverlay = document.getElementById('cropperOverlay');
-  const cropperImage = document.getElementById('cropperImage');
+  container.appendChild(row);
+}
 
+/* ---------------- IMAGE CROPPING ---------------- */
+const cropperOverlay = document.getElementById("cropperOverlay");
+const cropperImage = document.getElementById("cropperImage");
 
+function startCroppingProcess() {
+  if (!pendingFiles.length) return;
 
-  function startCroppingProcess() {
-    if (pendingFiles.length === 0) return;
+  const file = pendingFiles.shift();
+  const reader = new FileReader();
 
-    const file = pendingFiles.shift();
-    const reader = new FileReader();
+  reader.onload = e => {
+    cropperImage.src = e.target.result;
+    cropperOverlay.classList.remove("hidden");
+    cropperOverlay.classList.add("flex");
 
-    reader.onload = (event) => {
-      cropperImage.src = event.target.result;
-      cropperOverlay.classList.remove('hidden');
-      cropperOverlay.classList.add('flex');
-
-      if (cropper) cropper.destroy();
-      cropper = new Cropper(cropperImage, {
-        aspectRatio: 3 / 4,
-        viewMode: 2,
-        autoCropArea: 1
-      });
-    };
-
-    reader.readAsDataURL(file);
-  }
-
-  function applyCrop() {
-    const canvas = cropper.getCroppedCanvas({
-      width: 800,
-      height: 1067
+    if (cropper) cropper.destroy();
+    cropper = new Cropper(cropperImage, {
+      aspectRatio: 3 / 4,
+      viewMode: 2,
+      autoCropArea: 1
     });
+  };
 
-    canvas.toBlob((blob) => {
-      processedImages.push(blob);
-      updatePreview();
+  reader.readAsDataURL(file);
+}
 
-      cropperOverlay.classList.add('hidden');
-      cropperOverlay.classList.remove('flex');
+function applyCrop() {
+  const canvas = cropper.getCroppedCanvas({ width: 800, height: 1067 });
 
-      if (pendingFiles.length > 0) {
-        startCroppingProcess();
-      }
-    }, 'image/jpeg', 0.85);
-  }
-
-  function cancelCrop() {
-    cropperOverlay.classList.add('hidden');
-    cropperOverlay.classList.remove('flex');
-
-    if (pendingFiles.length > 0) {
-      startCroppingProcess();
-    }
-  }
-
-  function updatePreview() {
-    const preview = document.getElementById('imagePreview');
-    preview.innerHTML = '';
-
-    processedImages.forEach((blob, idx) => {
-      const url = URL.createObjectURL(blob);
-      const div = document.createElement('div');
-      div.className = 'relative aspect-[3/4] border rounded overflow-hidden shadow-sm';
-      div.innerHTML = `
-        <img src="${url}" class="w-full h-full object-cover">
-        <button type="button"
-          onclick="removeProcessedImage(${idx})"
-          class="absolute top-1 right-1 bg-white/80 text-red-600 rounded-full w-6 h-6 flex items-center justify-center hover:bg-white">
-          &times;
-        </button>
-      `;
-      preview.appendChild(div);
-    });
-  }
-
-  function removeProcessedImage(idx) {
-    processedImages.splice(idx, 1);
+  canvas.toBlob(blob => {
+    processedImages.push(blob);
     updatePreview();
-  }
 
+    cropperOverlay.classList.add("hidden");
+    cropperOverlay.classList.remove("flex");
 
-  document.getElementById("productForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
-
-    formData.delete("productImages");
-
-
-const isEdit = document.getElementById("form-productId").value;
-
-if (!isEdit && processedImages.length < 3) {
-  alert("Minimum 3 images required");
-  return;
+    if (pendingFiles.length) startCroppingProcess();
+  }, "image/jpeg", 0.85);
 }
 
+function cancelCrop() {
+  cropperOverlay.classList.add("hidden");
+  cropperOverlay.classList.remove("flex");
 
-
-    processedImages.forEach((blob, index) => {
-      const file = new File(
-        [blob],
-        `product_${Date.now()}_${index}.jpg`,
-        { type: "image/jpeg" }
-      );
-      formData.append("productImages", file);
-    });
-
-
-    const colors = document.querySelectorAll(".variant-color");
-    const qtys = document.querySelectorAll(".variant-qty");
-    const variants = [];
-
-    colors.forEach((input, i) => {
-      const color = input.value.trim();
-      const quantity = parseInt(qtys[i].value);
-
-      if (color && !isNaN(quantity)) {
-        variants.push({ color, quantity });
-      }
-    });
-
-   if (variants.length === 0) {
-  alert("Please add at least one color with stock quantity.");
-  return;
+  if (pendingFiles.length) startCroppingProcess();
 }
 
-formData.append("variants", JSON.stringify(variants));
+function updatePreview() {
+  const preview = document.getElementById("imagePreview");
+  preview.innerHTML = "";
 
-
-    fetch(this.action, {
-      method: "POST",
-      body: formData
-    })
-      .then(res => {
-        if (res.ok) {
-          window.location.reload();
-        } else {
-          alert("Failed to save product");
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Something went wrong");
-      });
-  });
-
-
-
-  function openStatusModal(id, isBlocked) {
-    const modal = document.getElementById('confirmModal');
-    const title = document.getElementById('confirmTitle');
-    const msg = document.getElementById('confirmMessage');
-    const btn = document.getElementById('confirmActionBtn');
-    const form = document.getElementById('confirmForm');
-
-    title.innerText = isBlocked ? 'Protocol Restoration' : 'Catalogue Suspension';
-    msg.innerText = isBlocked
-      ? 'Restore this piece to the active shop catalogue?'
-      : 'Temporarily remove this piece from the public view?';
-
-    btn.innerText = isBlocked ? 'Restore Access' : 'Suspend Access';
-    form.action = `/admin/products/${isBlocked ? 'unblock' : 'block'}/${id}`;
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-  }
-
-  function openDeleteModal(id) {
-    const modal = document.getElementById('confirmModal');
-    const title = document.getElementById('confirmTitle');
-    const msg = document.getElementById('confirmMessage');
-    const btn = document.getElementById('confirmActionBtn');
-    const form = document.getElementById('confirmForm');
-
-    title.innerText = 'Permanent Archival';
-    msg.innerText = 'This will move the piece to archived storage. This action is irreversible.';
-    btn.innerText = 'Confirm Archival';
-    btn.classList.add('bg-red-600');
-    btn.classList.remove('bg-teal-700');
-
-    form.action = `/admin/products/delete/${id}`;
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-  }
-
-  function closeActionModals() {
-    document.getElementById('confirmModal').classList.add('hidden');
-    document.getElementById('confirmModal').classList.remove('flex');
-  }
-
-  function addVariantRow() {
-    const container = document.getElementById("variantContainer");
-
+  processedImages.forEach((blob, i) => {
+    const url = URL.createObjectURL(blob);
     const div = document.createElement("div");
-    div.className = "grid grid-cols-2 gap-3";
+    div.className = "relative aspect-[3/4] border rounded overflow-hidden";
 
     div.innerHTML = `
-      <input type="text" placeholder="Color (e.g. Black)" class="variant-color input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" />
-      <input type="number" placeholder="Stock Qty" min="0" class="variant-qty input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" />
+      <img src="${url}" class="w-full h-full object-cover">
+      <button type="button"
+        onclick="removeProcessedImage(${i})"
+        class="absolute top-1 right-1 bg-white text-red-600 w-6 h-6 rounded-full">
+        &times;
+      </button>
     `;
+    preview.appendChild(div);
+  });
+}
 
-    container.appendChild(div);
-  }
+function removeProcessedImage(index) {
+  processedImages.splice(index, 1);
+  updatePreview();
+}
 
-  const imageInput = document.getElementById("imageInput");
-
-imageInput.addEventListener("change", function (e) {
+/* ---------------- IMAGE INPUT ---------------- */
+document.getElementById("imageInput").addEventListener("change", e => {
   pendingFiles = Array.from(e.target.files);
-
-  if (pendingFiles.length > 0) {
-    startCroppingProcess();
-  }
+  if (pendingFiles.length) startCroppingProcess();
 });
 
+/* ---------------- FORM SUBMIT ---------------- */
+document.getElementById("productForm").addEventListener("submit", e => {
+  e.preventDefault();
+
+  const formData = new FormData(e.target);
+  const isEdit = document.getElementById("form-productId").value;
+
+  if (!isEdit && processedImages.length < 3) {
+    showValidationModal("Minimum 3 images required");
+    return;
+  }
+
+  // Attach images
+  processedImages.forEach((blob, i) => {
+    formData.append(
+      "productImages",
+      new File([blob], `product_${Date.now()}_${i}.jpg`, { type: "image/jpeg" })
+    );
+  });
+
+  // Variants
+  const colors = document.querySelectorAll(".variant-color");
+  const qtys = document.querySelectorAll(".variant-qty");
+  const variants = [];
+
+  colors.forEach((input, i) => {
+    const color = input.value.trim();
+    const quantity = Number(qtys[i].value);
+    if (color && quantity >= 0) variants.push({ color, quantity });
+  });
+
+  if (!variants.length) {
+    showValidationModal("Add at least one color with stock");
+    return;
+  }
+
+  formData.append("variants", JSON.stringify(variants));
+
+  fetch(e.target.action, { method: "POST", body: formData })
+    .then(res => {
+      if (res.ok) {
+        showNotificationModal("Success!", "Product saved successfully", true);
+        setTimeout(() => {
+          closeNotificationModal();
+          location.reload();
+        }, 1500);
+      } else {
+        showNotificationModal("Error", "Failed to save product", false);
+      }
+    })
+    .catch(() => showNotificationModal("Error", "Something went wrong", false));
+});
 </script>
+
 
 
 <%- include("../partials/admin/footer") %>

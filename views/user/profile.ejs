@@ -29,7 +29,10 @@
                 <nav class="p-2">
                     <button onclick="ProfileApp.showTab('profile')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="profile">Profile Details</button>
                     <button onclick="ProfileApp.showTab('addresses')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="addresses">Addresses</button>
-                    <button onclick="ProfileApp.showTab('orders')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="orders">My Orders</button>
+                    <a href="/orders"
+                    class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50">
+                    My Orders
+                    </a>
                     <button onclick="ProfileApp.showTab('security')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="security">Security</button>
                 </nav>
             </div>
@@ -197,9 +200,7 @@
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- NORMAL MODALS (Forms & Input) -->
-<!-- ============================================ -->
+
 
 <!-- EDIT PROFILE MODAL -->
 <div id="edit-profile-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
@@ -760,30 +761,26 @@
 </style>
 
 <script>
-// ============================================
-// PROFILE APPLICATION - CLEAN ARCHITECTURE
-// ============================================
 
 const ProfileApp = (function() {
     'use strict';
 
     let originalEmailAtEdit = null;
 
-    // State management - minimal global state
+    // State management
     let state = {
         currentUser: {
             name: "<%= user.name %>",
             email: "<%= user.email %>",
             phone: "<%= user.phone || '' %>",
-            profileImage: "<%= user.profileImage || '' %>"
+            profileImage: "<%= user.profileImage || '' %>",
+            googleId: "<%= user.googleId || '' %>"
         },
-        pendingEmailChange: null, // Stores FormData + newEmail during OTP flow
-        currentOrderToCancel: null
+        pendingEmailChange: null, // {formData, newEmail}
+        currentOrderToCancel: null,
+        addressToDelete: null
     };
 
-    // ============================================
-    // MODAL MANAGEMENT
-    // ============================================
 
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
@@ -800,7 +797,7 @@ const ProfileApp = (function() {
             document.body.style.overflow = '';
         }
         if(modalId === "email-verification-modal"){
-            clearInterval(otpInterval)
+            clearInterval(otpInterval);
         }
     }
 
@@ -828,34 +825,26 @@ const ProfileApp = (function() {
         openEmera('error');
     }
 
-    // ============================================
-    // TAB NAVIGATION
-    // ============================================
-
+ 
     function showTab(tabName) {
-        // Hide all tabs
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.style.display = 'none';
         });
 
-        // Remove active class from all buttons
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('tab-active');
         });
 
-        // Show selected tab
         const selectedTab = document.getElementById(tabName + '-tab');
         if (selectedTab) {
             selectedTab.style.display = 'block';
         }
 
-        // Add active class to selected button
         const selectedBtn = document.querySelector(`[data-tab="${tabName}"]`);
         if (selectedBtn) {
             selectedBtn.classList.add('tab-active');
         }
 
-        // Load data when switching tabs
         if (tabName === 'addresses') {
             loadAddresses();
         } else if (tabName === 'orders') {
@@ -863,27 +852,23 @@ const ProfileApp = (function() {
         }
     }
 
-    // ============================================
-    // PROFILE MANAGEMENT
-    // ============================================
 
-function openEditProfileModal() {
-    const nameParts = state.currentUser.name.split(' ');
-    
-    document.getElementById('edit-firstname').value = nameParts[0];
-    document.getElementById('edit-lastname').value = nameParts.slice(1).join(' ') || '';
-    document.getElementById('edit-email').value = state.currentUser.email;
-    document.getElementById('edit-phone').value = state.currentUser.phone;
+    function openEditProfileModal() {
+        const nameParts = state.currentUser.name.split(' ');
+        
+        document.getElementById('edit-firstname').value = nameParts[0];
+        document.getElementById('edit-lastname').value = nameParts.slice(1).join(' ') || '';
+        document.getElementById('edit-email').value = state.currentUser.email;
+        document.getElementById('edit-phone').value = state.currentUser.phone;
 
-    if (state.currentUser.profileImage) {
-        document.getElementById('edit-profile-img-preview').src = state.currentUser.profileImage;
+        if (state.currentUser.profileImage) {
+            document.getElementById('edit-profile-img-preview').src = state.currentUser.profileImage;
+        }
+
+        originalEmailAtEdit = state.currentUser.email;
+
+        openModal('edit-profile-modal');
     }
-
-    originalEmailAtEdit = state.currentUser.email;
-
-    openModal('edit-profile-modal');
-}
-
 
     function previewProfileImage(file) {
         if (file && file.type.startsWith('image/')) {
@@ -898,29 +883,6 @@ function openEditProfileModal() {
     async function handleEditProfileSubmit(e) {
         e.preventDefault();
 
-        const formData = new FormData();
-
-        const emailInput = document.getElementById('edit-email');
-
-        if (emailInput.disabled) {
-
-            const response = await fetch('/profile/edit', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                closeModal('edit-profile-modal');
-                openEmera('profileUpdated');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                const error = await response.json();
-                showError(error.message || 'Failed to update profile');
-            }
-            return;
-        }
-
-
         const firstName = document.getElementById('edit-firstname').value.trim();
         const lastName = document.getElementById('edit-lastname').value.trim();
         const email = document.getElementById('edit-email').value.trim();
@@ -928,25 +890,12 @@ function openEditProfileModal() {
         const profileImageFile = document.getElementById('profile-image-input').files[0];
 
         const emailChanged = email !== originalEmailAtEdit;
-
-
-
-        console.log("Email changed?", emailChanged);
-
-
-
-        formData.append('firstName', firstName);
-        formData.append('lastName', lastName);
-        formData.append('phone', phone);
-
-        if (profileImageFile) {
-            formData.append('profileImage', profileImageFile);
-        }
+        const emailInput = document.getElementById('edit-email');
+        const isGoogleAccount = emailInput.disabled;
 
         try {
-            if (emailChanged) {
-                // CRITICAL: Email changed - initiate OTP flow
-                // Step 1: Request OTP from backend
+            if (emailChanged && !isGoogleAccount) {
+                // BACKEND MATCH: requestEmailOtp endpoint
                 const otpResponse = await fetch('/profile/request-email-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -954,27 +903,23 @@ function openEditProfileModal() {
                 });
 
                 if (otpResponse.ok) {
-                    // Store pending changes for after OTP verification
+                    const formData = new FormData();
+                    formData.append('name', `${firstName} ${lastName}`.trim());
+                    formData.append('phone', phone);
+                    if (profileImageFile) {
+                        formData.append('profileImage', profileImageFile);
+                    }
+
                     state.pendingEmailChange = {
                         formData: formData,
                         newEmail: email
                     };
 
-                    if (emailChanged && state.currentUser.googleId) {
-                    showError("Email cannot be changed for Google accounts");
-                    return;
-                    }
-
-
-                    // Show new email in OTP modal
                     document.getElementById('new-email-display').textContent = email;
-                    
-                    // Close edit modal and open OTP modal
                     closeModal('edit-profile-modal');
                     openModal('email-verification-modal');
                     startOtpTimer();
                     
-                    // Auto-focus OTP input
                     setTimeout(() => {
                         document.getElementById('otp-code').focus();
                     }, 300);
@@ -984,7 +929,14 @@ function openEditProfileModal() {
                     showError(error.message || 'Failed to send verification code');
                 }
             } else {
-                // No email change - direct profile update (FIXED: consistent endpoint)
+                // BACKEND MATCH: editProfile expects 'name' field (not firstName/lastName)
+                const formData = new FormData();
+                formData.append('name', `${firstName} ${lastName}`.trim());
+                formData.append('phone', phone);
+                if (profileImageFile) {
+                    formData.append('profileImage', profileImageFile);
+                }
+
                 const response = await fetch('/profile/edit', {
                     method: 'POST',
                     body: formData
@@ -1007,10 +959,6 @@ function openEditProfileModal() {
         }
     }
 
-    // ============================================
-    // EMAIL OTP VERIFICATION
-    // Critical: This is the ONLY OTP flow
-    // ============================================
 
     async function handleOTPVerification(e) {
         e.preventDefault();
@@ -1028,27 +976,31 @@ function openEditProfileModal() {
         }
 
         try {
-            // Step 1: Verify OTP with backend
+            // Step 1: Verify OTP (BACKEND: verifyEmailOtp)
             const verifyResponse = await fetch('/profile/verify-email-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    otp: otp,
-                    newEmail: state.pendingEmailChange.newEmail
-                })
+                body: JSON.stringify({ otp: otp })
             });
 
             if (verifyResponse.ok) {
-                // Step 2: OTP verified - now update profile with new email
+                // Step 2: Update profile first (name, phone, image)
+                if (state.pendingEmailChange.formData) {
+                    await fetch('/profile/edit', {
+                        method: 'POST',
+                        body: state.pendingEmailChange.formData
+                    });
+                }
+
+                // Step 3: Update email (BACKEND: updateProfileAfterOtp)
                 const updateResponse = await fetch('/profile/update-after-otp', {
                     method: 'POST',
-                    body: state.pendingEmailChange.formData
+                    headers: { 'Content-Type': 'application/json' }
                 });
 
                 if (updateResponse.ok) {
-                    // Success - clear state and show success modal
                     state.pendingEmailChange = null;
-                    document.getElementById('otp-code').value = ''; // Clear input
+                    document.getElementById('otp-code').value = '';
                     closeModal('email-verification-modal');
                     openEmera('emailVerified');
                     
@@ -1057,11 +1009,10 @@ function openEditProfileModal() {
                     }, 1500);
                 } else {
                     const error = await updateResponse.json();
-                    showError(error.message || 'Failed to update profile after verification');
+                    showError(error.message || 'Failed to update email');
                 }
             } else {
                 const error = await verifyResponse.json();
-                // Clear OTP input on failure
                 document.getElementById('otp-code').value = '';
                 document.getElementById('otp-code').focus();
                 showError(error.message || 'Invalid verification code');
@@ -1074,49 +1025,47 @@ function openEditProfileModal() {
     }
 
     let otpInterval = null;
-let otpTimeLeft = 300; // 5 minutes (in seconds)
+    let otpTimeLeft = 300; // 5 minutes
 
-function startOtpTimer() {
-    clearInterval(otpInterval);
-    otpTimeLeft = 300;
+    function startOtpTimer() {
+        clearInterval(otpInterval);
+        otpTimeLeft = 300;
 
-    const timerEl = document.getElementById("otp-timer");
-    const resendBtn = document.getElementById("resend-otp-btn");
+        const timerEl = document.getElementById("otp-timer");
+        const resendBtn = document.getElementById("resend-otp-btn");
 
-    resendBtn.disabled = true;
-    resendBtn.classList.add("cursor-not-allowed", "text-stone-400");
-    resendBtn.classList.remove("text-stone-600");
-
-    updateOtpTimerUI();
-
-    otpInterval = setInterval(() => {
-        otpTimeLeft--;
+        resendBtn.disabled = true;
+        resendBtn.classList.add("cursor-not-allowed", "text-stone-400");
+        resendBtn.classList.remove("text-stone-600");
 
         updateOtpTimerUI();
 
-        if (otpTimeLeft <= 0) {
-            clearInterval(otpInterval);
-            timerEl.innerHTML = "Didn’t receive the code?";
-            resendBtn.disabled = false;
-            resendBtn.classList.remove("cursor-not-allowed", "text-stone-400");
-            resendBtn.classList.add("text-stone-600");
-        }
-    }, 1000);
-}
+        otpInterval = setInterval(() => {
+            otpTimeLeft--;
+            updateOtpTimerUI();
 
-function updateOtpTimerUI() {
-    const timerEl = document.getElementById("otp-timer");
-    const minutes = Math.floor(otpTimeLeft / 60);
-    const seconds = otpTimeLeft % 60;
+            if (otpTimeLeft <= 0) {
+                clearInterval(otpInterval);
+                timerEl.innerHTML = "Didn't receive the code?";
+                resendBtn.disabled = false;
+                resendBtn.classList.remove("cursor-not-allowed", "text-stone-400");
+                resendBtn.classList.add("text-stone-600");
+            }
+        }, 1000);
+    }
 
-    timerEl.innerHTML = `
-        Resend code in
-        <span class="font-semibold">
-            ${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}
-        </span>
-    `;
-}
+    function updateOtpTimerUI() {
+        const timerEl = document.getElementById("otp-timer");
+        const minutes = Math.floor(otpTimeLeft / 60);
+        const seconds = otpTimeLeft % 60;
 
+        timerEl.innerHTML = `
+            Resend code in
+            <span class="font-semibold">
+                ${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}
+            </span>
+        `;
+    }
 
     async function resendOTP() {
         if (!state.pendingEmailChange) {
@@ -1132,9 +1081,8 @@ function updateOtpTimerUI() {
             });
 
             if (response.ok) {
-
                 startOtpTimer();
-                // Show feedback with dynamic text
+                
                 const titleEl = document.querySelector('#profileUpdated .modal-title');
                 const subtitleEl = document.querySelector('#profileUpdated .modal-subtitle');
                 const originalTitle = titleEl.textContent;
@@ -1145,7 +1093,6 @@ function updateOtpTimerUI() {
                 
                 openEmera('profileUpdated');
                 
-                // Restore original text after closing
                 setTimeout(() => {
                     closeEmera('profileUpdated');
                     titleEl.textContent = originalTitle;
@@ -1161,9 +1108,6 @@ function updateOtpTimerUI() {
         }
     }
 
-    // ============================================
-    // ADDRESS MANAGEMENT
-    // ============================================
 
     function openAddAddressModal() {
         document.getElementById('add-address-form').reset();
@@ -1188,50 +1132,49 @@ function updateOtpTimerUI() {
                     </div>
                 `;
             } else {
-               container.innerHTML = addresses.map(addr => `
-                <div class="border border-stone-200 p-8 relative">
-                    ${addr.isDefault ? `
-                        <span class="absolute top-4 right-4 px-3 py-1 bg-stone-950 text-white text-[8px] tracking-wider uppercase">
-                            Default
-                        </span>
-                    ` : ''}
-
-                    <h4 class="font-serif text-lg mb-4">${addr.fullName}</h4>
-
-                    <p class="text-sm text-stone-600">${addr.street}</p>
-                    <p class="text-sm text-stone-600">
-                        ${addr.city}, ${addr.state} ${addr.zipCode}
-                    </p>
-                    <p class="text-sm text-stone-600 mb-2">${addr.country}</p>
-                    <p class="text-sm text-stone-600 mb-6">Phone: ${addr.phone}</p>
-
-                    <div class="flex gap-4">
-                        <button
-                            onclick='ProfileApp.openEditAddress(${JSON.stringify(addr)})'
-                            class="text-[10px] uppercase tracking-wider text-stone-700 hover:underline font-bold"
-                        >
-                            Edit
-                        </button>
-
-                        <button
-                            onclick="ProfileApp.deleteAddress('${addr._id}')"
-                            class="text-[10px] uppercase tracking-wider text-red-600 hover:underline font-bold"
-                        >
-                            Delete
-                        </button>
-
-                        ${!addr.isDefault ? `
-                            <button
-                                onclick="ProfileApp.setDefaultAddress('${addr._id}')"
-                                class="text-[10px] uppercase tracking-wider text-stone-600 hover:underline font-bold"
-                            >
-                                Set as Default
-                            </button>
+                container.innerHTML = addresses.map(addr => `
+                    <div class="border border-stone-200 p-8 relative">
+                        ${addr.isDefault ? `
+                            <span class="absolute top-4 right-4 px-3 py-1 bg-stone-950 text-white text-[8px] tracking-wider uppercase">
+                                Default
+                            </span>
                         ` : ''}
-                    </div>
-                </div>
-            `).join('');
 
+                        <h4 class="font-serif text-lg mb-4">${addr.fullName}</h4>
+
+                        <p class="text-sm text-stone-600">${addr.street}</p>
+                        <p class="text-sm text-stone-600">
+                            ${addr.city}, ${addr.state} ${addr.zipCode}
+                        </p>
+                        <p class="text-sm text-stone-600 mb-2">${addr.country}</p>
+                        <p class="text-sm text-stone-600 mb-6">Phone: ${addr.phone}</p>
+
+                        <div class="flex gap-4">
+                            <button
+                                onclick='ProfileApp.openEditAddress(${JSON.stringify(addr).replace(/'/g, "&#39;")})'
+                                class="text-[10px] uppercase tracking-wider text-stone-700 hover:underline font-bold"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                onclick="ProfileApp.deleteAddress('${addr._id}')"
+                                class="text-[10px] uppercase tracking-wider text-red-600 hover:underline font-bold"
+                            >
+                                Delete
+                            </button>
+
+                            ${!addr.isDefault ? `
+                                <button
+                                    onclick="ProfileApp.setDefaultAddress('${addr._id}')"
+                                    class="text-[10px] uppercase tracking-wider text-stone-600 hover:underline font-bold"
+                                >
+                                    Set as Default
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
             }
         } catch (error) {
             console.error('Error loading addresses:', error);
@@ -1278,40 +1221,6 @@ function updateOtpTimerUI() {
         }
     }
 
-    async function handleEditAddressSubmit(e) {
-    e.preventDefault();
-
-    const id = document.getElementById('edit-address-id').value;
-
-    const data = {
-        fullName: document.getElementById('edit-fullName').value,
-        phone: document.getElementById('edit-phone').value,
-        street: document.getElementById('edit-street').value,
-        city: document.getElementById('edit-city').value,
-        state: document.getElementById('edit-state').value,
-        zipCode: document.getElementById('edit-zipCode').value,
-        country: document.getElementById('edit-country').value
-    };
-
-    const res = await fetch(`/profile/addresses/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-
-    if (res.ok) {
-        closeModal('edit-address-modal');
-        openEmera('profileUpdated');
-        loadAddresses();
-    } else {
-        showError('Failed to update address');
-    }
-}
-
-
-    let addressToDelete = null;
-
-    // OPEN EDIT
     function openEditAddress(address) {
         document.getElementById('edit-address-id').value = address._id;
         document.getElementById('edit-fullName').value = address.fullName;
@@ -1325,8 +1234,7 @@ function updateOtpTimerUI() {
         openModal('edit-address-modal');
     }
 
-    // SUBMIT EDIT
-    document.getElementById('edit-address-form').addEventListener('submit', async e => {
+    async function handleEditAddressSubmit(e) {
         e.preventDefault();
 
         const id = document.getElementById('edit-address-id').value;
@@ -1341,40 +1249,55 @@ function updateOtpTimerUI() {
             country: document.getElementById('edit-country').value
         };
 
+        try {
+            const res = await fetch(`/profile/addresses/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
 
-        const res = await fetch(`/profile/addresses/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        if (res.ok) {
-            closeModal('edit-address-modal');
-            openEmera('profileUpdated');
-            loadAddresses();
-        } else {
-            showError('Failed to update address');
+            if (res.ok) {
+                closeModal('edit-address-modal');
+                openEmera('profileUpdated');
+                setTimeout(() => {
+                    closeEmera('profileUpdated');
+                    loadAddresses();
+                }, 1500);
+            } else {
+                showError('Failed to update address');
+            }
+        } catch (error) {
+            console.error('Error updating address:', error);
+            showError('Network error. Please try again.');
         }
-    });
+    }
 
-    // DELETE FLOW
     function deleteAddress(id) {
-        addressToDelete = id;
+        state.addressToDelete = id;
         openModal('delete-address-modal');
     }
 
     async function confirmDeleteAddress() {
-        const res = await fetch(`/profile/addresses/${addressToDelete}`, { method: 'DELETE' });
+        try {
+            const res = await fetch(`/profile/addresses/${state.addressToDelete}`, {
+                method: 'DELETE'
+            });
 
-        if (res.ok) {
-            closeModal('delete-address-modal');
-            openEmera('profileUpdated');
-            loadAddresses();
-        } else {
-            showError('Failed to delete address');
+            if (res.ok) {
+                closeModal('delete-address-modal');
+                openEmera('profileUpdated');
+                setTimeout(() => {
+                    closeEmera('profileUpdated');
+                    loadAddresses();
+                }, 1500);
+            } else {
+                showError('Failed to delete address');
+            }
+        } catch (error) {
+            console.error('Error deleting address:', error);
+            showError('Network error. Please try again.');
         }
     }
-
 
     async function setDefaultAddress(addressId) {
         try {
@@ -1396,10 +1319,6 @@ function updateOtpTimerUI() {
             showError('Network error. Please try again.');
         }
     }
-
-    // ============================================
-    // ORDER MANAGEMENT
-    // ============================================
 
     async function loadOrders() {
         const container = document.getElementById('orders-container');
@@ -1530,7 +1449,6 @@ function updateOtpTimerUI() {
         const newPassword = document.getElementById('new-password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
 
-        // Client-side validation
         if (newPassword !== confirmPassword) {
             showError('New passwords do not match');
             return;
@@ -1560,13 +1478,30 @@ function updateOtpTimerUI() {
                 })
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
                 showError(data.message || 'Failed to change password');
                 return;
             }
 
-            openEmera("profileUpdated");
+            // Success
+            const titleEl = document.querySelector('#profileUpdated .modal-title');
+            const subtitleEl = document.querySelector('#profileUpdated .modal-subtitle');
+            const originalTitle = titleEl.textContent;
+            const originalSubtitle = subtitleEl.textContent;
+            
+            titleEl.textContent = 'Password Changed';
+            subtitleEl.textContent = 'Your password has been updated successfully.';
+            
+            openEmera('profileUpdated');
             e.target.reset();
+            
+            setTimeout(() => {
+                closeEmera('profileUpdated');
+                titleEl.textContent = originalTitle;
+                subtitleEl.textContent = originalSubtitle;
+            }, 1500);
 
         } catch (error) {
             console.error('Error changing password:', error);
@@ -1575,38 +1510,25 @@ function updateOtpTimerUI() {
     }
 
     function handleForgotPassword() {
-        // Redirect user to existing forgot-password flow
         window.location.href = "/forgot-password";
     }
 
-    // ============================================
-    // INITIALIZATION
-    // ============================================
 
     function init() {
-        // Show default tab
         showTab('profile');
 
         // Profile image preview
-        document.getElementById('profile-image-input').addEventListener('change', function(e) {
+        document.getElementById('profile-image-input')?.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) previewProfileImage(file);
         });
 
-        // Edit profile form
-        document.getElementById('edit-profile-form').addEventListener('submit', handleEditProfileSubmit);
-
-        // OTP verification form
-        document.getElementById('verify-email-form').addEventListener('submit', handleOTPVerification);
-
-        // Add address form
-        document.getElementById('add-address-form').addEventListener('submit', handleAddAddressSubmit);
-
-        // Change password form
-        document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
-
-        document.getElementById('edit-address-form')
-        ?.addEventListener('submit', handleEditAddressSubmit);
+        // Form handlers
+        document.getElementById('edit-profile-form')?.addEventListener('submit', handleEditProfileSubmit);
+        document.getElementById('verify-email-form')?.addEventListener('submit', handleOTPVerification);
+        document.getElementById('add-address-form')?.addEventListener('submit', handleAddAddressSubmit);
+        document.getElementById('edit-address-form')?.addEventListener('submit', handleEditAddressSubmit);
+        document.getElementById('change-password-form')?.addEventListener('submit', handleChangePassword);
 
         // Close modals on background click
         document.querySelectorAll('.modal').forEach(modal => {
@@ -1634,10 +1556,6 @@ function updateOtpTimerUI() {
         });
     }
 
-    // ============================================
-    // PUBLIC API
-    // ============================================
-
     return {
         init,
         showTab,
@@ -1658,9 +1576,7 @@ function updateOtpTimerUI() {
     };
 })();
 
-
 document.addEventListener('DOMContentLoaded', ProfileApp.init);
-
 </script>
 
 <%- include('../partials/user/footer') %>

@@ -36,8 +36,6 @@ const loadSignup = async(req, res) => {
 
 const loadHomepage = async (req, res) => {
 
-    console.log("SESSION USER AFTER LOGIN:", req.session.user);
-
   try {
     let userData = null;
 
@@ -258,7 +256,7 @@ const resendOtp = async (req, res) => {
 
 const loadLogin = async (req, res) => {
     try {
-        if (req.session.user) {
+        if (req.session.user && !req.session.redirectTo) {
             return res.redirect("/");
         }
         res.render("user/login");
@@ -271,6 +269,9 @@ const loadLogin = async (req, res) => {
 
 const login = async (req, res) => {
   try {
+
+    console.log("REDIRECT TO:", req.session.redirectTo);
+
     const { email, password } = req.body;
 
     const findUser = await User.findOne({ isAdmin: false, email: email });
@@ -301,8 +302,16 @@ const login = async (req, res) => {
     req.session.user = findUser._id;
 
     req.session.save( () => {
-        return res.redirect("/");
-    })
+        console.log("LOGIN SUCCESS");
+        console.log("SESSION USER:", req.session.user);
+        console.log("REDIRECT TO (login):", req.session.redirectTo);
+        const redirectTo = req.session.redirectTo || "/";
+        delete req.session.redirectTo;
+        return res.json({
+            success: true,
+            redirectTo
+        });
+    });
 
   } catch (error) {
     console.error("Login error", error);
@@ -638,15 +647,13 @@ const editProfile = async (req, res) => {
 
         const userId = req.session.user;
 
+        console.log("REQ BODY:", req.body);
 
-        console.log("UserID:", userId);
-        console.log("Body:", req.body);
-        console.log("File:", req.file);
 
-        const {firstName, lastName, phone} = req.body;
+        const {name, phone} = req.body;
 
         const updateData = {
-            name: `${firstName} ${lastName}`.trim(),
+            name,
             phone
         }
 

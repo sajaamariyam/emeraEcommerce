@@ -127,7 +127,7 @@
 
         if (data.success) {
             // ✅ Only redirect if login is correct
-            window.location.href = "/";
+            window.location.href = data.redirectTo || "/";
         } else {
             // ❌ Show error message if login fails
             showAlert(data.message || "Invalid email or password");

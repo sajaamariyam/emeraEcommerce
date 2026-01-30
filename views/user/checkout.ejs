@@ -218,29 +218,33 @@
                     
                     <!-- Order Items -->
                     <div class="space-y-6 mb-8 pb-8 border-b border-stone-200">
-                        <div class="flex gap-4">
-                            <div class="w-20 h-20 bg-stone-200 flex-shrink-0"></div>
-                            <div class="flex-1">
-                                <h4 class="text-sm font-semibold text-gray-900 mb-1">Classic Leather Bag</h4>
-                                <p class="text-[9px] uppercase tracking-widest text-gray-400">Qty: 1</p>
-                                <p class="text-sm font-bold text-gray-900 mt-2">₹12,500</p>
+                        <% if (cartItems && cartItems.length > 0) { %>
+                            <% cartItems.forEach(item => { %>
+                                <div class="flex gap-4">
+                                    <div class="w-20 h-20 bg-stone-200 flex-shrink-0 overflow-hidden">
+                                        <img src="<%= item.product.productImage?.[0]?.url || '/images/placeholder.png' %>" 
+                                             alt="<%= item.product.name %>" 
+                                             class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-semibold text-gray-900 mb-1"><%= item.product.name %></h4>
+                                        <p class="text-[9px] uppercase tracking-widest text-gray-400">Qty: <%= item.quantity %></p>
+                                        <p class="text-sm font-bold text-gray-900 mt-2">₹<%= item.price.toLocaleString('en-IN') %></p>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="text-center py-8">
+                                <p class="text-sm text-gray-500">No items in cart</p>
                             </div>
-                        </div>
-                        <div class="flex gap-4">
-                            <div class="w-20 h-20 bg-stone-200 flex-shrink-0"></div>
-                            <div class="flex-1">
-                                <h4 class="text-sm font-semibold text-gray-900 mb-1">Artisan Wallet</h4>
-                                <p class="text-[9px] uppercase tracking-widest text-gray-400">Qty: 2</p>
-                                <p class="text-sm font-bold text-gray-900 mt-2">₹8,000</p>
-                            </div>
-                        </div>
+                        <% } %>
                     </div>
                     
                     <!-- Price Breakdown -->
                     <div class="space-y-6 mb-8 pb-8 border-b border-stone-200">
                         <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
                             <span class="text-gray-400 font-bold">Subtotal</span>
-                            <span class="font-bold text-gray-900">₹20,500</span>
+                            <span class="font-bold text-gray-900">₹<%= subtotal.toLocaleString('en-IN') %></span>
                         </div>
                         <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
                             <span class="text-gray-400 font-bold">Shipping</span>
@@ -248,16 +252,16 @@
                         </div>
                         <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
                             <span class="text-gray-400 font-bold">Tax (GST 18%)</span>
-                            <span class="font-bold text-gray-900">₹3,690</span>
+                            <span class="font-bold text-gray-900">₹<%= tax.toLocaleString('en-IN') %></span>
                         </div>
                     </div>
                     
                     <div class="flex justify-between mb-8 pb-8 border-b border-stone-200">
                         <span class="text-xl font-serif text-gray-900">Total</span>
-                        <span class="text-2xl font-serif text-gray-900">₹24,190</span>
+                        <span class="text-2xl font-serif text-gray-900">₹<%= total.toLocaleString('en-IN') %></span>
                     </div>
                     
-                    <button id="placeOrderBtn" class="block text-center btn-hover w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold mb-6">
+                    <button id="placeOrderBtn" class="block text-center w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold mb-6 hover:bg-emera-700 transition-all duration-300">
                         Place Order
                     </button>
                     
@@ -348,10 +352,51 @@
                     return;
                 }
             }
-            
-            // Simulate order placement
-            alert('Order placed successfully! Thank you for shopping with EMERA.');
-            // window.location.href = '/order-confirmation';
+            placeOrderBtn.disabled = true;
+            placeOrderBtn.textContent = "Placing Order..."; 
+
+            // Submit order to backend
+            fetch('/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email,
+                    phone,
+                    firstName,
+                    lastName,
+                    address1,
+                    address2: document.getElementById('address2').value,
+                    city,
+                    state,
+                    pincode: pincodeVal,
+                    paymentMethod: selectedPayment,
+                    cardDetails: selectedPayment === 'card'
+                        ? {
+                            cardNumber: document.getElementById('cardNumber').value,
+                            cardName: document.getElementById('cardName').value,
+                            expiry: document.getElementById('cardExpiry').value,
+                            cvv: document.getElementById('cardCVV').value
+                        }
+                        : null
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // go to order confirmation page
+                    window.location.href = `/orderConfirmation/${data.orderId}`;
+                } else {
+                    alert(data.message || 'Unable to place order');
+                }
+            })
+            .catch(error => {
+                console.error('Checkout error:', error);
+                alert('Something went wrong. Please try again.');
+            });
+
+
         });
     </script>
 

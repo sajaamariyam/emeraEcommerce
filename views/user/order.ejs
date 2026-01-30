@@ -1,0 +1,488 @@
+<%- include('../partials/user/header') %>
+    
+    <main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-20 animate-reveal">
+        
+        <!-- Breadcrumb & Header -->
+        <div class="mb-24 space-y-6">
+            <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-400">
+                <a href="/" class="hover:text-black transition-colors">Home</a> / 
+                <span class="text-black">My Orders</span>
+            </nav>
+            <h1 class="text-6xl md:text-7xl font-serif text-gray-900 leading-none">My <span class="italic font-light">Orders</span></h1>
+            <p class="text-[11px] uppercase tracking-[0.3em] text-gray-400 font-bold">Track & Manage Your Purchases</p>
+        </div>
+        
+        <!-- Search & Filter Section -->
+        <div class="mb-12 bg-stone-50 p-8 border border-stone-100">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Search Box -->
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Search Orders</label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="searchOrders" 
+                            placeholder="Search by Order ID, Product Name..."
+                            class="w-full border border-stone-300 px-6 py-4 pr-12 text-sm focus:border-emera-950 transition-colors bg-white"
+                        >
+                        <svg class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Filter by Status</label>
+                    <select id="statusFilter" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                        <option value="">All Orders</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                        <option value="Return Requested">Return Requested</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Orders List -->
+        <div class="space-y-8" id="ordersList">
+            <% if (orders && orders.length > 0) { %>
+                <% orders.forEach(order => { %>
+                    <div class="bg-stone-50 border border-stone-100 order-card" 
+                         data-order-id="<%= order.orderId %>" 
+                         data-status="<%= order.status %>">
+                        
+                        <!-- Order Header -->
+                        <div class="p-8 border-b border-stone-200">
+                            <div class="flex flex-wrap justify-between items-start gap-4">
+                                <div>
+                                    <h3 class="text-2xl font-serif text-gray-900 mb-2">Order #<%= order.orderId %></h3>
+                                    <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">
+                                        Placed on <%= new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="inline-block px-6 py-2 rounded-full text-[9px] uppercase tracking-[0.3em] font-bold
+                                        <%= order.status === 'Delivered' ? 'bg-green-100 text-green-700' : '' %>
+                                        <%= order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : '' %>
+                                        <%= order.status === 'Processing' ? 'bg-blue-100 text-blue-700' : '' %>
+                                        <%= order.status === 'Shipped' ? 'bg-purple-100 text-purple-700' : '' %>
+                                        <%= order.status === 'Cancelled' ? 'bg-red-100 text-red-700' : '' %>
+                                        <%= order.status === 'Return Requested' ? 'bg-orange-100 text-orange-700' : '' %>">
+                                        <%= order.status %>
+                                    </div>
+                                    <p class="text-xl font-serif text-gray-900 mt-3">₹<%= order.finalAmount.toLocaleString('en-IN') %></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Order Items -->
+                        <div class="p-8">
+                            <div class="space-y-6">
+                                <% order.orderedItems.slice(0, 2).forEach(item => { %>
+                                    <% if (item.productId) { %>
+                                    <div class="flex gap-6 items-center order-item" data-product-id="<%= item.productId._id %>">
+                                    <% } else { %>
+                                    <div class="flex gap-6 items-center order-item opacity-50">
+                                    <% } %>
+                                        <div class="w-20 h-20 bg-stone-200 flex-shrink-0 overflow-hidden">
+                                            <img src="<%= item.productId?.productImage?.[0]?.url || '/images/placeholder.png' %>" 
+                                                 alt="<%= item.productId?.name || 'Product unavailable' %>" 
+                                                 class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="text-sm font-semibold text-gray-900">
+                                                <%= item.productId ? item.productId.name : 'Product no longer available' %>
+                                            </h4>
+                                            <p class="text-[9px] uppercase tracking-widest text-gray-400 mt-1">Qty: <%= item.quantity %></p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-bold text-gray-900">₹<%= (item.price * item.quantity).toLocaleString('en-IN') %></p>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                                
+                                <% if (order.orderedItems.length > 2) { %>
+                                    <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">
+                                        + <%= order.orderedItems.length - 2 %> more item(s)
+                                    </p>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <!-- Order Actions -->
+                        <div class="p-8 border-t border-stone-200 bg-white">
+                            <div class="flex flex-wrap gap-4">
+                                <a href="/orders/<%= order.orderId %>" 
+                                   class="px-8 py-3 bg-emera-950 text-white text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-emera-700 transition-all">
+                                    View Details
+                                </a>
+                                
+                                <button onclick="downloadInvoice('<%= order.orderId %>')"
+                                        class="px-8 py-3 border-2 border-emera-950 text-emera-950 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all">
+                                    Download Invoice
+                                </button>
+                                
+                                <% if (order.status === 'Pending' || order.status === 'Processing') { %>
+                                    <button onclick="openCancelModal('<%= order.orderId %>', 'order')"
+                                            class="px-8 py-3 border-2 border-red-600 text-red-600 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-red-600 hover:text-white transition-all">
+                                        Cancel Order
+                                    </button>
+                                <% } %>
+                                
+                                <% if (order.status === 'Delivered') { %>
+                                    <button onclick="openReturnModal('<%= order.orderId %>')"
+                                            class="px-8 py-3 border-2 border-orange-600 text-orange-600 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-orange-600 hover:text-white transition-all">
+                                        Return Order
+                                    </button>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <!-- Empty State -->
+                <div class="bg-stone-50 p-20 border border-stone-100 text-center">
+                    <svg class="w-24 h-24 mx-auto mb-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                    </svg>
+                    <h3 class="text-2xl font-serif text-gray-900 mb-4">No Orders Yet</h3>
+                    <p class="text-sm text-gray-600 mb-8">You haven't placed any orders yet. Start shopping to see your orders here.</p>
+                    <a href="/" class="inline-block px-12 py-4 bg-emera-950 text-white text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-700 transition-all">
+                        Start Shopping
+                    </a>
+                </div>
+            <% } %>
+        </div>
+        
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+            <div class="mt-16 flex justify-center items-center gap-4">
+                <% if (currentPage > 1) { %>
+                    <a href="/orders?page=<%= currentPage - 1 %>" 
+                       class="px-6 py-3 border-2 border-stone-300 text-gray-900 text-[9px] uppercase tracking-[0.3em] font-bold hover:border-stone-900 transition-all">
+                        Previous
+                    </a>
+                <% } %>
+                
+                <div class="flex gap-2">
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <a href="/orders?page=<%= i %>" 
+                           class="w-12 h-12 flex items-center justify-center border-2 text-[10px] font-bold transition-all
+                                  <%= currentPage === i ? 'border-emera-950 bg-emera-950 text-white' : 'border-stone-300 text-gray-900 hover:border-stone-900' %>">
+                            <%= i %>
+                        </a>
+                    <% } %>
+                </div>
+                
+                <% if (currentPage < totalPages) { %>
+                    <a href="/orders?page=<%= currentPage + 1 %>" 
+                       class="px-6 py-3 border-2 border-stone-300 text-gray-900 text-[9px] uppercase tracking-[0.3em] font-bold hover:border-stone-900 transition-all">
+                        Next
+                    </a>
+                <% } %>
+            </div>
+        <% } %>
+        
+    </main>
+
+    <!-- Cancel Order Modal -->
+    <div id="cancelModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white max-w-2xl w-full p-10 animate-modal">
+            <h2 class="text-3xl font-serif text-gray-900 mb-6">Cancel Order</h2>
+            <p class="text-sm text-gray-600 mb-6">Are you sure you want to cancel this order? This action cannot be undone.</p>
+            
+            <div class="mb-8">
+                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Reason for Cancellation (Optional)</label>
+                <textarea 
+                    id="cancelReason" 
+                    rows="4"
+                    placeholder="Tell us why you're cancelling..."
+                    class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors resize-none"
+                ></textarea>
+            </div>
+            
+            <div class="flex gap-4">
+                <button onclick="confirmCancel()" 
+                        class="flex-1 py-4 bg-red-600 text-white text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-red-700 transition-all">
+                    Confirm Cancellation
+                </button>
+                <button onclick="closeCancelModal()" 
+                        class="flex-1 py-4 border-2 border-stone-300 text-gray-900 text-[10px] uppercase tracking-[0.4em] font-bold hover:border-stone-900 transition-all">
+                    Keep Order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Order Modal -->
+    <div id="returnModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white max-w-2xl w-full p-10 animate-modal">
+            <h2 class="text-3xl font-serif text-gray-900 mb-6">Return Order</h2>
+            <p class="text-sm text-gray-600 mb-6">Please provide a reason for returning this order. Our team will review your request.</p>
+            
+            <div class="mb-8">
+                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Reason for Return *</label>
+                <textarea 
+                    id="returnReason" 
+                    rows="4"
+                    placeholder="Please describe the reason for return..."
+                    class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors resize-none"
+                    required
+                ></textarea>
+            </div>
+            
+            <div class="flex gap-4">
+                <button onclick="confirmReturn()" 
+                        class="flex-1 py-4 bg-orange-600 text-white text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-orange-700 transition-all">
+                    Submit Return Request
+                </button>
+                <button onclick="closeReturnModal()" 
+                        class="flex-1 py-4 border-2 border-stone-300 text-gray-900 text-[10px] uppercase tracking-[0.4em] font-bold hover:border-stone-900 transition-all">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white max-w-md w-full p-10 text-center animate-modal">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-serif text-gray-900 mb-4">Success!</h3>
+            <p class="text-sm text-gray-600 mb-8" id="successMessage"></p>
+            <button onclick="closeSuccessModal()" 
+                    class="w-full py-4 bg-emera-950 text-white text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-700 transition-all">
+                Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white max-w-md w-full p-10 text-center animate-modal">
+            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-serif text-gray-900 mb-4">Error</h3>
+            <p class="text-sm text-gray-600 mb-8" id="errorMessage"></p>
+            <button onclick="closeErrorModal()" 
+                    class="w-full py-4 bg-emera-950 text-white text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-700 transition-all">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentOrderId = '';
+        let cancelType = 'order';
+        let currentProductId = '';
+
+        // Search functionality
+        const searchInput = document.getElementById('searchOrders');
+        const statusFilter = document.getElementById('statusFilter');
+        
+        searchInput.addEventListener('input', filterOrders);
+        statusFilter.addEventListener('change', filterOrders);
+        
+        function filterOrders() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedStatus = statusFilter.value;
+            const orderCards = document.querySelectorAll('.order-card');
+            
+            orderCards.forEach(card => {
+                const orderId = card.dataset.orderId.toLowerCase();
+                const status = card.dataset.status;
+                const productNames = Array.from(card.querySelectorAll('.order-item h4'))
+                    .map(h => h.textContent.toLowerCase())
+                    .join(' ');
+                
+                const matchesSearch = orderId.includes(searchTerm) || productNames.includes(searchTerm);
+                const matchesStatus = !selectedStatus || status === selectedStatus;
+                
+                if (matchesSearch && matchesStatus) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Modal Functions
+        function showSuccessModal(message) {
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successModal').classList.remove('hidden');
+            document.getElementById('successModal').classList.add('flex');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.add('hidden');
+            document.getElementById('successModal').classList.remove('flex');
+            window.location.reload();
+        }
+
+        function showErrorModal(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorModal').classList.remove('hidden');
+            document.getElementById('errorModal').classList.add('flex');
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.add('hidden');
+            document.getElementById('errorModal').classList.remove('flex');
+        }
+
+        // Cancel Order Modal
+        function openCancelModal(orderId, type = 'order', productId = '') {
+            currentOrderId = orderId;
+            cancelType = type;
+            currentProductId = productId;
+            document.getElementById('cancelModal').classList.remove('hidden');
+            document.getElementById('cancelModal').classList.add('flex');
+        }
+
+        function closeCancelModal() {
+            document.getElementById('cancelModal').classList.add('hidden');
+            document.getElementById('cancelModal').classList.remove('flex');
+            document.getElementById('cancelReason').value = '';
+        }
+
+        function confirmCancel() {
+            const reason = document.getElementById('cancelReason').value;
+            
+            const url = cancelType === 'product' 
+                ? `/orders/${currentOrderId}/cancel-product`
+                : `/orders/${currentOrderId}/cancel`;
+            
+            const body = cancelType === 'product'
+                ? { reason, productId: currentProductId }
+                : { reason };
+            
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(r => r.json())
+            .then(data => {
+                closeCancelModal();
+                if (data.success) {
+                    showSuccessModal(data.message || 'Cancellation successful');
+                } else {
+                    showErrorModal(data.message || 'Cancellation failed');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                closeCancelModal();
+                showErrorModal('An error occurred. Please try again.');
+            });
+        }
+
+        // Return Order Modal
+        function openReturnModal(orderId) {
+            currentOrderId = orderId;
+            document.getElementById('returnModal').classList.remove('hidden');
+            document.getElementById('returnModal').classList.add('flex');
+        }
+
+        function closeReturnModal() {
+            document.getElementById('returnModal').classList.add('hidden');
+            document.getElementById('returnModal').classList.remove('flex');
+            document.getElementById('returnReason').value = '';
+        }
+
+        function confirmReturn() {
+            const reason = document.getElementById('returnReason').value.trim();
+            
+            if (!reason) {
+                showErrorModal('Please provide a reason for return');
+                return;
+            }
+            
+            fetch(`/orders/${currentOrderId}/return`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason })
+            })
+            .then(r => r.json())
+            .then(data => {
+                closeReturnModal();
+                if (data.success) {
+                    showSuccessModal(data.message || 'Return request submitted successfully');
+                } else {
+                    showErrorModal(data.message || 'Return request failed');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                closeReturnModal();
+                showErrorModal('An error occurred. Please try again.');
+            });
+        }
+
+        // Download Invoice
+        function downloadInvoice(orderId) {
+            window.location.href = `/orders/${orderId}/invoice`;
+        }
+
+        // Close modals on outside click
+        document.getElementById('cancelModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCancelModal();
+        });
+
+        document.getElementById('returnModal').addEventListener('click', function(e) {
+            if (e.target === this) closeReturnModal();
+        });
+
+        document.getElementById('successModal').addEventListener('click', function(e) {
+            if (e.target === this) closeSuccessModal();
+        });
+
+        document.getElementById('errorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeErrorModal();
+        });
+    </script>
+
+    <style>
+        .animate-reveal {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-modal {
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+
+<%- include('../partials/user/footer') %>
