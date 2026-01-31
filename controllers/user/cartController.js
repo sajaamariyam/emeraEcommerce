@@ -1,7 +1,6 @@
 const Cart = require("../../models/cartSchema");
 const Product = require("../../models/productSchema");
 
-
 const loadCart = async (req, res) => {
   try {
     const userId = req.session.user;
@@ -19,7 +18,7 @@ const loadCart = async (req, res) => {
         subtotal: 0,
         tax: 0,
         total: 0,
-        showAnnouncement: false
+        showAnnouncement: false,
       });
     }
 
@@ -27,7 +26,11 @@ const loadCart = async (req, res) => {
     const cartItems = [];
 
     for (const item of cart.items) {
-      if (!item.productId || item.productId.isBlocked || !item.productId.isListed) {
+      if (
+        !item.productId ||
+        item.productId.isBlocked ||
+        !item.productId.isListed
+      ) {
         continue;
       }
 
@@ -39,7 +42,7 @@ const loadCart = async (req, res) => {
         color: item.color,
         quantity: item.quantity,
         price: item.price,
-        totalPrice: itemTotal
+        totalPrice: itemTotal,
       });
     }
 
@@ -52,15 +55,13 @@ const loadCart = async (req, res) => {
       subtotal,
       tax,
       total,
-      showAnnouncement: false
+      showAnnouncement: false,
     });
-
   } catch (error) {
     console.error("LOAD CART ERROR:", error);
     res.redirect("/pageNotFound");
   }
 };
-
 
 const addToCart = async (req, res) => {
   try {
@@ -70,14 +71,14 @@ const addToCart = async (req, res) => {
     if (!userId) {
       return res.status(401).json({
         success: false,
-        code: "AUTH_REQUIRED"
+        code: "AUTH_REQUIRED",
       });
     }
 
     if (!color) {
       return res.status(400).json({
         success: false,
-        message: "Please select a color"
+        message: "Please select a color",
       });
     }
 
@@ -86,16 +87,16 @@ const addToCart = async (req, res) => {
     if (!product || product.isBlocked || !product.isListed) {
       return res.status(400).json({
         success: false,
-        message: "Product unavailable"
+        message: "Product unavailable",
       });
     }
 
-    const variant = product.variants.find(v => v.color === color);
+    const variant = product.variants.find((v) => v.color === color);
 
     if (!variant || variant.quantity <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Selected variant out of stock"
+        message: "Selected variant out of stock",
       });
     }
 
@@ -105,16 +106,14 @@ const addToCart = async (req, res) => {
     }
 
     const existingItem = cart.items.find(
-      i =>
-        i.productId.toString() === productId &&
-        i.color === color
+      (i) => i.productId.toString() === productId && i.color === color,
     );
 
     if (existingItem) {
       if (existingItem.quantity + 1 > variant.quantity) {
         return res.status(400).json({
           success: false,
-          message: "Stock limit reached"
+          message: "Stock limit reached",
         });
       }
       existingItem.quantity += 1;
@@ -123,7 +122,7 @@ const addToCart = async (req, res) => {
         productId,
         color,
         quantity: 1,
-        price: product.salePrice
+        price: product.salePrice,
       });
     }
 
@@ -132,7 +131,7 @@ const addToCart = async (req, res) => {
     if (buyNow) {
       return res.json({
         success: true,
-        redirect: "/checkout"
+        redirect: "/checkout",
       });
     }
 
@@ -140,18 +139,16 @@ const addToCart = async (req, res) => {
 
     res.json({
       success: true,
-      cartCount
+      cartCount,
     });
-
   } catch (error) {
     console.error("ADD TO CART ERROR:", error);
     res.status(500).json({
       success: false,
-      message: "Something went wrong"
+      message: "Something went wrong",
     });
   }
 };
-
 
 const incrementQty = async (req, res) => {
   try {
@@ -162,18 +159,16 @@ const incrementQty = async (req, res) => {
     if (!cart) return res.json({ success: false });
 
     const item = cart.items.find(
-      i =>
-        i.productId._id.toString() === productId &&
-        i.color === color
+      (i) => i.productId._id.toString() === productId && i.color === color,
     );
 
     if (!item) return res.json({ success: false });
 
-    const variant = item.productId.variants.find(v => v.color === color);
+    const variant = item.productId.variants.find((v) => v.color === color);
     if (!variant || item.quantity + 1 > variant.quantity) {
       return res.status(400).json({
         success: false,
-        message: "Out of stock"
+        message: "Out of stock",
       });
     }
 
@@ -181,12 +176,10 @@ const incrementQty = async (req, res) => {
     await cart.save();
 
     res.json({ success: true });
-
   } catch (error) {
     res.status(500).json({ success: false });
   }
 };
-
 
 const decrementQty = async (req, res) => {
   try {
@@ -197,9 +190,7 @@ const decrementQty = async (req, res) => {
     if (!cart) return res.json({ success: true });
 
     const index = cart.items.findIndex(
-      i =>
-        i.productId.toString() === productId &&
-        i.color === color
+      (i) => i.productId.toString() === productId && i.color === color,
     );
 
     if (index === -1) return res.json({ success: true });
@@ -212,12 +203,10 @@ const decrementQty = async (req, res) => {
 
     await cart.save();
     res.json({ success: true });
-
   } catch (error) {
     res.status(500).json({ success: false });
   }
 };
-
 
 const removeItem = async (req, res) => {
   try {
@@ -226,11 +215,10 @@ const removeItem = async (req, res) => {
 
     await Cart.updateOne(
       { userId },
-      { $pull: { items: { productId, color } } }
+      { $pull: { items: { productId, color } } },
     );
 
     res.json({ success: true });
-
   } catch (error) {
     res.status(500).json({ success: false });
   }
@@ -241,5 +229,5 @@ module.exports = {
   addToCart,
   incrementQty,
   decrementQty,
-  removeItem
+  removeItem,
 };

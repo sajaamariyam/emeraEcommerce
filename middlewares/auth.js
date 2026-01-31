@@ -1,6 +1,5 @@
 const User = require("../models/userSchema");
 
-
 const userAuth = async (req, res, next) => {
   try {
     console.log("SESSION USER ID:", req.session.user);
@@ -28,7 +27,6 @@ const userAuth = async (req, res, next) => {
   }
 };
 
-
 const saveRedirect = (req, res, next) => {
   if (
     !req.session.user &&
@@ -45,18 +43,12 @@ const saveRedirect = (req, res, next) => {
   next();
 };
 
-
-
-
 const noCache = (req, res, next) => {
-
   res.set("Cache-control", "no-store, no-cache, must-revalidate, private");
   res.set("Pragma", "no-cache");
   res.set("Expires", "0");
-  next()
+  next();
 };
-
-
 
 const adminAuth = async (req, res, next) => {
   try {
@@ -80,12 +72,9 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
-
-
-
 module.exports = {
-    userAuth,
-    adminAuth,
-    noCache,
-    saveRedirect
-}
+  userAuth,
+  adminAuth,
+  noCache,
+  saveRedirect,
+};

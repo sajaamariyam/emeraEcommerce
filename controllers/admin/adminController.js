@@ -5,216 +5,192 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
 const pageerror = async (req, res) => {
-    res.render("pageerror");
-}
+  res.render("pageerror");
+};
 
 const loadLogin = (req, res) => {
-
-    if(req.session.admin){
-
-        return res.redirect("/admin/adminDashboard");
-
-    }
-    res.render("admin/adminLogin", {message: null})
-}
+  if (req.session.admin) {
+    return res.redirect("/admin/adminDashboard");
+  }
+  res.render("admin/adminLogin", { message: null });
+};
 
 const login = async (req, res) => {
-    try {
-        
-        const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        console.log(req.body);
+    console.log(req.body);
 
-        const admin = await User.findOne({ email, isAdmin: true });
+    const admin = await User.findOne({ email, isAdmin: true });
 
-        if (!admin) {
-            return res.render("admin/adminLogin", { message: "Admin not found" });
-        }
-
-        const passwordMatch = await bcrypt.compare(password, admin.password);
-
-        if (!passwordMatch) {
-            return res.render("admin/adminLogin", { message: "Invalid password" });
-        }
-
-        req.session.admin = admin._id;
-
-        return res.redirect("/admin/adminDashboard");
-
-    } catch (error) {
-        
-        console.log("Login error",error);
-        return res.redirect("/admin/pageerror");
-
+    if (!admin) {
+      return res.render("admin/adminLogin", { message: "Admin not found" });
     }
-}
+
+    const passwordMatch = await bcrypt.compare(password, admin.password);
+
+    if (!passwordMatch) {
+      return res.render("admin/adminLogin", { message: "Invalid password" });
+    }
+
+    req.session.admin = admin._id;
+
+    return res.redirect("/admin/adminDashboard");
+  } catch (error) {
+    console.log("Login error", error);
+    return res.redirect("/admin/pageerror");
+  }
+};
 
 const loadDashboard = async (req, res) => {
-    try {
-        if (!req.session.admin) {
-            return res.redirect("/admin/adminLogin");
-        }
-
-        const admin = await User.findById(req.session.admin);
-
-
-        res.render("admin/adminDashboard", {admin, activePage: "dashboard"});
-    } catch (error) {
-        console.log("Dashboard error:", error);
-        res.redirect("/admin/pageerror");
+  try {
+    if (!req.session.admin) {
+      return res.redirect("/admin/adminLogin");
     }
+
+    const admin = await User.findById(req.session.admin);
+
+    res.render("admin/adminDashboard", { admin, activePage: "dashboard" });
+  } catch (error) {
+    console.log("Dashboard error:", error);
+    res.redirect("/admin/pageerror");
+  }
 };
 
 const loadUsers = async (req, res) => {
-    try {
-        const search = req.query.search?.trim();
-        const status = req.query.status || "all";
+  try {
+    const search = req.query.search?.trim();
+    const status = req.query.status || "all";
 
-        const page = parseInt(req.query.page) || 1;
-        const limit = 5;
-        const skip = (page - 1) * limit;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+    const skip = (page - 1) * limit;
 
+    let filter = { isAdmin: false };
 
-        let filter = { isAdmin: false };
-
-        if (search) {
-            filter.$or = [
-                { name: { $regex: search, $options: "i" } },
-                { email: { $regex: search, $options: "i" } }
-            ];
-        }
-
-        if(status === "active"){
-            filter.isBlocked = false;
-        }else if(status === "blocked"){
-            filter.isBlocked = true;
-        }
-
-
-        const users = await User.find(filter)
-            .sort({createdAt: -1})
-            .skip(skip)
-            .limit(limit);
-
-        
-        const totalFilteredUsers = await User.countDocuments(filter);
-        const totalPages = Math.ceil(totalFilteredUsers / limit);
-
-
-        const totalUsers = await User.countDocuments({ isAdmin: false });
-        const blockedUsers = await User.countDocuments({ isAdmin: false, isBlocked: true });
-        const activeUsers = totalUsers - blockedUsers;
-
-        const admin = await User.findById(req.session.admin);
-
-
-        res.render("admin/users", {
-            admin,
-            users,
-            totalUsers,
-            activeUsers,
-            blockedUsers,
-            currentPage: page,
-            totalPages,
-            search: search || "",
-            status,
-            activePage: "users"
-        });
-
-    } catch (error) {
-        console.log("Load users error:", error);
-        res.redirect("/admin/pageerror");
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
     }
+
+    if (status === "active") {
+      filter.isBlocked = false;
+    } else if (status === "blocked") {
+      filter.isBlocked = true;
+    }
+
+    const users = await User.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalFilteredUsers = await User.countDocuments(filter);
+    const totalPages = Math.ceil(totalFilteredUsers / limit);
+
+    const totalUsers = await User.countDocuments({ isAdmin: false });
+    const blockedUsers = await User.countDocuments({
+      isAdmin: false,
+      isBlocked: true,
+    });
+    const activeUsers = totalUsers - blockedUsers;
+
+    const admin = await User.findById(req.session.admin);
+
+    res.render("admin/users", {
+      admin,
+      users,
+      totalUsers,
+      activeUsers,
+      blockedUsers,
+      currentPage: page,
+      totalPages,
+      search: search || "",
+      status,
+      activePage: "users",
+    });
+  } catch (error) {
+    console.log("Load users error:", error);
+    res.redirect("/admin/pageerror");
+  }
 };
 
-
-
-
 const blockUser = async (req, res) => {
-    try {
-        const userId = req.params.id;
+  try {
+    const userId = req.params.id;
 
-        await User.findByIdAndUpdate(userId, { isBlocked: true });
+    await User.findByIdAndUpdate(userId, { isBlocked: true });
 
-        res.redirect("/admin/users");
-    } catch (error) {
-        console.log("Block user error:", error);
-        res.redirect("/admin/pageerror");
-    }
+    res.redirect("/admin/users");
+  } catch (error) {
+    console.log("Block user error:", error);
+    res.redirect("/admin/pageerror");
+  }
 };
 
 const unblockUser = async (req, res) => {
-    try {
-        const userId = req.params.id;
+  try {
+    const userId = req.params.id;
 
-        await User.findByIdAndUpdate(userId, { isBlocked: false });
+    await User.findByIdAndUpdate(userId, { isBlocked: false });
 
-        res.redirect("/admin/users");
-    } catch (error) {
-        console.log("Unblock user error:", error);
-        res.redirect("/admin/pageerror");
-    }
+    res.redirect("/admin/users");
+  } catch (error) {
+    console.log("Unblock user error:", error);
+    res.redirect("/admin/pageerror");
+  }
 };
 
 const loadCategories = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+    const skip = (page - 1) * limit;
 
-    try {
-       
-        const page = parseInt(req.query.page) || 1;
-        const limit = 5;
-        const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+    const status = req.query.status || "all";
 
-        const search = req.query.search || "";
-        const status = req.query.status || "all";
+    let filter = {};
 
-        let filter = {};
+    if (search) {
+      filter.name = { $regex: search, $options: "i" };
+    }
 
-        if(search){
-            filter.name = {$regex: search, $options: "i"};
-        }
-
-    if(status === "listed"){
-        filter.isListed = true;
-    }else if(status === "unlisted"){
-        filter.isListed = false;
+    if (status === "listed") {
+      filter.isListed = true;
+    } else if (status === "unlisted") {
+      filter.isListed = false;
     }
 
     const totalCategories = await Category.countDocuments(filter);
 
     const categories = await Category.find(filter)
-    .sort({createdAt: -1})
-    .skip(skip)
-    .limit(limit);
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     const totalPages = Math.ceil(totalCategories / limit);
 
     const admin = await User.findById(req.session.admin);
 
-
     res.render("admin/categories", {
-        admin,
-        categories,
-        currentPage: page,
-        totalPages,
-        search,
-        status,
-        activePage: "categories"
+      admin,
+      categories,
+      currentPage: page,
+      totalPages,
+      search,
+      status,
+      activePage: "categories",
     });
-        
-    } catch (error) {
-        
-        console.log("Load categories error :", error);
-        res.redirect("/admin/pageerror");
-        
-    }
-
-}
-
+  } catch (error) {
+    console.log("Load categories error :", error);
+    res.redirect("/admin/pageerror");
+  }
+};
 
 const addCategory = async (req, res) => {
   try {
-
-
     const { name } = req.body;
 
     if (!name || !req.file) {
@@ -222,13 +198,12 @@ const addCategory = async (req, res) => {
     }
 
     const newCategory = new Category({
-    name: name.trim(),
-    image: {
-      url: req.file.path,           
-      public_id: req.file.public_id 
-    }
-  });
-
+      name: name.trim(),
+      image: {
+        url: req.file.path,
+        public_id: req.file.public_id,
+      },
+    });
 
     await newCategory.save();
 
@@ -239,9 +214,6 @@ const addCategory = async (req, res) => {
   }
 };
 
-
-
-
 const editCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -249,20 +221,19 @@ const editCategory = async (req, res) => {
 
     const updateData = {
       name,
-      isListed: isListed === "true"
+      isListed: isListed === "true",
     };
 
     if (req.file) {
-    updateData.image = {
-      url: req.file.path,
-      public_id: req.file.public_id
-    };
-  }
-
+      updateData.image = {
+        url: req.file.path,
+        public_id: req.file.public_id,
+      };
+    }
 
     await Category.findByIdAndUpdate(id, updateData, {
       new: true,
-      runValidators: true
+      runValidators: true,
     });
 
     res.status(200).json({ message: "Category updated" });
@@ -271,8 +242,6 @@ const editCategory = async (req, res) => {
     res.status(500).json({ message: "Failed to update category" });
   }
 };
-
-
 
 const toggleCategoryStatus = async (req, res) => {
   try {
@@ -286,7 +255,7 @@ const toggleCategoryStatus = async (req, res) => {
     await Category.findByIdAndUpdate(
       id,
       { $set: { isListed: !category.isListed } },
-      { runValidators: false }
+      { runValidators: false },
     );
 
     res.status(200).json({ message: "Category status updated" });
@@ -296,7 +265,6 @@ const toggleCategoryStatus = async (req, res) => {
   }
 };
 
-
 const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -304,7 +272,7 @@ const deleteCategory = async (req, res) => {
     await Category.findByIdAndUpdate(
       id,
       { $set: { isListed: false } },
-      { runValidators: false }
+      { runValidators: false },
     );
 
     res.status(200).json({ message: "Category soft deleted" });
@@ -314,25 +282,24 @@ const deleteCategory = async (req, res) => {
   }
 };
 
-
 const logout = (req, res) => {
-    req.session.destroy( () => {
-        res.redirect("/admin/adminLogin");
-    })
-}
+  req.session.destroy(() => {
+    res.redirect("/admin/adminLogin");
+  });
+};
 
 module.exports = {
-    loadLogin,
-    login,
-    loadDashboard,
-    pageerror,
-    loadUsers,
-    blockUser,
-    unblockUser,
-    loadCategories,
-    addCategory,
-    editCategory,
-    toggleCategoryStatus,
-    deleteCategory,
-    logout
-}
+  loadLogin,
+  login,
+  loadDashboard,
+  pageerror,
+  loadUsers,
+  blockUser,
+  unblockUser,
+  loadCategories,
+  addCategory,
+  editCategory,
+  toggleCategoryStatus,
+  deleteCategory,
+  logout,
+};

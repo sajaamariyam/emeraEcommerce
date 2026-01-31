@@ -2,156 +2,151 @@ const Order = require("../../models/orderSchema");
 const User = require("../../models/userSchema");
 
 const loadOrders = async (req, res) => {
-    try{
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
 
-        const page = parseInt(req.query.page) || 1;
-        const limit = 10;
-        const skip = (page - 1) * limit;
+    const search = req.query.search?.trim() || "";
+    const status = req.query.status || "all";
+    const sortBy = req.query.sortBy || "date-desc";
 
-        const search = req.query.search?.trim() || "";
-        const status = req.query.status || "all";
-        const sortBy = req.query.sortBy || "date-desc";
+    let query = {};
 
-        let query = {};
+    if (search) {
+      const users = await User.find({
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      }).select("_id");
 
-        if(search){
-            const users = await User.find({
-                $or: [
-                    {name: {$regex: search, $options: "i"}},
-                    {email: {$regex: search, $options: "i"}}
-                ]
-            }).select("_id");
+      query.$or = [{ orderId: { $regex: search, $options: "i" } }];
 
-            query.$or = [
-                {orderId: {$regex: search, $options: "i"}}];
-            
-                if(users.length > 0){
-                    query.$or.push({userId: {$in: users.map(u => u._id)}});
-                }
-        }
-
-        if(status != "all"){
-            query.status = status;
-        }
-
-        let sortQuery = {};
-        switch(sortBy){
-            case "date-asc":
-                sortQuery.createdAt = 1;
-                break;
-            case "amount-desc":
-                sortQuery.finalAmount = -1;
-                break;
-            case "amount-asc":
-                sortQuery.finalAmount = 1
-                break;
-            default:
-                sortQuery.createdAt = -1;
-        }
-
-        const totalOrders = await Order.countDocuments(query);
-
-        const orders = await Order.find(query)
-            .populate("userId")
-            .sort(sortQuery)
-            .skip(skip)
-            .limit(limit)
-            .lean();
-
-        const pendingOrders = await Order.countDocuments({status: "pending"});
-        const shippedOrders = await Order.countDocuments({status: "shipped"});
-        const outForDelivery = await Order.countDocuments({status: "out-for-delivery"});
-        const deliveredOrders = await Order.countDocuments({status: "delivered"});
-        const cancelledOrders = await Order.countDocuments({status: "cancelled"});
-
-        res.render("admin/orders", {
-            admin: res.locals.admin,
-            orders,
-            totalOrders,
-            pendingOrders,
-            shippedOrders,
-            outForDelivery,
-            deliveredOrders,
-            cancelledOrders,
-            currentPage: page,
-            totalPages: Math.ceil(totalOrders / limit),
-            search,
-            status,
-            sortBy
-        });
-
-    }catch(error){
-        console.error("LOAD ADMIN ORDERS ERROR: ", error);
-        res.redirect("/admin/pageerror");
+      if (users.length > 0) {
+        query.$or.push({ userId: { $in: users.map((u) => u._id) } });
+      }
     }
+
+    if (status != "all") {
+      query.status = status;
+    }
+
+    let sortQuery = {};
+    switch (sortBy) {
+      case "date-asc":
+        sortQuery.createdAt = 1;
+        break;
+      case "amount-desc":
+        sortQuery.finalAmount = -1;
+        break;
+      case "amount-asc":
+        sortQuery.finalAmount = 1;
+        break;
+      default:
+        sortQuery.createdAt = -1;
+    }
+
+    const totalOrders = await Order.countDocuments(query);
+
+    const orders = await Order.find(query)
+      .populate("userId")
+      .sort(sortQuery)
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const pendingOrders = await Order.countDocuments({ status: "pending" });
+    const shippedOrders = await Order.countDocuments({ status: "shipped" });
+    const outForDelivery = await Order.countDocuments({
+      status: "out-for-delivery",
+    });
+    const deliveredOrders = await Order.countDocuments({ status: "delivered" });
+    const cancelledOrders = await Order.countDocuments({ status: "cancelled" });
+
+    res.render("admin/orders", {
+      admin: res.locals.admin,
+      orders,
+      totalOrders,
+      pendingOrders,
+      shippedOrders,
+      outForDelivery,
+      deliveredOrders,
+      cancelledOrders,
+      currentPage: page,
+      totalPages: Math.ceil(totalOrders / limit),
+      search,
+      status,
+      sortBy,
+    });
+  } catch (error) {
+    console.error("LOAD ADMIN ORDERS ERROR: ", error);
+    res.redirect("/admin/pageerror");
+  }
 };
 
-const getOrderDetails = async(req, res) => {
-    try{
+const getOrderDetails = async (req, res) => {
+  try {
+    const orderId = req.params.id;
 
-        const orderId = req.params.id;
+    const order = await Order.findById(orderId)
+      .populate("userId")
+      .populate("orderedItems.productId")
+      .lean();
 
-        const order = await Order.findById(orderId)
-            .populate("userId")
-            .populate("orderedItems.productId")
-            .lean();
-
-        if(!order){
-            return res.status(404).json({message: "Order not found"});
-        }
-
-        res.json(order);
-
-    }catch(error){
-        console.error("GET ORDER DETAILS ERROR:", error);
-        res.status(500).json({message: "Failed to load order details"});
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
     }
+
+    res.json(order);
+  } catch (error) {
+    console.error("GET ORDER DETAILS ERROR:", error);
+    res.status(500).json({ message: "Failed to load order details" });
+  }
 };
 
 const updateOrderStatus = async (req, res) => {
-    try{
+  try {
+    const { orderId, status } = req.body;
 
-        const {orderId, status} = req.body;
-
-        if(!orderId || !status){
-            return res.status(400).json({message: "Missing orderId or status"});
-        }
-
-        const ALLOWED_STATUSES = [
-            "pending",
-            "shipped",
-            "out-for-delivery",
-            "delivered",
-            "cancelled"
-        ];
-
-        if(!ALLOWED_STATUSES.includes(status)){
-            return res.status(400).json({message: "Invalid status"});
-        }
-
-        const order = await Order.findByIdAndUpdate(
-            orderId,
-            {status},
-            {
-                new: true,
-                runValidators: false
-            }
-        );
-
-        if(!order){
-            return res.status(404).json({success: false});
-        }
-
-        return res.json({success: true});
-
-    }catch(error){
-        console.error("UPDATE ORDER STATUS ERROR", error);
-        res.status(500).json({success: false});
+    if (!orderId || !status) {
+      return res.status(400).json({ message: "Missing orderId or status" });
     }
+
+    const ALLOWED_STATUSES = [
+      "pending",
+      "shipped",
+      "out-for-delivery",
+      "delivered",
+      "cancelled",
+    ];
+
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { status },
+      {
+        new: true,
+        runValidators: false,
+      },
+    );
+
+    if (!order) {
+      return res.status(404).json({ success: false });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("UPDATE ORDER STATUS ERROR", error);
+    res.status(500).json({ success: false });
+  }
 };
 
 module.exports = {
-    loadOrders,
-    getOrderDetails,
-    updateOrderStatus
-}
+  loadOrders,
+  getOrderDetails,
+  updateOrderStatus,
+};
