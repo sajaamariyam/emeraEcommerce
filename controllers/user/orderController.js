@@ -97,6 +97,35 @@ const loadOrder = async (req, res) => {
   }
 };
 
+const getProfileOrders = async (req, res) => {
+  try{
+    const orders = await Order.find({userId: req.session.user})
+    .populate("orderedItems.productId")
+    .sort({createdAt: -1});
+
+    const formattedOrders = orders.map(order => ({
+      _id: order._id,
+      orderNumber: order.orderId,
+      status: order.status,
+      createdAt: order.createdAt,
+      totalAmount: order.finalAmount,
+      items: order.orderedItems.map(item => ({
+        quantity: item.quantity,
+        price: item.price,
+        product:{
+          name: item.productId?.name,
+          image: item.productId?.productImage?.[0]?.url
+        }
+      }))
+    }));
+
+    res.json(formattedOrders);
+  }catch(error){
+    console.log("PROFILE ORDERES ERROR:", error);
+    res.status(500).json([]);
+  }
+}
+
 const cancelOrder = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -574,6 +603,7 @@ module.exports = {
   loadOrderConfirmation,
   loadOrderDetails,
   loadOrder,
+  getProfileOrders,
   cancelOrder,
   returnOrder,
   downloadInvoice,

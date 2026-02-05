@@ -63,6 +63,7 @@ router.get("/pageNotFound", userController.pageNotFound);
 
 //PROFILE ROUTES
 router.get("/profile", userAuth, noCache, userController.loadProfile);
+router.get("/api/profile/orders", userAuth, orderController.getProfileOrders);
 router.post(
   "/profile/edit",
   userAuth,
@@ -123,7 +124,7 @@ router.get("/orders", userAuth, orderController.loadOrder);
 
 router.post("/orders/:orderId/cancel", userAuth, orderController.cancelOrder);
 router.post("/orders/:orderId/return", userAuth, orderController.returnOrder);
-router.post(
+router.get(
   "/orders/:orderId/invoice",
   userAuth,
   orderController.downloadInvoice,
