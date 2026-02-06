@@ -6,7 +6,7 @@
     <a href="/" class="hover:text-black">Home</a>
     <span class="mx-2">/</span>
 
-    <% if (categoryName) { %>
+    <% if (typeof categoryName !== 'undefined' && categoryName) { %>
         <span class="text-black font-bold"><%= categoryName %></span>
     <% } else { %>
         <span class="text-black font-bold">Products</span>
@@ -18,8 +18,8 @@
             <!-- Filtering Sidebar -->
             <aside class="w-full lg:w-72 space-y-16 flex-shrink-0">
                 <form action="/products" method="GET" id="filter-form">
-                    <input type="hidden" name="search" value="<%= search || '' %>">
-                    <input type="hidden" name="sort" value="<%= sort || 'newest' %>">
+                    <input type="hidden" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>">
+                    <input type="hidden" name="sort" value="<%= typeof sort !== 'undefined' ? sort : 'newest' %>">
                     
                     <!-- Category Filter -->
                     <div class="space-y-10 mb-16">

@@ -10,6 +10,7 @@ const loadCart = async (req, res) => {
     }
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
+    const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
     if (!cart || cart.items.length === 0) {
       return res.render("user/cart", {
@@ -18,6 +19,7 @@ const loadCart = async (req, res) => {
         subtotal: 0,
         tax: 0,
         total: 0,
+        cartCount,
         showAnnouncement: false,
       });
     }
@@ -153,19 +155,50 @@ const addToCart = async (req, res) => {
 const incrementQty = async (req, res) => {
   try {
     const userId = req.session.user;
-    const { productId, color } = req.body;
+    const { productId } = req.params;
+    const { color } = req.body;
+
+    console.log("PARAMS:", req.params);
+    console.log("BODY:", req.body);
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
-    if (!cart) return res.json({ success: false });
+    if (!cart)
+      return res
+        .status(400)
+        .json({ success: false, message: "Cart not found" });
 
     const item = cart.items.find(
-      (i) => i.productId._id.toString() === productId && i.color === color,
+      (i) =>
+        i.productId._id.toString() === productId &&
+        i.color.toLowerCase() === color.toLowerCase(),
     );
 
-    if (!item) return res.json({ success: false });
+    if (!item)
+      return res
+        .status(400)
+        .json({ success: false, message: "Item not found" });
 
-    const variant = item.productId.variants.find((v) => v.color === color);
-    if (!variant || item.quantity + 1 > variant.quantity) {
+    if (!item.productId.variants || !item.productId.variants.length) {
+      return res.status(400).json({
+        success: false,
+        message: "variants not available for this product",
+      });
+    }
+
+    console.log("VARIANTS:", item.productId.variants);
+
+    const variant = item.productId.variants.find(
+      (v) => v.color.toLowerCase() === color.toLowerCase(),
+    );
+
+    if (!variant) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected variant not found",
+      });
+    }
+
+    if (item.quantity + 1 > variant.quantity) {
       return res.status(400).json({
         success: false,
         message: "Out of stock",
@@ -177,6 +210,7 @@ const incrementQty = async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
+    console.log("INCREMENT ERROR:", error);
     res.status(500).json({ success: false });
   }
 };
@@ -184,16 +218,21 @@ const incrementQty = async (req, res) => {
 const decrementQty = async (req, res) => {
   try {
     const userId = req.session.user;
-    const { productId, color } = req.body;
+    const { productId } = req.params;
+    const { color } = req.body;
 
     const cart = await Cart.findOne({ userId });
-    if (!cart) return res.json({ success: true });
+    if (!cart)
+      return res.status(400).json({ success: true, message: "Cart not found" });
 
     const index = cart.items.findIndex(
-      (i) => i.productId.toString() === productId && i.color === color,
+      (i) =>
+        i.productId.toString() === productId &&
+        i.color.toLowerCase() === color.toLowerCase(),
     );
 
-    if (index === -1) return res.json({ success: true });
+    if (index === -1)
+      return res.status(400).json({ success: true, message: "Item not found" });
 
     if (cart.items[index].quantity === 1) {
       cart.items.splice(index, 1);
@@ -204,6 +243,7 @@ const decrementQty = async (req, res) => {
     await cart.save();
     res.json({ success: true });
   } catch (error) {
+    console.error("DECREMENT ERROR: ", error);
     res.status(500).json({ success: false });
   }
 };
@@ -211,15 +251,24 @@ const decrementQty = async (req, res) => {
 const removeItem = async (req, res) => {
   try {
     const userId = req.session.user;
-    const { productId, color } = req.body;
+    const { productId } = req.params;
+    const { color } = req.body;
 
-    await Cart.updateOne(
+    const result = await Cart.updateOne(
       { userId },
       { $pull: { items: { productId, color } } },
     );
 
+    if (result.modifiedCount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Item not found or already removed",
+      });
+    }
+
     res.json({ success: true });
   } catch (error) {
+    console.error("REMOVE ERROR: ", error);
     res.status(500).json({ success: false });
   }
 };

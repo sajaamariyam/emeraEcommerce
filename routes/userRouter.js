@@ -61,6 +61,8 @@ router.get("/products/:id", saveRedirect, userController.loadProductDetails);
 
 router.get("/pageNotFound", userController.pageNotFound);
 
+router.get("/search", userController.searchProducts);
+
 //PROFILE ROUTES
 router.get("/profile", userAuth, noCache, userController.loadProfile);
 router.get("/api/profile/orders", userAuth, orderController.getProfileOrders);

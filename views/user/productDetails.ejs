@@ -237,6 +237,155 @@
     <% } %>
 </main>
 
+<!-- Success Modal -->
+<div id="success-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 backdrop-blur-md" style="display: none;">
+    <div class="bg-white rounded-lg shadow-2xl p-0 max-w-xl w-full mx-4 transform transition-all overflow-hidden relative">
+        
+        <!-- Confetti Animation -->
+        <div class="confetti-container absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+        </div>
+
+        <!-- Premium Header with Animated Background -->
+        <div class="relative bg-gradient-to-br from-emera-950 via-emera-800 to-emera-950 p-10 overflow-hidden">
+            <!-- Animated Background Elements -->
+            <div class="absolute inset-0 overflow-hidden">
+                <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl animate-float-slow"></div>
+                <div class="absolute bottom-0 left-0 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl animate-float-slower"></div>
+                <div class="absolute top-1/2 left-1/2 w-64 h-64 bg-amber-300 opacity-10 rounded-full blur-2xl animate-pulse-slow"></div>
+            </div>
+
+            <!-- Shimmer Effect -->
+            <div class="absolute inset-0 shimmer-effect"></div>
+            
+            <div class="relative z-10 text-center">
+                <!-- Success Icon with Ripple Effect -->
+                <div class="relative mx-auto w-24 h-24 mb-6">
+                    <div class="absolute inset-0 rounded-full bg-white opacity-20 animate-ping-slow"></div>
+                    <div class="absolute inset-2 rounded-full bg-white opacity-30 animate-ping-slower"></div>
+                    <div class="relative flex items-center justify-center h-24 w-24 rounded-full bg-white bg-opacity-20 backdrop-blur-md animate-scale-in shadow-2xl">
+                        <div class="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-lg">
+                            <svg class="h-12 w-12 text-emera-950 animate-check-draw" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-3xl font-serif text-white mb-3 tracking-wide animate-fade-in-up" style="animation-delay: 0.2s;">
+                    Successfully Added!
+                </h3>
+                <p class="text-white text-opacity-90 text-xs uppercase tracking-[0.4em] font-light animate-fade-in-up" style="animation-delay: 0.3s;">
+                    ✦ Item secured in your collection ✦
+                </p>
+            </div>
+        </div>
+
+        <!-- Product Preview Card -->
+        <div class="p-8 border-b border-gray-100 animate-fade-in-up" style="animation-delay: 0.4s;">
+            <div class="flex items-start gap-6 group">
+                <div class="relative w-28 h-32 bg-stone-100 rounded-md overflow-hidden flex-shrink-0 shadow-lg transform transition-all duration-500 group-hover:scale-105 group-hover:shadow-xl">
+                    <img id="modal-product-img" src="" alt="Product" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                <div class="flex-1 pt-1">
+                    <h4 id="modal-product-name" class="font-serif text-gray-900 text-lg mb-3 leading-snug"></h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <p id="modal-product-price" class="text-base font-bold text-emera-950"></p>
+                            <span class="text-xs text-gray-400">•</span>
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Premium Quality</span>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-md border border-gray-100">
+                            <div id="modal-product-color" class="w-5 h-5 rounded-full border-2 border-white shadow-md transform transition-transform duration-300 hover:scale-125"></div>
+                            <span class="text-xs text-gray-600 uppercase tracking-wider font-medium">Selected Color</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cart Summary with Gradient -->
+        <div class="px-8 py-6 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 border-b border-amber-200 animate-fade-in-up" style="animation-delay: 0.5s;">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center transform transition-all duration-300 hover:scale-110 hover:rotate-12">
+                        <svg class="w-6 h-6 text-emera-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-widest font-bold text-gray-500 mb-1">Your Cart</p>
+                        <p id="modal-cart-count" class="text-lg font-bold text-emera-950">0 items</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs uppercase tracking-wider text-gray-500 mb-1">Status</p>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <span class="text-xs font-semibold text-green-700">Ready to Checkout</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons with Enhanced Styling -->
+        <div class="p-8 space-y-4 animate-fade-in-up" style="animation-delay: 0.6s;">
+            <a href="/cart" class="block relative overflow-hidden group text-center bg-gradient-to-r from-emera-950 via-emera-800 to-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-md transition-all duration-500 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                <span class="relative z-10 flex items-center justify-center gap-3">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    View Cart & Checkout
+                    <svg class="w-4 h-4 transform transition-transform duration-300 group-hover:translate-x-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </span>
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 group-hover:translate-x-full transition-all duration-1000"></div>
+            </a>
+            
+            <button onclick="closeModal()" class="relative w-full overflow-hidden group border-2 border-gray-300 text-gray-700 py-4 text-[10px] uppercase tracking-[0.3em] font-bold rounded-md transition-all duration-300 hover:border-emera-950 hover:text-white hover:bg-emera-950 transform hover:scale-[1.02]">
+                <span class="relative z-10">Continue Shopping</span>
+            </button>
+
+            <!-- Trust Badge -->
+            <div class="flex items-center justify-center gap-2 pt-4 opacity-70">
+                <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="text-xs text-gray-600">Secure checkout • Free shipping over ₹50,000</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4 transform transition-all">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-serif text-gray-900 mb-2">Oops!</h3>
+            <p id="error-message" class="text-sm text-gray-600 mb-6">Something went wrong. Please try again.</p>
+            <button onclick="closeErrorModal()" class="w-full bg-emera-950 text-white py-3 text-[10px] uppercase tracking-[0.3em] font-bold rounded-sm hover:bg-emera-700 transition-all duration-300">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 if (<%= !!product.isBlocked %>) location.href = "/products";
 
@@ -244,7 +393,54 @@ const variants = <%- JSON.stringify(product.variants) %>;
 const images = <%- JSON.stringify(product.productImage || []) %>;
 let activeVariant = 0;
 
+// Modal Functions
+function showSuccessModal(cartCount) {
+    const modal = document.getElementById('success-modal');
+    
+    // Populate product details
+    const productName = "<%= product.name %>";
+    const productPrice = "₹<%= product.salePrice.toLocaleString() %>";
+    const productImage = images[0]?.url || "";
+    const selectedColor = variants[activeVariant]?.color || "#000000";
+    
+    document.getElementById('modal-product-name').textContent = productName;
+    document.getElementById('modal-product-price').textContent = productPrice;
+    document.getElementById('modal-product-img').src = productImage;
+    document.getElementById('modal-product-color').style.backgroundColor = selectedColor;
+    document.getElementById('modal-cart-count').textContent = cartCount + ' item' + (cartCount !== 1 ? 's' : '');
+    
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+}
 
+function closeModal() {
+    const modal = document.getElementById('success-modal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+}
+
+function showErrorModal(message) {
+    const modal = document.getElementById('error-modal');
+    const messageEl = document.getElementById('error-message');
+    messageEl.textContent = message || 'Something went wrong. Please try again.';
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+}
+
+function closeErrorModal() {
+    const modal = document.getElementById('error-modal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+}
+
+// Close modal when clicking outside
+document.getElementById('success-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+document.getElementById('error-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeErrorModal();
+});
 
 function changeImage(i) {
   if (!images[i]) return;
@@ -285,7 +481,8 @@ function selectVariant(i) {
 
 // Improved Zoom Functionality
 const zoomArea = document.getElementById("main-zoom-area");
-const zoomImg = document.getElementById("main-img");let zoomed = false;
+const zoomImg = document.getElementById("main-img");
+let zoomed = false;
 
 if (zoomArea && zoomImg) {
   zoomArea.addEventListener("click", () => {
@@ -347,11 +544,22 @@ function addToCart(productId) {
       }
 
       if (data.success) {
-        document.getElementById("cart-count-badge").textContent = data.cartCount;
+        // Update cart count badge
+        const cartBadge = document.getElementById("cart-count-badge");
+        if (cartBadge) {
+          cartBadge.textContent = data.cartCount;
+        }
+        // Show success modal with cart count
+        showSuccessModal(data.cartCount || 1);
+      } else {
+        showErrorModal(data.message || 'Failed to add item to cart');
       }
+    })
+    .catch(err => {
+      console.error("ADD TO CART ERROR", err);
+      showErrorModal('An error occurred. Please try again.');
     });
 }
-
 
 function buyNow(productId) {
   fetch("/cart/add", {
@@ -384,17 +592,337 @@ function buyNow(productId) {
 
       if (data.redirect) {
         window.location.href = data.redirect;
+      } else if (!data.success) {
+        showErrorModal(data.message || 'Failed to process your request');
       }
     })
     .catch(err => {
       console.error("BUY NOW ERROR", err);
+      showErrorModal('An error occurred. Please try again.');
     });
 }
 
-
-
-
 if (variants.length) selectVariant(0);
 </script>
+
+<style>
+/* Modal Base Animations */
+#success-modal {
+    transition: all 0.3s ease-in-out;
+}
+
+#success-modal.show {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#success-modal.show > div {
+    animation: modalSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#error-modal.show {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Fade and Slide Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(50px) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Success Icon Animations */
+@keyframes scale-in {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.animate-scale-in {
+    animation: scale-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes check-draw {
+    0% {
+        stroke-dasharray: 0, 100;
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        stroke-dasharray: 100, 0;
+        opacity: 1;
+    }
+}
+
+.animate-check-draw {
+    stroke-dasharray: 100;
+    animation: check-draw 0.8s cubic-bezier(0.65, 0, 0.35, 1) 0.4s forwards;
+}
+
+/* Ripple Effects */
+@keyframes ping-slow {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.3);
+        opacity: 0.4;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+@keyframes ping-slower {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.3;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+.animate-ping-slow {
+    animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-ping-slower {
+    animation: ping-slower 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Floating Background Elements */
+@keyframes float-slow {
+    0%, 100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+    25% {
+        transform: translate(10px, -10px) rotate(5deg);
+    }
+    50% {
+        transform: translate(-5px, -20px) rotate(-5deg);
+    }
+    75% {
+        transform: translate(-10px, -10px) rotate(3deg);
+    }
+}
+
+@keyframes float-slower {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+    }
+    33% {
+        transform: translate(-15px, 10px) scale(1.05);
+    }
+    66% {
+        transform: translate(15px, -15px) scale(0.95);
+    }
+}
+
+.animate-float-slow {
+    animation: float-slow 8s ease-in-out infinite;
+}
+
+.animate-float-slower {
+    animation: float-slower 12s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+    0%, 100% {
+        opacity: 0.1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.15;
+        transform: scale(1.1);
+    }
+}
+
+.animate-pulse-slow {
+    animation: pulse-slow 4s ease-in-out infinite;
+}
+
+/* Shimmer Effect */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.shimmer-effect {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 3s infinite;
+}
+
+/* Confetti Animation */
+.confetti-container {
+    perspective: 1000px;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    opacity: 0;
+    animation: confetti-fall 3s ease-out forwards;
+}
+
+.confetti:nth-child(1) {
+    left: 10%;
+    animation-delay: 0.1s;
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.confetti:nth-child(2) {
+    left: 20%;
+    animation-delay: 0.2s;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.confetti:nth-child(3) {
+    left: 30%;
+    animation-delay: 0.15s;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.confetti:nth-child(4) {
+    left: 40%;
+    animation-delay: 0.25s;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+}
+
+.confetti:nth-child(5) {
+    left: 50%;
+    animation-delay: 0.1s;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.confetti:nth-child(6) {
+    left: 60%;
+    animation-delay: 0.3s;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+.confetti:nth-child(7) {
+    left: 70%;
+    animation-delay: 0.2s;
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.confetti:nth-child(8) {
+    left: 80%;
+    animation-delay: 0.15s;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.confetti:nth-child(9) {
+    left: 90%;
+    animation-delay: 0.25s;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+}
+
+.confetti:nth-child(10) {
+    left: 95%;
+    animation-delay: 0.1s;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+@keyframes confetti-fall {
+    0% {
+        top: -10%;
+        opacity: 1;
+        transform: translateX(0) rotateZ(0deg);
+    }
+    100% {
+        top: 100%;
+        opacity: 0;
+        transform: translateX(calc(-50px + 100px * var(--random, 0))) rotateZ(calc(360deg * var(--random, 1)));
+    }
+}
+
+/* Button Hover Effects */
+button, a {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active, a:active {
+    transform: scale(0.98);
+}
+
+/* Gradient Text Effect */
+@keyframes gradient-shift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Smooth Status Indicator */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+</style>
 
 <%- include('../partials/user/footer') %>

@@ -1,4 +1,4 @@
-<%- include('../partials/user/header', { user, cartItems }) %>
+<%- include('../partials/user/header', { user, cartCount }) %>
 
 
 <body class="bg-white text-gray-900 selection:bg-emera-950 selection:text-white">
@@ -80,9 +80,11 @@
                                     class="qty-btn"
                                     data-action="decrease"
                                     data-item-id="<%= item.product._id %>"
+                                    data-color="<%= item.color %>"
                                     >
                                     −
                                     </button>
+
 
                                    <span class="text-sm font-light w-8 text-center"><%= item.quantity %></span>
 
@@ -90,14 +92,23 @@
                                     class="qty-btn"
                                     data-action="increase"
                                     data-item-id="<%= item.product._id %>"
-                                    <%= item.product.stock === 0 ? "disabled" : "" %>
+                                    data-color="<%= item.color %>"
                                     >
                                     +
                                     </button>
 
+
+
                                 </div>
-                                
-                                <button class="remove-btn text-[10px] tracking-[0.3em] uppercase text-gray-400 font-bold hover:text-gray-900 transition-colors" data-item-id="<%= item.product._id %>">Remove</button>
+                            
+                                <button
+                                class="remove-btn text-[10px] tracking-[0.3em] uppercase text-gray-400 font-bold hover:text-gray-900 transition-colors"
+                                data-item-id="<%= item.product._id %>"
+                                data-color="<%= item.color %>"
+                                >
+                                Remove
+                                </button>
+
                             </div>
                         </div>
                     </div>
@@ -152,12 +163,14 @@
                     %>
 
 
-                    <a
-                    href="/checkout"
+                   <button
+                    type="button"
+                    onclick="window.location.href='/checkout'"
                     class="block text-center btn-hover w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold"
                     >
                     Proceed to Checkout
-                    </a>
+                    </button>
+
 
 
                     
@@ -180,25 +193,56 @@
     btn.addEventListener("click", async () => {
       const action = btn.dataset.action;
       const productId = btn.dataset.itemId;
+      const color = btn.dataset.color;
 
       const url =
         action === "increase"
           ? `/cart/increment/${productId}`
           : `/cart/decrement/${productId}`;
 
-      await fetch(url, { method: "PUT" });
-      location.reload();
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ color }),
+      });
+
+      if (!res.ok) {
+        alert("Try again, error occurred");
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        location.reload();
+      } else {
+        alert(data.message || "Quantity update failed");
+      }
     });
   });
 
   document.querySelectorAll(".remove-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const productId = btn.dataset.itemId;
+      const color = btn.dataset.color;
 
-      await fetch(`/cart/remove/${productId}`, { method: "DELETE" });
+      const res = await fetch(`/cart/remove/${productId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ color }),
+      });
+
+      if (!res.ok) {
+        alert("Try again, error occurred");
+        return;
+      }
+
       location.reload();
     });
   });
 </script>
+
+
+
+
 
 <%- include('../partials/user/footer') %>

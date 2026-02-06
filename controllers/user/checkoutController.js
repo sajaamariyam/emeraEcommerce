@@ -1,6 +1,7 @@
 const Cart = require("../../models/cartSchema");
 const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
+const User = require("../../models/userSchema");
 
 const loadCheckout = async (req, res) => {
   try {
@@ -11,6 +12,10 @@ const loadCheckout = async (req, res) => {
     if (!cart || cart.items.length === 0) {
       return res.redirect("/cart");
     }
+
+    const user = await User.findById(userId);
+    const addresses = user?.addresses || [];
+
 
     let subtotal = 0;
     const cartItems = [];
@@ -34,12 +39,19 @@ const loadCheckout = async (req, res) => {
     const tax = Math.round(subtotal * 0.18);
     const total = subtotal + tax;
 
+    const cartCount = cart.items.reduce(
+      (sum, item) => sum + item.quantity, 0
+    )
+
     res.render("user/checkout", {
       user: req.user,
       cartItems,
+      addresses,
       subtotal,
       tax,
       total,
+      cartCount,
+      discount: 0,
       showAnnouncement: false,
     });
   } catch (error) {
@@ -48,14 +60,25 @@ const loadCheckout = async (req, res) => {
   }
 };
 
+
 const placeOrder = async (req, res) => {
   try {
     const userId = req.user._id;
+    const { addressId, email, phone } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const selectedAddress = user.addresses.id(addressId);
+    if (!selectedAddress) {
+      return res.status(400).json({ message: "Invalid address selected" });
+    }
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
-
     if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ success: false, message: "Cart is empty" });
+      return res.status(400).json({ message: "Cart is empty" });
     }
 
     let totalPrice = 0;
@@ -64,24 +87,14 @@ const placeOrder = async (req, res) => {
     for (const item of cart.items) {
       const product = item.productId;
 
-      if (!product || product.isBlocked || !product.isListed) {
-        return res.status(400).json({
-          success: false,
-          message: "Some products are unavailable",
-        });
-      }
-
-      const variant = product.variants.find((v) => v.color === item.color);
-
+      const variant = product.variants.find(v => v.color === item.color);
       if (!variant || variant.quantity < item.quantity) {
         return res.status(400).json({
-          success: false,
-          message: `${product.name} (${item.color}) is out of stock`,
+          message: `${product.name} (${item.color}) out of stock`,
         });
       }
 
       totalPrice += item.price * item.quantity;
-
       orderedItems.push({
         productId: product._id,
         color: item.color,
@@ -95,23 +108,25 @@ const placeOrder = async (req, res) => {
 
     const newOrder = new Order({
       orderId: `Emera-${Date.now()}`,
-      userId: userId,
+      userId,
       orderedItems,
       totalPrice,
       discount: 0,
       finalAmount,
-      shippingAddress: {
-        name: `${req.body.firstName} ${req.body.lastName}`,
-        phone: req.body.phone,
-        email: req.body.email,
-        address: `${req.body.address1}, ${req.body.address2 || ""}`,
-        city: req.body.city,
-        state: req.body.state,
-        pincode: req.body.pincode,
-        country: "India",
-      },
       paymentMethod: "COD",
       status: "pending",
+
+      shippingAddress: {
+      name: selectedAddress.fullName, 
+      phone: selectedAddress.phone,
+      email,
+      address: selectedAddress.street, 
+      city: selectedAddress.city,
+      state: selectedAddress.state,
+      pincode: selectedAddress.zipCode,
+      country: selectedAddress.country,
+    },
+
     });
 
     await newOrder.save();
@@ -119,19 +134,16 @@ const placeOrder = async (req, res) => {
     for (const item of cart.items) {
       await Product.updateOne(
         { _id: item.productId._id, "variants.color": item.color },
-        { $inc: { "variants.$.quantity": -item.quantity } },
+        { $inc: { "variants.$.quantity": -item.quantity } }
       );
     }
 
     await Cart.deleteOne({ userId });
 
-    res.json({
-      success: true,
-      orderId: newOrder.orderId,
-    });
+    res.json({ success: true, orderId: newOrder.orderId });
   } catch (error) {
-    console.error("PLACE ORDER ERROR ", error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
+    console.error("PLACE ORDER ERROR", error);
+    res.status(500).json({ message: "Order failed" });
   }
 };
 

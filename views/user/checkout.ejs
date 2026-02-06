@@ -29,11 +29,11 @@
                     <div class="space-y-6">
                         <div>
                             <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Email Address *</label>
-                            <input type="email" id="email" required class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                            <input type="email" id="email" required value="<%= user?.email || '' %>" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
                         </div>
                         <div>
                             <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Phone Number *</label>
-                            <input type="tel" id="phone" required class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                            <input type="tel" id="phone" required value="<%= user?.phone || '' %>" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
                         </div>
                     </div>
                 </div>
@@ -45,7 +45,70 @@
                         <span class="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-bold">Step 2 of 3</span>
                     </div>
                     
-                    <div class="space-y-6">
+                    <!-- Saved Addresses -->
+                    <% if (addresses && addresses.length > 0) { %>
+                        <div class="mb-8">
+                            <h3 class="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-widest">Select Saved Address</h3>
+                            <div class="space-y-4" id="savedAddresses">
+                                <% addresses.forEach((address, index) => { %>
+                                    <label class="flex items-start gap-4 p-6 border border-stone-300 cursor-pointer hover:border-emera-950 transition-colors bg-white address-card" data-address-id="<%= address._id %>">
+                                        <input type="radio" name="selectedAddress" value="<%= address._id %>" class="radio-custom mt-1" <%= address.isDefault ? 'checked' : '' %>>
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="text-sm font-semibold"><%= address.firstName %> <%= address.lastName %></span>
+                                                <% if (address.isDefault) { %>
+                                                    <span class="text-[8px] uppercase tracking-widest text-emera-700 font-bold bg-emera-50 px-3 py-1">Default</span>
+                                                <% } %>
+                                            </div>
+                                            <p class="text-xs text-gray-600 mb-1">
+                                                <%= address.address1 %><% if (address.address2) { %>, <%= address.address2 %><% } %>
+                                            </p>
+                                            <p class="text-xs text-gray-600 mb-1">
+                                                <%= address.city %>, <%= address.state %> - <%= address.pincode %>
+                                            </p>
+                                            <p class="text-xs text-gray-600 mb-3">India</p>
+                                            <p class="text-xs text-gray-600">Phone: <%= address.phone || user.phone %></p>
+                                            <div class="flex gap-4 mt-4">
+                                                <button class="text-[9px] uppercase tracking-widest text-emera-700 font-bold hover:text-emera-950 transition-colors edit-address-btn" data-address-id="<%= address._id %>">
+                                                    Edit
+                                                </button>
+                                                <% if (!address.isDefault) { %>
+                                                    <button class="text-[9px] uppercase tracking-widest text-gray-500 font-bold hover:text-gray-900 transition-colors set-default-btn" data-address-id="<%= address._id %>">
+                                                        Set as Default
+                                                    </button>
+                                                    <button class="text-[9px] uppercase tracking-widest text-red-500 font-bold hover:text-red-700 transition-colors delete-address-btn" data-address-id="<%= address._id %>">
+                                                        Delete
+                                                    </button>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </label>
+                                <% }) %>
+                            </div>
+                            
+                            <button id="addNewAddressBtn" class="mt-6 w-full border-2 border-dashed border-stone-300 text-gray-600 py-6 text-[10px] uppercase tracking-[0.4em] font-bold hover:border-emera-950 hover:text-emera-950 transition-all duration-300">
+                                + Add New Address
+                            </button>
+                        </div>
+                    <% } else { %>
+                        <p class="text-sm text-gray-500 mb-6 text-center py-4">No saved addresses. Please add a new address below.</p>
+                    <% } %>
+                    
+                    <!-- Add/Edit Address Form -->
+                    <div id="addressForm" class="<%= addresses && addresses.length > 0 ? 'hidden' : '' %> space-y-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-widest" id="formTitle">
+                                <%= addresses && addresses.length > 0 ? 'Add New Address' : 'Enter Shipping Address' %>
+                            </h3>
+                            <% if (addresses && addresses.length > 0) { %>
+                                <button id="cancelAddressBtn" class="text-[9px] uppercase tracking-widest text-gray-500 font-bold hover:text-gray-900 transition-colors">
+                                    Cancel
+                                </button>
+                            <% } %>
+                        </div>
+                        
+                        <input type="hidden" id="editingAddressId" value="">
+                        
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">First Name *</label>
@@ -124,11 +187,21 @@
                         </div>
                         
                         <div>
+                            <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Phone (Optional)</label>
+                            <input type="tel" id="addressPhone" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
+                            <p class="text-[9px] text-gray-400 mt-2">Leave blank to use contact phone number</p>
+                        </div>
+                        
+                        <div>
                             <label class="flex items-start gap-3 cursor-pointer">
-                                <input type="checkbox" id="saveAddress" class="mt-1">
-                                <span class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Save this address for future orders</span>
+                                <input type="checkbox" id="setAsDefault" class="mt-1">
+                                <span class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Set as default address</span>
                             </label>
                         </div>
+                        
+                        <button id="saveAddressBtn" class="w-full bg-emera-950 text-white py-5 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-700 transition-all duration-300">
+                            Save Address
+                        </button>
                     </div>
                 </div>
                 
@@ -142,7 +215,7 @@
                     <div class="space-y-4">
                         <!-- Credit/Debit Card -->
                         <label class="flex items-start gap-4 p-6 border border-stone-300 cursor-pointer hover:border-emera-950 transition-colors bg-white">
-                            <input type="radio" name="payment" value="card" class="radio-custom mt-1" checked>
+                            <input type="radio" name="payment" value="card" class="radio-custom mt-1">
                             <div class="flex-1">
                                 <div class="flex items-center justify-between mb-2">
                                     <span class="text-sm font-semibold">Credit / Debit Card</span>
@@ -178,7 +251,7 @@
                         
                         <!-- Cash on Delivery -->
                         <label class="flex items-start gap-4 p-6 border border-stone-300 cursor-pointer hover:border-emera-950 transition-colors bg-white">
-                            <input type="radio" name="payment" value="cod" class="radio-custom mt-1">
+                            <input type="radio" name="payment" value="cod" class="radio-custom mt-1" checked>
                             <div class="flex-1">
                                 <span class="text-sm font-semibold">Cash on Delivery</span>
                                 <p class="text-[9px] uppercase tracking-[0.3em] text-gray-400">Pay when you receive</p>
@@ -187,7 +260,7 @@
                     </div>
                     
                     <!-- Card Details (shown when card is selected) -->
-                    <div id="cardDetails" class="mt-8 pt-8 border-t border-stone-200 space-y-6">
+                    <div id="cardDetails" class="mt-8 pt-8 border-t border-stone-200 space-y-6" style="display: none;">
                         <div>
                             <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Card Number *</label>
                             <input type="text" id="cardNumber" maxlength="19" placeholder="1234 5678 9012 3456" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
@@ -220,7 +293,9 @@
                     <div class="space-y-6 mb-8 pb-8 border-b border-stone-200">
                         <% if (cartItems && cartItems.length > 0) { %>
                             <% cartItems.forEach(item => { %>
-                                <div class="flex gap-4">
+                                <% const isOutOfStock = item.product.stock < item.quantity; %>
+                                <% const isBlocked = item.product.isBlocked || item.product.category?.isBlocked; %>
+                                <div class="flex gap-4 <%= (isOutOfStock || isBlocked) ? 'opacity-50' : '' %>">
                                     <div class="w-20 h-20 bg-stone-200 flex-shrink-0 overflow-hidden">
                                         <img src="<%= item.product.productImage?.[0]?.url || '/images/placeholder.png' %>" 
                                              alt="<%= item.product.name %>" 
@@ -229,6 +304,11 @@
                                     <div class="flex-1">
                                         <h4 class="text-sm font-semibold text-gray-900 mb-1"><%= item.product.name %></h4>
                                         <p class="text-[9px] uppercase tracking-widest text-gray-400">Qty: <%= item.quantity %></p>
+                                        <% if (isOutOfStock) { %>
+                                            <p class="text-[8px] uppercase tracking-widest text-red-600 font-bold mt-1">Out of Stock</p>
+                                        <% } else if (isBlocked) { %>
+                                            <p class="text-[8px] uppercase tracking-widest text-red-600 font-bold mt-1">Unavailable</p>
+                                        <% } %>
                                         <p class="text-sm font-bold text-gray-900 mt-2">₹<%= item.price.toLocaleString('en-IN') %></p>
                                     </div>
                                 </div>
@@ -246,6 +326,12 @@
                             <span class="text-gray-400 font-bold">Subtotal</span>
                             <span class="font-bold text-gray-900">₹<%= subtotal.toLocaleString('en-IN') %></span>
                         </div>
+                        <% if (discount > 0) { %>
+                            <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                                <span class="text-gray-400 font-bold">Discount</span>
+                                <span class="font-bold text-emera-700">-₹<%= discount.toLocaleString('en-IN') %></span>
+                            </div>
+                        <% } %>
                         <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
                             <span class="text-gray-400 font-bold">Shipping</span>
                             <span class="font-bold text-emera-700">Complimentary</span>
@@ -261,9 +347,13 @@
                         <span class="text-2xl font-serif text-gray-900">₹<%= total.toLocaleString('en-IN') %></span>
                     </div>
                     
-                    <button id="placeOrderBtn" class="block text-center w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold mb-6 hover:bg-emera-700 transition-all duration-300">
+                    <button id="placeOrderBtn" class="block text-center w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold mb-6 hover:bg-emera-700 transition-all duration-300" <%= (cartItems && cartItems.some(item => item.product.stock < item.quantity || item.product.isBlocked || item.product.category?.isBlocked)) ? 'disabled' : '' %>>
                         Place Order
                     </button>
+                    
+                    <% if (cartItems && cartItems.some(item => item.product.stock < item.quantity || item.product.isBlocked || item.product.category?.isBlocked)) { %>
+                        <p class="text-[9px] text-red-600 uppercase tracking-widest text-center mb-4">Please remove unavailable items to continue</p>
+                    <% } %>
                     
                     <div class="space-y-4 text-center">
                         <p class="text-[9px] text-gray-400 uppercase tracking-widest">Secure Checkout • 256-bit SSL</p>
@@ -277,127 +367,237 @@
         
     </main>
 
-    <script>
-        // Toggle card details visibility
-        const paymentRadios = document.querySelectorAll('input[name="payment"]');
-        const cardDetails = document.getElementById('cardDetails');
-        
-        paymentRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if (e.target.value === 'card') {
-                    cardDetails.style.display = 'block';
-                } else {
-                    cardDetails.style.display = 'none';
-                }
-            });
-        });
-        
-        // Format card number
-        const cardNumber = document.getElementById('cardNumber');
-        cardNumber.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\s/g, '');
-            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-            e.target.value = formattedValue;
-        });
-        
-        // Format expiry date
-        const cardExpiry = document.getElementById('cardExpiry');
-        cardExpiry.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length >= 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2, 4);
-            }
-            e.target.value = value;
-        });
-        
-        // Only allow numbers in CVV
-        const cardCVV = document.getElementById('cardCVV');
-        cardCVV.addEventListener('input', (e) => {
-            e.target.value = e.target.value.replace(/\D/g, '');
-        });
-        
-        // Only allow numbers in PIN code
-        const pincode = document.getElementById('pincode');
-        pincode.addEventListener('input', (e) => {
-            e.target.value = e.target.value.replace(/\D/g, '');
-        });
-        
-        // Place order validation
-        const placeOrderBtn = document.getElementById('placeOrderBtn');
-        placeOrderBtn.addEventListener('click', () => {
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
-            const firstName = document.getElementById('firstName').value;
-            const lastName = document.getElementById('lastName').value;
-            const address1 = document.getElementById('address1').value;
-            const city = document.getElementById('city').value;
-            const state = document.getElementById('state').value;
-            const pincodeVal = document.getElementById('pincode').value;
-            
-            if (!email || !phone || !firstName || !lastName || !address1 || !city || !state || !pincodeVal) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            const selectedPayment = document.querySelector('input[name="payment"]:checked').value;
-            
-            if (selectedPayment === 'card') {
-                const cardNum = document.getElementById('cardNumber').value;
-                const cardNameVal = document.getElementById('cardName').value;
-                const expiryVal = document.getElementById('cardExpiry').value;
-                const cvvVal = document.getElementById('cardCVV').value;
-                
-                if (!cardNum || !cardNameVal || !expiryVal || !cvvVal) {
-                    alert('Please fill in all card details');
-                    return;
-                }
-            }
-            placeOrderBtn.disabled = true;
-            placeOrderBtn.textContent = "Placing Order..."; 
-
-            // Submit order to backend
-            fetch('/checkout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email,
-                    phone,
-                    firstName,
-                    lastName,
-                    address1,
-                    address2: document.getElementById('address2').value,
-                    city,
-                    state,
-                    pincode: pincodeVal,
-                    paymentMethod: selectedPayment,
-                    cardDetails: selectedPayment === 'card'
-                        ? {
-                            cardNumber: document.getElementById('cardNumber').value,
-                            cardName: document.getElementById('cardName').value,
-                            expiry: document.getElementById('cardExpiry').value,
-                            cvv: document.getElementById('cardCVV').value
-                        }
-                        : null
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // go to order confirmation page
-                    window.location.href = `/orderConfirmation/${data.orderId}`;
-                } else {
-                    alert(data.message || 'Unable to place order');
-                }
-            })
-            .catch(error => {
-                console.error('Checkout error:', error);
-                alert('Something went wrong. Please try again.');
-            });
+<script>
+  window.addresses = <%- JSON.stringify(addresses || []) %>;
+</script>
 
 
-        });
-    </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* ================= DOM ELEMENTS ================= */
+
+  const firstName = document.getElementById('firstName');
+  const lastName = document.getElementById('lastName');
+  const address1 = document.getElementById('address1');
+  const address2 = document.getElementById('address2');
+  const city = document.getElementById('city');
+  const state = document.getElementById('state');
+  const pincode = document.getElementById('pincode');
+  const addressPhone = document.getElementById('addressPhone');
+  const setAsDefault = document.getElementById('setAsDefault');
+
+  const addressForm = document.getElementById('addressForm');
+  const addNewAddressBtn = document.getElementById('addNewAddressBtn');
+  const cancelAddressBtn = document.getElementById('cancelAddressBtn');
+  const saveAddressBtn = document.getElementById('saveAddressBtn');
+  const editingAddressId = document.getElementById('editingAddressId');
+  const placeOrderBtn = document.getElementById('placeOrderBtn');
+
+  /* ================= PAYMENT ================= */
+
+  const cardDetails = document.getElementById('cardDetails');
+  document.querySelectorAll('input[name="payment"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      cardDetails.style.display = radio.value === 'card' ? 'block' : 'none';
+    });
+  });
+
+  /* ================= HELPERS ================= */
+
+  function clearAddressForm() {
+    editingAddressId.value = '';
+    [firstName,lastName,address1,address2,city,state,pincode,addressPhone]
+      .forEach(el => el && (el.value = ''));
+    setAsDefault.checked = false;
+  }
+
+  /* ================= ADD ADDRESS ================= */
+
+  addNewAddressBtn?.addEventListener('click', () => {
+    addressForm.classList.remove('hidden');
+    addNewAddressBtn.classList.add('hidden');
+    clearAddressForm();
+  });
+
+  cancelAddressBtn?.addEventListener('click', () => {
+    addressForm.classList.add('hidden');
+    addNewAddressBtn?.classList.remove('hidden');
+    clearAddressForm();
+  });
+
+  saveAddressBtn?.addEventListener('click', async () => {
+    if (
+      !firstName.value.trim() ||
+      !lastName.value.trim() ||
+      !address1.value.trim() ||
+      !city.value.trim() ||
+      !state.value ||
+      !pincode.value.trim()
+    ) {
+      alert('Please fill all required fields');
+      return;
+    }
+
+    if (pincode.value.length !== 6) {
+      alert('PIN code must be 6 digits');
+      return;
+    }
+
+    const payload = {
+      firstName: firstName.value.trim(),
+      lastName: lastName.value.trim(),
+      address1: address1.value.trim(),
+      address2: address2.value.trim(),
+      city: city.value.trim(),
+      state: state.value,
+      pincode: pincode.value.trim(),
+      phone: addressPhone.value.trim(),
+      isDefault: setAsDefault.checked
+    };
+
+    const isEdit = Boolean(editingAddressId.value);
+    const url = isEdit
+      ? `/profile/addresses/${editingAddressId.value}`
+      : `/profile/addresses`;
+
+    try {
+      saveAddressBtn.disabled = true;
+      const res = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (data.success) location.reload();
+      else alert(data.message || 'Address save failed');
+    } catch {
+      alert('Something went wrong');
+    } finally {
+      saveAddressBtn.disabled = false;
+    }
+  });
+
+  /* ================= EDIT ADDRESS ================= */
+
+  document.querySelectorAll('.edit-address-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const address = window.addresses.find(a => a._id === btn.dataset.addressId);
+      if (!address) return alert('Address not found');
+
+      editingAddressId.value = address._id;
+      firstName.value = address.firstName;
+      lastName.value = address.lastName;
+      address1.value = address.address1;
+      address2.value = address.address2 || '';
+      city.value = address.city;
+      state.value = address.state;
+      pincode.value = address.pincode;
+      addressPhone.value = address.phone || '';
+      setAsDefault.checked = address.isDefault;
+
+      addressForm.classList.remove('hidden');
+      addNewAddressBtn?.classList.add('hidden');
+      addressForm.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  document.querySelectorAll('.delete-address-btn').forEach(btn => {
+  btn.addEventListener('click', async e => {
+    e.preventDefault();
+    e.stopPropagation(); 
+
+    if (!confirm('Delete this address?')) return;
+
+    try {
+      const res = await fetch(
+        `/profile/addresses/${btn.dataset.addressId}`,
+        { method: 'DELETE' }
+      );
+
+      const data = await res.json();
+      if (data.success) {
+        location.reload();
+      } else {
+        alert(data.message || 'Delete failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Something went wrong');
+    }
+  });
+});
+
+
+document.querySelectorAll('.set-default-btn').forEach(btn => {
+  btn.addEventListener('click', async e => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      const res = await fetch(
+        `/profile/addresses/${btn.dataset.addressId}/set-default`,
+        { method: 'PUT' }
+      );
+
+      const data = await res.json();
+      if (data.success) {
+        location.reload();
+      } else {
+        alert(data.message || 'Failed to set default');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Something went wrong');
+    }
+  });
+});
+
+
+  /* ================= PLACE ORDER ================= */
+
+  placeOrderBtn?.addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+
+    if (!email || !phone) return alert('Contact info required');
+    if (!selectedAddress) return alert('Select an address');
+
+    placeOrderBtn.disabled = true;
+    placeOrderBtn.textContent = 'Placing Order...';
+
+    try {
+      const res = await fetch('/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          phone,
+          addressId: selectedAddress.value,
+          paymentMethod: document.querySelector('input[name="payment"]:checked').value
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) location.href = `/orderConfirmation/${data.orderId}`;
+      else alert(data.message || 'Order failed');
+    } catch {
+      alert('Checkout failed');
+    } finally {
+      placeOrderBtn.disabled = false;
+      placeOrderBtn.textContent = 'Place Order';
+    }
+  });
+
+});
+</script>
+
+
+
 
 <%- include('../partials/user/footer') %>

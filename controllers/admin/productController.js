@@ -203,6 +203,7 @@ const editProduct = async (req, res) => {
       salePrice,
       brand,
       variants,
+      removedImages,
     } = req.body;
 
     const parsedVariants = JSON.parse(variants || "[]");
@@ -213,27 +214,36 @@ const editProduct = async (req, res) => {
         .json({ success: false, message: "At least one variant is required" });
     }
 
-    const updateData = {
-      name,
-      description,
-      category,
-      brand,
-      regularPrice,
-      salePrice,
-      variants: parsedVariants,
-    };
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false });
+    }
+
+    if (removedImages) {
+      const removeIndexes = JSON.parse(removedImages);
+      product.productImage = product.productImage.filter(
+        (_, index) => !removeIndexes.includes(index)
+      );
+    }
 
     if (req.files && req.files.length > 0) {
-      updateData.productImage = req.files.map((file) => ({
+      const newImages = req.files.map((file) => ({
         url: file.path,
         public_id: file.filename,
       }));
+      product.productImage.push(...newImages);
     }
 
-    await Product.findByIdAndUpdate(productId, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    
+    product.name = name;
+    product.description = description;
+    product.category = category;
+    product.brand = brand;
+    product.regularPrice = regularPrice;
+    product.salePrice = salePrice;
+    product.variants = parsedVariants;
+
+    await product.save();
 
     res.status(200).json({ success: true });
   } catch (error) {
@@ -241,6 +251,8 @@ const editProduct = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
+
+
 
 const updateStock = async (req, res) => {
   try {

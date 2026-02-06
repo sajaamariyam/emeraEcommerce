@@ -380,6 +380,8 @@
           class="grid grid-cols-1 md:grid-cols-2 gap-10">
 
       <input type="hidden" name="productId" id="form-productId">
+      <input type="hidden" name="removedImages" id="removedImages">
+
 
       <!-- LEFT COLUMN -->
       <div class="space-y-8">
@@ -860,6 +862,18 @@ function closeActionModals() {
   confirmModal.classList.remove("flex");
 }
 
+let removedOldImages = [];
+
+function removeOldImage(index, btn) {
+  removedOldImages.push(index);
+
+  document.getElementById("removedImages").value =
+    JSON.stringify(removedOldImages);
+
+  btn.parentElement.remove();
+}
+
+
 /* ---------------- OPEN PRODUCT MODAL ---------------- */
 async function openProductModal(productId = null) {
   const modal = document.getElementById("productModal");
@@ -898,14 +912,25 @@ async function openProductModal(productId = null) {
     }
 
     // Existing images preview
-    if (Array.isArray(product.productImage)) {
-      product.productImage.forEach(img => {
-        const div = document.createElement("div");
-        div.className = "aspect-[3/4] border rounded-xl overflow-hidden";
-        div.innerHTML = `<img src="${img.url}" class="w-full h-full object-cover">`;
-        preview.appendChild(div);
-      });
-    }
+
+if (Array.isArray(product.productImage)) {
+  product.productImage.forEach((img, index) => {
+    const div = document.createElement("div");
+    div.className = "relative aspect-[3/4] border rounded-xl overflow-hidden";
+
+    div.innerHTML = `
+      <img src="${img.url}" class="w-full h-full object-cover">
+      <button
+        type="button"
+        onclick="removeOldImage(${index}, this)"
+        class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm">
+        &times;
+      </button>
+    `;
+
+    preview.appendChild(div);
+  });
+}
 
     // Variants
     if (Array.isArray(product.variants)) {
@@ -1085,6 +1110,7 @@ document.getElementById("productForm").addEventListener("submit", e => {
     })
     .catch(() => showNotificationModal("Error", "Something went wrong", false));
 });
+
 </script>
 
 

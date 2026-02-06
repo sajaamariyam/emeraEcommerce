@@ -208,21 +208,17 @@ const resendOtp = async (req, res) => {
         .status(200)
         .json({ success: true, message: "OTP Resend successfully" });
     } else {
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: "Failed to resend OTP, Please try again",
-        });
+      res.status(500).json({
+        success: false,
+        message: "Failed to resend OTP, Please try again",
+      });
     }
   } catch (error) {
     console.error("Error resending OTP", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal Server Error. Please try again",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error. Please try again",
+    });
   }
 };
 
@@ -271,9 +267,6 @@ const login = async (req, res) => {
     req.session.user = findUser._id;
 
     req.session.save(() => {
-      console.log("LOGIN SUCCESS");
-      console.log("SESSION USER:", req.session.user);
-      console.log("REDIRECT TO (login):", req.session.redirectTo);
       const redirectTo = req.session.redirectTo || "/";
       delete req.session.redirectTo;
       return res.json({
@@ -458,6 +451,17 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const productsPageDefaults = {
+  search: "",
+  sort: "newest",
+  maxPrice: 100000,
+  categoryName: null,
+  category: "",
+  currentPage: 1,
+  totalPages: 1,
+  showAnnouncement: false,
+};
+
 const loadProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -576,6 +580,53 @@ const loadProductDetails = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.redirect("/products");
+  }
+};
+
+const searchProducts = async (req, res) => {
+  try {
+    const search = req.query.q || "";
+    const page = parseInt(req.query.page) || 1;
+    const limit = 8;
+    const skip = (page - 1) * limit;
+    const maxPrice = Number(req.query.maxPrice) || 100000;
+
+    const query = {
+      isBlocked: false,
+      isListed: true,
+      salePrice: { $lte: maxPrice },
+    };
+
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    const totalProducts = await Product.countDocuments(query);
+
+    const products = await Product.find(query)
+      .populate("category")
+      .skip(skip)
+      .limit(limit);
+
+    const categories = await Category.find({
+      isBlocked: false,
+      isListed: true,
+    });
+
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    res.render("user/products", {
+      ...productsPageDefaults,
+      products,
+      categories,
+      search,
+      maxPrice,
+      currentPage: page,
+      totalPages,
+    });
+  } catch (error) {
+    console.error("SEARCH ERROR", error);
+    res.redirect("/pageNotFound");
   }
 };
 
@@ -749,42 +800,37 @@ const addAddress = async (req, res) => {
     }
 
     const {
-      fullName,
-      phone,
-      street,
+      firstName,
+      lastName,
+      address1,
+      address2,
       city,
       state,
-      zipCode,
-      country,
+      pincode,
+      phone,
       isDefault,
     } = req.body;
 
-    if (
-      !fullName ||
-      !phone ||
-      !street ||
-      !city ||
-      !state ||
-      !zipCode ||
-      !country
-    ) {
-      return res.status(400).json({ message: "All fields are required" });
+    const finalPhone = phone?.trim() || user.phone;
+
+    if (!firstName || !lastName || !address1 || !city || !state || !pincode) {
+      return res
+        .status(400)
+        .json({ message: "All required fields must be filled" });
     }
 
     if (isDefault) {
-      user.addresses.forEach((a) => {
-        a.isDefault = false;
-      });
+      user.addresses.forEach((a) => (a.isDefault = false));
     }
 
     const newAddress = {
-      fullName,
-      phone,
-      street,
+      fullName: `${firstName} ${lastName}`,
+      street: address1 + (address2 ? `, ${address2}` : ""),
       city,
       state,
-      zipCode,
-      country,
+      zipCode: pincode,
+      country: "India",
+      phone: finalPhone,
       isDefault: user.addresses.length === 0 ? true : !!isDefault,
     };
 
@@ -793,7 +839,7 @@ const addAddress = async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.log("ADD ADDRESS ERROR", error);
+    console.error("ADD ADDRESS ERROR", error);
     res.status(500).json({ message: "Failed to add address" });
   }
 };
@@ -825,20 +871,40 @@ const updateAddress = async (req, res) => {
     }
 
     const address = user.addresses.id(req.params.id);
-
     if (!address) {
       return res.status(404).json({ message: "Address not found" });
     }
 
-    const { fullName, phone, street, city, state, zipCode, country } = req.body;
+    const {
+      firstName,
+      lastName,
+      address1,
+      address2,
+      city,
+      state,
+      pincode,
+      phone,
+      isDefault,
+    } = req.body;
 
-    address.fullName = fullName;
-    address.phone = phone;
-    address.street = street;
+    if (!firstName || !lastName || !address1 || !city || !state || !pincode) {
+      return res
+        .status(400)
+        .json({ message: "All required fields must be filled" });
+    }
+
+    if (isDefault) {
+      user.addresses.forEach((a) => (a.isDefault = false));
+    }
+
+    address.fullName = `${firstName} ${lastName}`;
+    address.street = address1 + (address2 ? `, ${address2}` : "");
     address.city = city;
     address.state = state;
-    address.zipCode = zipCode;
-    address.country = country;
+    address.zipCode = pincode;
+    address.country = "India";
+    address.phone = phone;
+    address.isDefault = !!isDefault;
 
     await user.save();
 
@@ -930,6 +996,7 @@ module.exports = {
   resetPassword,
   loadProducts,
   loadProductDetails,
+  searchProducts,
   loadProfile,
   editProfile,
   requestEmailOtp,
