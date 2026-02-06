@@ -197,8 +197,18 @@ const addCategory = async (req, res) => {
       return res.status(400).json({ message: "Name and image required" });
     }
 
+    name = name.trim();
+
+    const existingCategory = await Category.findOne({
+      name: {$regex: `^${name}$`, $options: "i"}
+    })
+
+    if(existingCategory){
+      return res.status(406).json({message: "Category already exists"});
+    }
+
     const newCategory = new Category({
-      name: name.trim(),
+      name,
       image: {
         url: req.file.path,
         public_id: req.file.public_id,
@@ -218,6 +228,19 @@ const editCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, isListed } = req.body;
+
+    name: name.trim();
+
+    const existingCategory = await Category.findOne({
+      _id: { $ne: id },
+      name: { $regex: `^${name}$`, $options: "i" }
+    });
+
+    if (existingCategory) {
+      return res
+        .status(409)
+        .json({ message: "Category name already exists" });
+    }
 
     const updateData = {
       name,
