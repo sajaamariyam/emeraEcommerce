@@ -2,11 +2,9 @@ const User = require("../models/userSchema");
 
 const userAuth = async (req, res, next) => {
   try {
-    console.log("SESSION USER ID:", req.session.user);
-
     if (!req.session.user) {
-      console.log("NOT LOGGED IN");
       req.session.redirectTo = req.originalUrl;
+      req.session.message = "Please login to continue";
       return res.redirect("/login");
     }
 

@@ -10,7 +10,6 @@ const loadCart = async (req, res) => {
     }
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
-    const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
     if (!cart || cart.items.length === 0) {
       return res.render("user/cart", {
@@ -19,10 +18,15 @@ const loadCart = async (req, res) => {
         subtotal: 0,
         tax: 0,
         total: 0,
-        cartCount,
+        cartCount: 0,
         showAnnouncement: false,
       });
     }
+
+    const cartCount = cart.items.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
 
     let subtotal = 0;
     const cartItems = [];
@@ -57,6 +61,7 @@ const loadCart = async (req, res) => {
       subtotal,
       tax,
       total,
+      cartCount,
       showAnnouncement: false,
     });
   } catch (error) {

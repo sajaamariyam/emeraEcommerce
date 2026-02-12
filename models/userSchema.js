@@ -78,30 +78,10 @@ const userSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  cart: [
-    {
-      product: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "product",
-        required: true,
-      },
-      quantity: {
-        type: Number,
-        required: true,
-        min: 1,
-      },
-    },
-  ],
   wallet: {
     type: Number,
     default: 0,
   },
-  wishlist: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "Wishlist",
-    },
-  ],
   orderHistory: [
     {
       type: Schema.Types.ObjectId,
@@ -118,6 +98,21 @@ const userSchema = new Schema({
   redeemed: {
     type: Boolean,
   },
+  wishlist: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Product",
+    },
+  ],
+  cart: [
+    {
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product"
+      },
+      quantity: Number
+    }
+  ],
   redeemedUsers: [
     {
       type: Schema.Types.ObjectId,

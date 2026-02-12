@@ -8,15 +8,16 @@ const { userAuth, noCache, saveRedirect } = require("../middlewares/auth");
 const { uploadProduct, uploadProfile } = require("../middlewares/upload");
 const checkoutController = require("../controllers/user/checkoutController");
 const orderController = require("../controllers/user/orderController");
+const wishlistController = require("../controllers/user/wishlistController");
 
 console.log("loadOtp:", userController.loadOtp);
 
 //AUTHENTICATION ROUTES
 
-router.get("/login", userController.loadLogin);
+router.get("/login", noCache, userController.loadLogin);
 router.post("/login", userController.login);
 
-router.get("/signup", userController.loadSignup);
+router.get("/signup", noCache, userController.loadSignup);
 router.post("/signup", userController.signup);
 
 router.get("/otp", userController.loadOtp);
@@ -65,7 +66,12 @@ router.get("/search", userController.searchProducts);
 
 //PROFILE ROUTES
 router.get("/profile", userAuth, noCache, userController.loadProfile);
-router.get("/api/profile/orders", userAuth, orderController.getProfileOrders);
+router.get(
+  "/api/profile/orders",
+  userAuth,
+  noCache,
+  orderController.getProfileOrders,
+);
 router.post(
   "/profile/edit",
   userAuth,
@@ -105,31 +111,47 @@ router.post(
 );
 
 //CART ROUTES
-router.get("/cart", userAuth, cartController.loadCart);
+router.get("/cart", userAuth, noCache, cartController.loadCart);
 router.post("/cart/add", userAuth, cartController.addToCart);
 router.put("/cart/increment/:productId", userAuth, cartController.incrementQty);
 router.put("/cart/decrement/:productId", userAuth, cartController.decrementQty);
 router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
 
 //CHECKOUT ROUTES
-router.get("/checkout", userAuth, checkoutController.loadCheckout);
+router.get("/checkout", userAuth, noCache, checkoutController.loadCheckout);
 router.post("/checkout", userAuth, checkoutController.placeOrder);
 
 //ORDER ROUTES
 router.get(
   "/orderConfirmation/:orderId",
   userAuth,
+  noCache,
   orderController.loadOrderConfirmation,
 );
 router.get("/orders/:orderId", userAuth, orderController.loadOrderDetails);
 router.get("/orders", userAuth, orderController.loadOrder);
 
 router.post("/orders/:orderId/cancel", userAuth, orderController.cancelOrder);
+router.post(
+  "/orders/:orderId/cancel-product",
+  userAuth,
+  orderController.cancelOrder,
+);
 router.post("/orders/:orderId/return", userAuth, orderController.returnOrder);
 router.get(
   "/orders/:orderId/invoice",
   userAuth,
   orderController.downloadInvoice,
 );
+
+//WISHLIST
+router.get("/wishlist", userAuth, wishlistController.getWishlist);
+router.post("/wishlist/add/:productId", userAuth, wishlistController.addToWishlist);
+router.delete(
+  "/wishlist/remove/:productId",
+  userAuth,
+  wishlistController.removeFromWishlist,
+);
+router.post("/wishlist/add-all-to-cart", userAuth, wishlistController.addAllToCart);
 
 module.exports = router;

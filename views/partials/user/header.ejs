@@ -88,6 +88,19 @@
             left: 50%;
             transform: translate(-50%, -50%);
         }
+
+        /* Search animation */
+        .search-container {
+            max-width: 0;
+            overflow: hidden;
+            transition: max-width 0.4s ease-in-out, opacity 0.4s ease-in-out;
+            opacity: 0;
+        }
+        
+        .search-container.active {
+            max-width: 200px;
+            opacity: 1;
+        }
     </style>
 
 </head>
@@ -128,28 +141,42 @@
       <div class="flex items-center space-x-6">
 
         <!-- Search -->
-        <form action="/search" method="GET" class="flex items-center gap-2">
-          
-          <input
-            type="text"
-            name="q"
-            placeholder="Search products"
-            class="bg-transparent border-b border-white/40 text-white text-sm px-2 py-1 focus:outline-none"
-            required
-          />
+        <div class="flex items-center gap-2">
+          <form action="/search" method="GET" class="search-container flex items-center gap-2" id="searchForm">
+            <input
+              type="text"
+              name="q"
+              id="searchInput"
+              placeholder="Search products"
+              class="bg-transparent border-b border-white/40 text-white text-sm px-2 py-1 focus:outline-none w-full"
+              required
+            />
+          </form>
 
-          <button type="submit" class="text-white/80 hover:text-white">
+          <button type="button" id="searchToggle" class="text-white/80 hover:text-white transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
           </button>
+        </div>
 
-        </form>
-
+        <!-- Wishlist -->
+        <a href="/wishlist" class="relative text-white/80 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+          
+          <% if (wishlistCount && wishlistCount > 0) { %>
+            <span class="absolute -top-2 -right-2 bg-white text-emera-950 text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+              <%= wishlistCount %>
+            </span>
+          <% } %>
+        </a>
 
         <!-- Cart -->
-        <a href="/cart" class="relative text-white/80 hover:text-white">
+        <a href="/cart" class="relative text-white/80 hover:text-white transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
               d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
@@ -198,16 +225,58 @@
 </nav>
 
 <script>
+  // Profile dropdown
   const btn = document.getElementById("profileBtn");
   const menu = document.getElementById("profileMenu");
 
-  btn.addEventListener("click", () => {
-    menu.classList.toggle("hidden");
+  if (btn && menu) {
+    btn.addEventListener("click", () => {
+      menu.classList.toggle("hidden");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!btn.contains(e.target) && !menu.contains(e.target)) {
+        menu.classList.add("hidden");
+      }
+    });
+  }
+
+  // Search toggle
+  const searchToggle = document.getElementById("searchToggle");
+  const searchForm = document.getElementById("searchForm");
+  const searchInput = document.getElementById("searchInput");
+
+  searchToggle.addEventListener("click", () => {
+    searchForm.classList.toggle("active");
+    
+    if (searchForm.classList.contains("active")) {
+      setTimeout(() => {
+        searchInput.focus();
+      }, 200);
+    }
   });
 
+  // Submit form when clicking search icon if search is already open
+  searchToggle.addEventListener("click", () => {
+    if (searchForm.classList.contains("active") && searchInput.value.trim() !== "") {
+      searchForm.submit();
+    }
+  });
+
+  // Close search when clicking outside
   document.addEventListener("click", (e) => {
-    if (!btn.contains(e.target) && !menu.contains(e.target)) {
-      menu.classList.add("hidden");
+    if (!searchToggle.contains(e.target) && !searchForm.contains(e.target)) {
+      searchForm.classList.remove("active");
+    }
+  });
+
+  // Allow form submission with Enter key
+  searchInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter" && searchInput.value.trim() !== "") {
+      searchForm.submit();
     }
   });
 </script>
+
+</body>
+</html>

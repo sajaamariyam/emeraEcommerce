@@ -1,5 +1,6 @@
 const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
+const User = require("../../models/userSchema");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
@@ -15,6 +16,7 @@ const loadOrderConfirmation = async (req, res) => {
     }).populate("orderedItems.productId");
 
     if (!order) {
+      req.flash("error", "Order not found");
       return res.redirect("/pageNotFound");
     }
 
@@ -32,6 +34,7 @@ const loadOrderConfirmation = async (req, res) => {
     });
   } catch (error) {
     console.log("LOAD ORDER CONFIRMATION ERROR", error);
+    req.flash("error", "Failed to load order confirmation");
     res.redirect("/pageNotFound");
   }
 };
@@ -46,6 +49,7 @@ const loadOrderDetails = async (req, res) => {
     }).populate("orderedItems.productId");
 
     if (!order) {
+      req.flash("error", "Order not found");
       return res.redirect("/pageNotFound");
     }
 
@@ -63,6 +67,7 @@ const loadOrderDetails = async (req, res) => {
     });
   } catch (error) {
     console.error("LOAD ORDER DETAILS ERROR: ", error);
+    req.flash("error", "Failed to load order details");
     res.redirect("/pageNotFound");
   }
 };
@@ -73,6 +78,15 @@ const loadOrder = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+
+    let searchQuery = { userId };
+    if (search) {
+      searchQuery.$or = [
+        { orderId: { $regex: search, $options: "i" } },
+        { status: { $regex: search, $options: "i" } },
+      ];
+    }
 
     const totalOrders = await Order.countDocuments({ userId });
 
@@ -90,47 +104,52 @@ const loadOrder = async (req, res) => {
       currentPage: page,
       totalPages,
       showAnnouncement: false,
+      messages: {
+        success: req.flash("success"),
+        error: req.flash("error"),
+      },
     });
   } catch (error) {
     console.error("LOAD ORDER ERROR:", error);
+    req.flash("error", "Failed to load orders");
     res.redirect("/pageNotFound");
   }
 };
 
 const getProfileOrders = async (req, res) => {
-  try{
-    const orders = await Order.find({userId: req.session.user})
-    .populate("orderedItems.productId")
-    .sort({createdAt: -1});
+  try {
+    const orders = await Order.find({ userId: req.session.user })
+      .populate("orderedItems.productId")
+      .sort({ createdAt: -1 });
 
-    const formattedOrders = orders.map(order => ({
+    const formattedOrders = orders.map((order) => ({
       _id: order._id,
       orderNumber: order.orderId,
       status: order.status,
       createdAt: order.createdAt,
       totalAmount: order.finalAmount,
-      items: order.orderedItems.map(item => ({
+      items: order.orderedItems.map((item) => ({
         quantity: item.quantity,
         price: item.price,
-        product:{
+        product: {
           name: item.productId?.name,
-          image: item.productId?.productImage?.[0]?.url
-        }
-      }))
+          image: item.productId?.productImage?.[0]?.url,
+        },
+      })),
     }));
 
     res.json(formattedOrders);
-  }catch(error){
+  } catch (error) {
     console.log("PROFILE ORDERES ERROR:", error);
-    res.status(500).json([]);
+    res.status(500).json({ success: false, message: "Failed to fetch orders" });
   }
-}
+};
 
 const cancelOrder = async (req, res) => {
   try {
     const userId = req.user._id;
     const { orderId } = req.params;
-    const { productId, color, reason } = req.body;
+    const { reason } = req.body;
 
     const order = await Order.findOne({
       orderId,
@@ -144,16 +163,97 @@ const cancelOrder = async (req, res) => {
       });
     }
 
-    if (order.status === "delivered" || order.status === "cancelled") {
+    const lowerStatus = order.status.toLowerCase();
+    if (
+      lowerStatus === "delivered" ||
+      lowerStatus === "cancelled" ||
+      lowerStatus === "return-requested"
+    ) {
       return res.status(400).json({
         success: false,
         message: "This order cannot be cancelled",
       });
     }
 
-    const itemIndex = order.orderedItems.findIndex(
-      (item) => item.productId.toString() === productId && item.color === color,
-    );
+    for (const item of order.orderedItems) {
+      await Product.updateOne(
+        { _id: item.productId, "variants.color": item.color },
+        { $inc: { "variants.$.quantity": item.quantity } },
+      );
+    }
+
+    order.status = "cancelled";
+    order.cancelReason = reason || "No reason provided";
+    order.orderedItems = [];
+    order.totalPrice = 0;
+    order.finalAmount = 0;
+    
+    if(order.paymentMethod === "ONLINE"){
+      order.paymentStatus = "refunded"
+    }
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: "Order cancelled successfully.",
+    });
+  } catch (error) {
+    console.error("CANCEL ORDER ERROR", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+
+const cancelProduct = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { orderId } = req.params;
+    const { productId, color, reason } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID is required",
+      });
+    }
+
+    const order = await Order.findOne({
+      orderId,
+      userId,
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: fasle,
+        message: "Order not found",
+      });
+    }
+
+    const lowerStatus = order.status.toLowerCase();
+    if (
+      lowerStatus === "delivered" ||
+      lowerStatus === "cancelled" ||
+      lowerStatus === "return-requested"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot cancel items from ths order",
+      });
+    }
+
+    const itemIndex = order.orderedItems.findIndex((item) => {
+      if (item.productId.toString() !== productId) {
+        return false;
+      }
+      if (item.color && color) {
+        return item.color === color;
+      }
+
+      return true;
+    });
 
     if (itemIndex === -1) {
       return res.status(404).json({
@@ -179,20 +279,22 @@ const cancelOrder = async (req, res) => {
 
     if (order.orderedItems.length === 0) {
       order.status = "cancelled";
-      order.cancelReason = reason || "";
+      order.cancelReason = reason || "All items cancelled";
+      order.totalPrice = 0;
+      order.finalAmount = 0;
     }
 
     await order.save();
 
     res.json({
       success: true,
-      message: "Order cancelled successfully.",
+      message: "Product cancelled successfully. Stock has been restored.",
     });
   } catch (error) {
-    console.error("CANCEL ORDER ERROR", error);
+    console.error("CANCEL PRODUCT ERROR:", error);
     res.status(500).json({
       success: false,
-      message: "Something went wrong",
+      message: "Failed to cancel product. Please try again.",
     });
   }
 };
@@ -213,7 +315,7 @@ const returnOrder = async (req, res) => {
     const order = await Order.findOne({
       orderId,
       userId,
-    });
+    }).populate("orderedItems.productId");
 
     if (!order) {
       return res.status(404).json({
@@ -222,10 +324,11 @@ const returnOrder = async (req, res) => {
       });
     }
 
-    if (order.status !== "delivered") {
+    const lowerStatus = order.status.toLowerCase();
+    if (lowerStatus !== "delivered") {
       return res.status(400).json({
-        succes: false,
-        message: "Only delevered orders can be returned",
+        success: false,
+        message: "Only delivered orders can be returned",
       });
     }
 
@@ -238,11 +341,12 @@ const returnOrder = async (req, res) => {
     if (daysSinceDelivery > 30) {
       return res.status(400).json({
         success: false,
-        message: "Return period has expired (30 days",
+        message: "Return period has expired (30 days limit)",
       });
     }
 
-    order.returnReason = reason;
+    order.status = "return-requested";
+    order.returnReason = reason.trim();
     await order.save();
 
     res.json({
@@ -272,7 +376,11 @@ const downloadInvoice = async (req, res) => {
       return res.status(404).send("Order not found");
     }
 
-    const doc = new PDFDocument({ margin: 50, size: "A4" });
+    const doc = new PDFDocument({
+      margin: 40,
+      size: "A4",
+      bufferPages: true,
+    });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -282,274 +390,323 @@ const downloadInvoice = async (req, res) => {
 
     doc.pipe(res);
 
+    // Minimalist color palette
     const colors = {
-      primary: "#2C3E50",
-      secondary: "#E74C3C",
-      emeraGreen: "#10B981",
-      accent: "#3498DB",
-      text: "#2C3E50",
-      lightGrey: "#ECF0F1",
-      darkGrey: "#7F8C8D",
+      primary: "#000000", // Pure black
+      secondary: "#4A4A4A", // Dark gray
+      border: "#E5E5E5", // Light gray
+      subtle: "#F8F8F8", // Very light gray
     };
 
-    doc.rect(0, 0, 612, 8).fill(colors.emeraGreen);
+    // ============================================
+    // HEADER SECTION
+    // ============================================
 
-    if (order.paymentStatus === "Paid" || order.status === "Delivered") {
-      doc.save();
-      doc.rotate(-45, { origin: [306, 421] });
-      doc
-        .fontSize(120)
-        .fillColor(colors.emeraGreen)
-        .opacity(0.08)
-        .font("Helvetica-Bold")
-        .text("PAID", 150, 350, { width: 400, align: "center" });
-      doc.restore();
-    }
+    // Thin top border
+    doc.rect(0, 0, 612, 1).fill(colors.primary);
 
-    doc.rect(0, 8, 612, 120).fill(colors.lightGrey);
-
-    doc.circle(85, 60, 35).fillAndStroke(colors.emeraGreen, colors.primary);
-
+    // Company Name - Minimalist
     doc
-      .fillColor("#FFFFFF")
-      .fontSize(28)
+      .fontSize(32)
       .font("Helvetica-Bold")
-      .text("E", 75, 46);
-
-    doc
       .fillColor(colors.primary)
-      .fontSize(36)
-      .font("Helvetica-Bold")
-      .text("EMERA", 140, 40);
+      .text("EMERA", 40, 35);
 
     doc
-      .fillColor(colors.emeraGreen)
-      .fontSize(12)
-      .font("Helvetica-Oblique")
-      .text("Luxury Bags", 140, 80);
+      .fontSize(9)
+      .font("Helvetica")
+      .fillColor(colors.secondary)
+      .text("LUXURY BAGS", 40, 70);
 
-    doc.rect(140, 98, 100, 3).fill(colors.emeraGreen);
-
+    // Invoice Title & Number - Right aligned
     doc
-      .fillColor(colors.primary)
-      .fontSize(28)
-      .font("Helvetica-Bold")
-      .text("INVOICE", 400, 45);
-
-    doc
-      .fillColor(colors.text)
       .fontSize(10)
       .font("Helvetica")
-      .text(`Invoice #${orderId}`, 400, 80)
+      .fillColor(colors.secondary)
+      .text("INVOICE", 450, 40, { align: "right", width: 122 });
+
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text(`#${orderId}`, 450, 55, { align: "right", width: 122 });
+
+    // Date
+    doc
+      .fontSize(9)
+      .font("Helvetica")
+      .fillColor(colors.secondary)
       .text(
-        `Date: ${new Date(order.createdAt).toLocaleDateString("en-IN", {
+        new Date(order.createdAt).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
           year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}`,
-        400,
-        95,
+        }),
+        450,
+        78,
+        { align: "right", width: 122 },
       );
 
-    let currentY = 150;
-
+    // Separator line
     doc
-      .rect(50, currentY - 10, 240, 140)
-      .fill("#FAFAFA")
+      .moveTo(40, 105)
+      .lineTo(572, 105)
+      .strokeColor(colors.border)
+      .lineWidth(0.5)
       .stroke();
 
+    // ============================================
+    // BILLING & ORDER INFO
+    // ============================================
+
+    let currentY = 125;
+
+    // Bill To Section
     doc
-      .fillColor(colors.primary)
-      .fontSize(11)
+      .fontSize(8)
       .font("Helvetica-Bold")
-      .text("BILL TO", 60, currentY);
+      .fillColor(colors.secondary)
+      .text("BILL TO", 40, currentY);
 
     doc
-      .fillColor(colors.text)
       .fontSize(10)
-      .font("Helvetica")
-      .text(order.shippingAddress.name, 60, currentY + 20)
-      .text(order.shippingAddress.address, 60, currentY + 35);
-
-    let addressY = currentY + 50;
-    if (order.shippingAddress.address) {
-      doc.text(order.shippingAddress.address, 60, addressY);
-      addressY += 15;
-    }
-
-    doc
-      .text(
-        `${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.pincode}`,
-        60,
-        addressY,
-      )
-      .text(order.shippingAddress.country, 60, addressY + 15)
-      .text(`Phone: ${order.shippingAddress.phone}`, 60, addressY + 30)
-      .text(`Email: ${order.shippingAddress.email}`, 60, addressY + 45);
-
-    doc
-      .rect(310, currentY - 10, 240, 80)
-      .fill("#FAFAFA")
-      .stroke();
-
-    doc
-      .fillColor(colors.primary)
-      .fontSize(11)
       .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text(order.shippingAddress.name, 40, currentY + 15);
+
+    doc
+      .fontSize(9)
+      .font("Helvetica")
+      .fillColor(colors.secondary)
+      .text(order.shippingAddress.address, 40, currentY + 30, { width: 220 });
+
+    doc.text(
+      `${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.pincode}`,
+      40,
+      currentY + 44,
+      { width: 220 },
+    );
+
+    doc.text(order.shippingAddress.phone, 40, currentY + 58, { width: 220 });
+
+    // Order Details Section - Right side
+    doc
+      .fontSize(8)
+      .font("Helvetica-Bold")
+      .fillColor(colors.secondary)
       .text("ORDER DETAILS", 320, currentY);
 
-    const statusColors = {
-      delivered: "#27AE60",
-      shipped: "#3498DB",
-      processing: "#F39C12",
-      pending: "#E67E22",
-      cancelled: "#E74C3C",
-    };
-    const statusColor = statusColors[order.status] || "#95A5A6";
-
+    // Status
+    const lowerStatus = order.status.toLowerCase();
     doc
-      .fillColor(colors.text)
-      .fontSize(10)
-      .font("Helvetica")
-      .text("Status:", 320, currentY + 20);
-
-    doc.roundedRect(365, currentY + 18, 80, 16, 3).fill(statusColor);
-
-    doc
-      .fillColor("#FFFFFF")
       .fontSize(9)
-      .font("Helvetica-Bold")
-      .text(order.status.toUpperCase(), 370, currentY + 21, {
-        width: 70,
-        align: "center",
-      });
-
-    doc
-      .fillColor(colors.text)
-      .fontSize(10)
       .font("Helvetica")
-      .text("Payment Method:", 320, currentY + 45)
+      .fillColor(colors.secondary)
+      .text("Status:", 320, currentY + 15)
       .font("Helvetica-Bold")
-      .text(order.paymentMethod.toUpperCase(), 420, currentY + 45);
+      .fillColor(colors.primary)
+      .text(order.status.toUpperCase(), 390, currentY + 15);
 
-    const tableTop = 330;
+    // Payment Method
+    doc
+      .fontSize(9)
+      .font("Helvetica")
+      .fillColor(colors.secondary)
+      .text("Payment:", 320, currentY + 30)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text(order.paymentMethod.toUpperCase(), 390, currentY + 30);
 
-    doc.rect(50, tableTop - 5, 500, 25).fill(colors.emeraGreen);
+    // Payment Status
+    doc
+      .fontSize(9)
+      .font("Helvetica")
+      .fillColor(colors.secondary)
+      .text("Status:", 320, currentY + 45)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text(order.paymentStatus || "Pending", 390, currentY + 45);
+
+    // ============================================
+    // ITEMS TABLE
+    // ============================================
+
+    const tableTop = 230;
+
+    // Table Header with subtle background
+    doc.rect(40, tableTop, 532, 20).fill(colors.subtle);
 
     doc
-      .fillColor("#FFFFFF")
-      .fontSize(10)
+      .fontSize(8)
       .font("Helvetica-Bold")
-      .text("ITEM DESCRIPTION", 60, tableTop + 5)
-      .text("QTY", 320, tableTop + 5, { width: 50, align: "center" })
-      .text("PRICE", 390, tableTop + 5, { width: 70, align: "right" })
-      .text("TOTAL", 480, tableTop + 5, { width: 60, align: "right" });
+      .fillColor(colors.secondary)
+      .text("ITEM", 50, tableTop + 6)
+      .text("QTY", 360, tableTop + 6, { width: 40, align: "center" })
+      .text("PRICE", 420, tableTop + 6, { width: 70, align: "right" })
+      .text("AMOUNT", 510, tableTop + 6, { width: 52, align: "right" });
 
-    let yPosition = tableTop + 35;
-    let rowCount = 0;
+    // Table Header Border
+    doc
+      .moveTo(40, tableTop + 20)
+      .lineTo(572, tableTop + 20)
+      .strokeColor(colors.border)
+      .lineWidth(0.5)
+      .stroke();
 
-    order.orderedItems.forEach((item, index) => {
+    let yPosition = tableTop + 30;
+
+    // Items - Calculate available space
+    const maxItems = 8; // Maximum items that fit on one page
+    const itemsToShow = order.orderedItems.slice(0, maxItems);
+
+    itemsToShow.forEach((item, index) => {
       const itemTotal = item.price * item.quantity;
 
-      if (rowCount % 2 === 0) {
-        doc.rect(50, yPosition - 8, 500, 30).fill("#F9F9F9");
+      // Subtle alternating rows
+      if (index % 2 === 1) {
+        doc.rect(40, yPosition - 5, 532, 20).fill(colors.subtle);
       }
 
       doc
-        .fillColor(colors.text)
-        .fontSize(10)
+        .fontSize(9)
         .font("Helvetica")
-        .text(item.productId.name, 60, yPosition, { width: 240 })
-        .text(item.quantity.toString(), 320, yPosition, {
-          width: 50,
-          align: "center",
-        })
-        .text(`₹${item.price.toLocaleString("en-IN")}`, 390, yPosition, {
+        .fillColor(colors.primary)
+        .text(item.productId.name, 50, yPosition, {
+          width: 300,
+          lineBreak: false,
+        });
+
+      doc.text(item.quantity.toString(), 360, yPosition, {
+        width: 40,
+        align: "center",
+      });
+
+      doc
+        .fillColor(colors.secondary)
+        .text(`₹${item.price.toLocaleString("en-IN")}`, 420, yPosition, {
           width: 70,
-          align: "right",
-        })
-        .font("Helvetica-Bold")
-        .text(`₹${itemTotal.toLocaleString("en-IN")}`, 480, yPosition, {
-          width: 60,
           align: "right",
         });
 
-      yPosition += 30;
-      rowCount++;
+      doc
+        .font("Helvetica-Bold")
+        .fillColor(colors.primary)
+        .text(`₹${itemTotal.toLocaleString("en-IN")}`, 510, yPosition, {
+          width: 52,
+          align: "right",
+        });
+
+      yPosition += 20;
     });
 
-    yPosition += 20;
+    // If more items, show indicator
+    if (order.orderedItems.length > maxItems) {
+      doc
+        .fontSize(8)
+        .font("Helvetica-Oblique")
+        .fillColor(colors.secondary)
+        .text(
+          `+ ${order.orderedItems.length - maxItems} more item(s)`,
+          50,
+          yPosition,
+          { width: 300 },
+        );
+      yPosition += 20;
+    }
 
-    doc.rect(320, yPosition - 10, 230, 150).fill("#FAFAFA");
+    // ============================================
+    // TOTALS SECTION
+    // ============================================
+
+    const totalsY = 620; // Fixed position for totals
+
+    // Separator before totals
+    doc
+      .moveTo(350, totalsY - 15)
+      .lineTo(572, totalsY - 15)
+      .strokeColor(colors.border)
+      .lineWidth(0.5)
+      .stroke();
 
     const subtotal = order.totalPrice;
     const tax = order.finalAmount - order.totalPrice;
     const total = order.finalAmount;
 
+    let summaryY = totalsY;
+
+    // Subtotal
     doc
-      .fillColor(colors.text)
-      .fontSize(10)
+      .fontSize(9)
       .font("Helvetica")
-      .text("Subtotal:", 330, yPosition)
-      .text(`₹${subtotal.toLocaleString("en-IN")}`, 480, yPosition, {
-        width: 60,
+      .fillColor(colors.secondary)
+      .text("Subtotal:", 420, summaryY, { width: 80, align: "right" })
+      .fillColor(colors.primary)
+      .text(`₹${subtotal.toLocaleString("en-IN")}`, 510, summaryY, {
+        width: 52,
         align: "right",
       });
 
-    yPosition += 22;
+    summaryY += 18;
+
+    // Tax
     doc
-      .text("Tax (GST 18%):", 330, yPosition)
-      .text(`₹${tax.toLocaleString("en-IN")}`, 480, yPosition, {
-        width: 60,
+      .fillColor(colors.secondary)
+      .text("Tax (GST 18%):", 420, summaryY, { width: 80, align: "right" })
+      .fillColor(colors.primary)
+      .text(`₹${tax.toLocaleString("en-IN")}`, 510, summaryY, {
+        width: 52,
         align: "right",
       });
 
+    summaryY += 18;
+
+    // Discount (if applicable)
     if (order.discount > 0) {
-      yPosition += 22;
       doc
         .fillColor(colors.secondary)
-        .text("Discount:", 330, yPosition)
-        .text(`-₹${order.discount.toLocaleString("en-IN")}`, 480, yPosition, {
-          width: 60,
+        .text("Discount:", 420, summaryY, { width: 80, align: "right" })
+        .fillColor(colors.primary)
+        .text(`-₹${order.discount.toLocaleString("en-IN")}`, 510, summaryY, {
+          width: 52,
           align: "right",
         });
-      doc.fillColor(colors.text);
+      summaryY += 18;
     }
 
-    yPosition += 22;
     doc
-      .text("Shipping:", 330, yPosition)
-      .fillColor("#27AE60")
+      .fillColor(colors.secondary)
+      .text("Shipping:", 420, summaryY, { width: 80, align: "right" })
       .font("Helvetica-Bold")
-      .text("FREE", 480, yPosition, { width: 60, align: "right" });
+      .fillColor(colors.primary)
+      .text("FREE", 510, summaryY, { width: 52, align: "right" });
 
-    yPosition += 15;
+    summaryY += 10;
+
     doc
-      .moveTo(330, yPosition)
-      .lineTo(540, yPosition)
-      .strokeColor(colors.emeraGreen)
-      .lineWidth(2)
+      .moveTo(350, summaryY)
+      .lineTo(572, summaryY)
+      .strokeColor(colors.primary)
+      .lineWidth(1)
       .stroke();
 
-    yPosition += 15;
+    summaryY += 12;
+
     doc
-      .fillColor(colors.primary)
-      .fontSize(13)
+      .fontSize(11)
       .font("Helvetica-Bold")
-      .text("TOTAL:", 330, yPosition)
+      .fillColor(colors.primary)
+      .text("TOTAL:", 420, summaryY, { width: 80, align: "right" })
       .fontSize(14)
-      .fillColor(colors.emeraGreen)
-      .text(`₹${total.toLocaleString("en-IN")}`, 480, yPosition, {
-        width: 60,
+      .text(`₹${total.toLocaleString("en-IN")}`, 510, summaryY, {
+        width: 52,
         align: "right",
       });
 
     const QRCode = require("qrcode");
-
     const qrData = `EMERA-ORDER-${orderId}-${order.finalAmount}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
-      width: 100,
-      margin: 1,
+      width: 80,
+      margin: 0,
       color: {
         dark: colors.primary,
         light: "#FFFFFF",
@@ -557,40 +714,32 @@ const downloadInvoice = async (req, res) => {
     });
 
     const qrBuffer = Buffer.from(qrCodeDataUrl.split(",")[1], "base64");
-
-    doc.image(qrBuffer, 60, 665, { width: 80, height: 80 });
+    doc.image(qrBuffer, 40, 720, { width: 60, height: 60 });
 
     doc
-      .fillColor(colors.darkGrey)
+      .fontSize(7)
+      .font("Helvetica")
+      .fillColor(colors.secondary)
+      .text("Scan to verify", 40, 785, { width: 60, align: "center" });
+
+    doc
       .fontSize(8)
       .font("Helvetica")
-      .text("Scan to verify", 60, 750, { width: 80, align: "center" });
-
-    doc.rect(0, 765, 612, 77).fill(colors.lightGrey);
-
-    doc
-      .fillColor(colors.primary)
-      .fontSize(12)
-      .font("Helvetica-Bold")
-      .text("Thank you for shopping with EMERA!", 50, 778, {
+      .fillColor(colors.secondary)
+      .text("Thank you for your purchase", 120, 730, {
         align: "center",
-        width: 512,
+        width: 372,
       });
 
     doc
-      .fillColor(colors.darkGrey)
-      .fontSize(9)
-      .font("Helvetica")
-      .text("For any queries, please contact us:", 50, 798, {
+      .fontSize(7)
+      .fillColor(colors.secondary)
+      .text("For support: support@emera.com | +91 1800 123 4567", 120, 750, {
         align: "center",
-        width: 512,
-      })
-      .text("Email: support@emera.com | Phone: +91 1800 123 4567", 50, 813, {
-        align: "center",
-        width: 512,
+        width: 372,
       });
 
-    doc.rect(0, 834, 612, 8).fill(colors.emeraGreen);
+    doc.rect(0, 841, 612, 1).fill(colors.primary);
 
     doc.end();
   } catch (error) {
@@ -605,6 +754,7 @@ module.exports = {
   loadOrder,
   getProfileOrders,
   cancelOrder,
+  cancelProduct,
   returnOrder,
   downloadInvoice,
 };

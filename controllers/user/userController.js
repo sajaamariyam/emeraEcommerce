@@ -15,6 +15,9 @@ const pageNotFound = async (req, res) => {
 
 const loadSignup = async (req, res) => {
   try {
+    if (req.session.user) {
+      return res.redirect("/");
+    }
     return res.render("user/signup");
   } catch (error) {
     console.log("Home page not loading", error);
@@ -224,7 +227,7 @@ const resendOtp = async (req, res) => {
 
 const loadLogin = async (req, res) => {
   try {
-    if (req.session.user && !req.session.redirectTo) {
+    if (req.session.user) {
       return res.redirect("/");
     }
     res.render("user/login");
@@ -235,8 +238,6 @@ const loadLogin = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    console.log("REDIRECT TO:", req.session.redirectTo);
-
     const { email, password } = req.body;
 
     const findUser = await User.findOne({ isAdmin: false, email: email });
@@ -264,11 +265,19 @@ const login = async (req, res) => {
       });
     }
 
-    req.session.user = findUser._id;
+    req.session.regenerate((err) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          message: "Session error. Please try again.",
+        });
+      }
 
-    req.session.save(() => {
+      req.session.user = findUser._id;
+
       const redirectTo = req.session.redirectTo || "/";
       delete req.session.redirectTo;
+
       return res.json({
         success: true,
         redirectTo,
@@ -632,7 +641,7 @@ const searchProducts = async (req, res) => {
 
 const loadProfile = async (req, res) => {
   try {
-    const userData = await User.findById(req.session.user);
+    const userData = req.user;
 
     if (!userData) {
       return res.redirect("/login");
@@ -650,7 +659,7 @@ const loadProfile = async (req, res) => {
 
 const editProfile = async (req, res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.user._id;
 
     console.log("REQ BODY:", req.body);
 
@@ -779,7 +788,7 @@ const updateProfileAfterOtp = async (req, res) => {
 
 const getAddresses = async (req, res) => {
   try {
-    const user = await User.findById(req.session.user).lean();
+    const user = req.user;
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -794,7 +803,7 @@ const getAddresses = async (req, res) => {
 
 const addAddress = async (req, res) => {
   try {
-    const user = await User.findById(req.session.user);
+    const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -813,7 +822,15 @@ const addAddress = async (req, res) => {
 
     const finalPhone = phone?.trim() || user.phone;
 
-    if (!firstName || !lastName || !address1 || !city || !state || !pincode) {
+    if (
+      !firstName ||
+      !lastName ||
+      !address1 ||
+      !finalPhone ||
+      !city ||
+      !state ||
+      !pincode
+    ) {
       return res
         .status(400)
         .json({ message: "All required fields must be filled" });
@@ -821,6 +838,14 @@ const addAddress = async (req, res) => {
 
     if (isDefault) {
       user.addresses.forEach((a) => (a.isDefault = false));
+    }
+
+    if (!/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ message: "Invalid pincode" });
+    }
+
+    if (!/^\d{10}$/.test(finalPhone)) {
+      return res.status(400).json({ message: "Invalid phone number" });
     }
 
     const newAddress = {
@@ -846,7 +871,7 @@ const addAddress = async (req, res) => {
 
 const setDefaultAddress = async (req, res) => {
   try {
-    const user = await User.findById(req.session.user);
+    const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -865,7 +890,7 @@ const setDefaultAddress = async (req, res) => {
 
 const updateAddress = async (req, res) => {
   try {
-    const user = await User.findById(req.session.user);
+    const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -917,7 +942,7 @@ const updateAddress = async (req, res) => {
 
 const deleteAddress = async (req, res) => {
   try {
-    const user = await User.findById(req.session.user);
+    const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -945,7 +970,7 @@ const deleteAddress = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.user._id;
 
     const { currentPassword, newPassword } = req.body;
 

@@ -1,5 +1,6 @@
 const Order = require("../../models/orderSchema");
 const User = require("../../models/userSchema");
+const Product = require("../../models/productSchema");
 
 const loadOrders = async (req, res) => {
   try {
@@ -37,6 +38,9 @@ const loadOrders = async (req, res) => {
       case "date-asc":
         sortQuery.createdAt = 1;
         break;
+      case "date-desc":
+        sortQuery.createdAt = -1;
+        break;
       case "amount-desc":
         sortQuery.finalAmount = -1;
         break;
@@ -47,9 +51,9 @@ const loadOrders = async (req, res) => {
         sortQuery.createdAt = -1;
     }
 
-    const totalOrders = await Order.countDocuments(query);
+    const totalOrders = await Order.countDocuments(searchQuery);
 
-    const orders = await Order.find(query)
+    const orders = await Order.find(searchQuery)
       .populate("userId")
       .sort(sortQuery)
       .skip(skip)
@@ -63,6 +67,10 @@ const loadOrders = async (req, res) => {
     });
     const deliveredOrders = await Order.countDocuments({ status: "delivered" });
     const cancelledOrders = await Order.countDocuments({ status: "cancelled" });
+    const returnRequestedOrders = await Order.countDocuments({
+      status: "return-requested",
+    });
+    const returnedOrders = await Order.countDocuments({ status: "returned" });
 
     res.render("admin/orders", {
       admin: res.locals.admin,
@@ -73,6 +81,8 @@ const loadOrders = async (req, res) => {
       outForDelivery,
       deliveredOrders,
       cancelledOrders,
+      returnRequestedOrders,
+      returnedOrders,
       currentPage: page,
       totalPages: Math.ceil(totalOrders / limit),
       search,
@@ -95,7 +105,9 @@ const getOrderDetails = async (req, res) => {
       .lean();
 
     if (!order) {
-      return res.status(404).json({ message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     res.json(order);
@@ -110,35 +122,79 @@ const updateOrderStatus = async (req, res) => {
     const { orderId, status } = req.body;
 
     if (!orderId || !status) {
-      return res.status(400).json({ message: "Missing orderId or status" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing orderId or status" });
     }
 
     const ALLOWED_STATUSES = [
       "pending",
+      "processing",
       "shipped",
       "out-for-delivery",
       "delivered",
       "cancelled",
+      "return-requested",
+      "returned",
     ];
 
     if (!ALLOWED_STATUSES.includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid status" });
     }
 
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      { status },
-      {
-        new: true,
-        runValidators: false,
-      },
+    const order = await Order.findById(orderId).populate(
+      "orderedItems.productId",
     );
 
     if (!order) {
-      return res.status(404).json({ success: false });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
-    return res.json({ success: true });
+    if (order.status === "return-requested" && status === "returned") {
+      for (const item of order.orderedItems) {
+        if (item.productId && item.productId._id) {
+          await Product.updateOne(
+            { _id: item.productId._id, "variants.color": item.color },
+            { $inc: { "variants.$.quantity": item.quantity } },
+          );
+        }
+      }
+
+      if (order.paymentMethod === "ONLINE") {
+        order.paymentStatus = "refunded";
+      }
+    }
+
+    if (status === "cancelled" && order.status !== "cancelled") {
+      for (const item of order.orderedItems) {
+        if (item.productId && item.productId._id) {
+          await Product.updateOne(
+            { _id: item.productId._id, "variants.color": item.color },
+            { $inc: { "variants.$.quantity": item.quantity } },
+          );
+        }
+      }
+
+      if (order.paymentMethod === "ONLINE") {
+        order.paymentStatus = "refunded";
+      }
+    }
+
+    if (status === "delivered") {
+      order.paymentStatus = "paid";
+    }
+
+    order.status = status;
+    await order.save();
+
+    return res.json({
+      success: true,
+      message: "Order status updated successfully",
+    });
   } catch (error) {
     console.error("UPDATE ORDER STATUS ERROR", error);
     res.status(500).json({ success: false });

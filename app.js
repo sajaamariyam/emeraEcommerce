@@ -2,7 +2,9 @@ const dotenv = require('dotenv').config()
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
+const flash = require("connect-flash");
 const cartCount = require("./middlewares/cartCount");
+const wishlistCount = require("./middlewares/wishlistCount");
 const userHeader = require("./middlewares/userHeader");
 const nocache = require("nocache");
 const passport = require("./config/passport");
@@ -13,18 +15,25 @@ db()
 const app = express();
 
 app.use(session({
-    secret:process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET,
     resave:false,
     saveUninitialized:false,
     cookie:{
-        secure: false,
-        httpOnly:true,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
         maxAge: 72*60*60*1000
     }
+}));
 
-}))
+app.use(flash());
+app.use((req, res, next) => {
+    res.locals.messages = req.flash();
+    next();
+});
 
 app.use(cartCount);
+app.use(wishlistCount);
 app.use(userHeader);
 
 app.use(nocache())

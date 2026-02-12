@@ -29,9 +29,8 @@
                 <nav class="p-2">
                     <button onclick="ProfileApp.showTab('profile')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="profile">Profile Details</button>
                     <button onclick="ProfileApp.showTab('addresses')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="addresses">Addresses</button>
-                    <a href="/orders"
-                    class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50">
-                    My Orders
+                    <a href="/orders" class="tab-btn block w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50">
+                        My Orders
                     </a>
                     <button onclick="ProfileApp.showTab('security')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="security">Security</button>
                 </nav>
@@ -94,113 +93,84 @@
                             Add New Address
                         </button>
                     </div>
-
                     <div id="addresses-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- Addresses will be loaded here -->
                     </div>
                 </div>
             </div>
 
-            <!-- ORDERS TAB -->
-            <div id="orders-tab" class="tab-content" style="display:none;">
+            <!-- SECURITY TAB -->
+            <!-- FIX: Corrected the broken EJS structure — "Forgot Password" was outside the else block -->
+            <div id="security-tab" class="tab-content" style="display:none;">
                 <div class="bg-white border border-stone-200 p-12">
                     <div class="mb-10 pb-8 border-b border-stone-100">
-                        <h2 class="text-3xl font-serif text-gray-900">Order History</h2>
+                        <h2 class="text-3xl font-serif text-gray-900">Security Settings</h2>
                     </div>
 
-                    <div id="orders-container" class="space-y-8">
-                        <!-- Orders will be loaded here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECURITY TAB -->
-            <div id="security-tab" class="tab-content" style="display:none;">
-        <div class="bg-white border border-stone-200 p-12">
-            <div class="mb-10 pb-8 border-b border-stone-100">
-                <h2 class="text-3xl font-serif text-gray-900">Security Settings</h2>
-            </div>
-
-            <div class="space-y-10">
-
-                <% if (user.googleId) { %>
-
-                    <!-- GOOGLE ACCOUNT MESSAGE -->
-                    <div class="border border-stone-200 p-10">
-                        <p class="text-sm text-stone-500 italic">
-                            This account is connected with Google.
-                            Password and security settings are managed by Google.
-                        </p>
-                    </div>
-
-                <% } else { %>
-
-                    <!-- CHANGE PASSWORD -->
-                    <div class="border border-stone-200 p-10">
-                        <h3 class="text-xl font-serif mb-8 text-gray-900">Change Password</h3>
-
-                        <form id="change-password-form" class="space-y-6 max-w-md">
-                            <div>
-                                <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">
-                                    Current Password
-                                </label>
-                                <input type="password" id="current-password"
-                                    class="w-full px-5 py-4 border border-stone-300 focus:border-stone-950 transition-all text-sm"
-                                    required>
-                            </div>
-
-                            <div>
-                                <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">
-                                    New Password
-                                </label>
-                                <input type="password" id="new-password"
-                                    class="w-full px-5 py-4 border border-stone-300 focus:border-stone-950 transition-all text-sm"
-                                    required>
-                                <p class="text-xs text-stone-500 mt-2">
-                                    Min. 8 characters with uppercase, lowercase, and number
+                    <div class="space-y-10">
+                        <% if (user.googleId) { %>
+                            <!-- GOOGLE ACCOUNT MESSAGE -->
+                            <div class="border border-stone-200 p-10">
+                                <p class="text-sm text-stone-500 italic">
+                                    This account is connected with Google.
+                                    Password and security settings are managed by Google.
                                 </p>
                             </div>
-
-                            <div>
-                                <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">
-                                    Confirm New Password
-                                </label>
-                                <input type="password" id="confirm-password"
-                                    class="w-full px-5 py-4 border border-stone-300 focus:border-stone-950 transition-all text-sm"
-                                    required>
+                        <% } else { %>
+                            <!-- CHANGE PASSWORD -->
+                            <div class="border border-stone-200 p-10">
+                                <h3 class="text-xl font-serif mb-8 text-gray-900">Change Password</h3>
+                                <form id="change-password-form" class="space-y-6 max-w-md" novalidate>
+                                    <div>
+                                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Current Password</label>
+                                        <input type="password" id="current-password"
+                                            class="w-full px-5 py-4 border border-stone-300 focus:border-stone-950 transition-all text-sm">
+                                        <p id="current-password-error" class="text-xs text-red-500 mt-1 hidden">Current password is required</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">New Password</label>
+                                        <input type="password" id="new-password"
+                                            class="w-full px-5 py-4 border border-stone-300 focus:border-stone-950 transition-all text-sm">
+                                        <p class="text-xs text-stone-500 mt-2">Min. 8 characters with uppercase, lowercase, and number</p>
+                                        <p id="new-password-error" class="text-xs text-red-500 mt-1 hidden">Password must be at least 8 characters with uppercase, lowercase, and a number</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Confirm New Password</label>
+                                        <input type="password" id="confirm-password"
+                                            class="w-full px-5 py-4 border border-stone-300 focus:border-stone-950 transition-all text-sm">
+                                        <p id="confirm-password-error" class="text-xs text-red-500 mt-2 hidden">Passwords do not match</p>
+                                    </div>
+                                    <button type="submit"
+                                        class="px-10 py-4 bg-stone-950 text-white text-[10px] tracking-[0.4em] uppercase font-black hover:bg-stone-700 transition-all duration-500">
+                                        Update Password
+                                    </button>
+                                </form>
                             </div>
 
-                            <button type="submit"
-                                class="px-10 py-4 bg-stone-950 text-white text-[10px] tracking-[0.4em] uppercase font-black hover:bg-stone-700 transition-all duration-500">
-                                Update Password
-                            </button>
-                        </form>
+                            <!-- FORGOT PASSWORD — FIX: Now correctly inside the else block -->
+                            <div class="border border-stone-200 p-10">
+                                <h3 class="text-xl font-serif mb-4 text-gray-900">Forgot Password?</h3>
+                                <p class="text-sm text-stone-600 mb-6 leading-relaxed">
+                                    If you've forgotten your password, we'll send you a reset link via email.
+                                </p>
+                                <button onclick="ProfileApp.handleForgotPassword()"
+                                    class="px-10 py-4 bg-white border-2 border-stone-950 text-stone-950 text-[10px] tracking-[0.4em] uppercase font-black hover:bg-stone-950 hover:text-white transition-all duration-500">
+                                    Send Reset Link
+                                </button>
+                            </div>
+                        <% } %>
                     </div>
-
-                <!-- FORGOT PASSWORD -->
-                <div class="border border-stone-200 p-10">
-                    <h3 class="text-xl font-serif mb-4 text-gray-900">Forgot Password?</h3>
-                    <p class="text-sm text-stone-600 mb-6 leading-relaxed">
-                        If you've forgotten your password, we'll send you a reset link via email.
-                    </p>
-                    <button onclick="ProfileApp.handleForgotPassword()"
-                        class="px-10 py-4 bg-white border-2 border-stone-950 text-stone-950 text-[10px] tracking-[0.4em] uppercase font-black hover:bg-stone-950 hover:text-white transition-all duration-500">
-                        Send Reset Link
-                    </button>
                 </div>
-
-            <% } %>
-
-        </div>
-    </div>
-</div>
-
+            </div>
 
         </div>
     </div>
 </div>
 
 
+<!-- ============================================ -->
+<!-- MODALS -->
+<!-- ============================================ -->
 
 <!-- EDIT PROFILE MODAL -->
 <div id="edit-profile-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
@@ -211,7 +181,7 @@
                 <button onclick="ProfileApp.closeModal('edit-profile-modal')" class="text-4xl text-stone-400 hover:text-stone-900 leading-none">&times;</button>
             </div>
             
-            <form id="edit-profile-form" class="space-y-6">
+            <form id="edit-profile-form" class="space-y-6" novalidate>
                 <div class="text-center mb-10">
                     <img id="edit-profile-img-preview" src="<%= user.profileImage || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' %>" alt="Profile Preview" class="w-32 h-32 rounded-full mx-auto mb-6 border-4 border-stone-50 object-cover">
                     <label class="cursor-pointer px-8 py-3 bg-stone-100 text-stone-700 text-[10px] tracking-[0.3em] uppercase font-bold hover:bg-stone-200 transition-all inline-block">
@@ -223,37 +193,37 @@
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">First Name</label>
-                        <input type="text" name="firstName" id="edit-firstname" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
+                        <input type="text" name="firstName" id="edit-firstname" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                        <p id="edit-firstname-error" class="text-xs text-red-500 mt-1 hidden">First name is required</p>
                     </div>
                     <div>
                         <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Last Name</label>
-                        <input type="text" name="lastName" id="edit-lastname" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
+                        <input type="text" name="lastName" id="edit-lastname" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
                     </div>
                 </div>
 
                 <div>
                     <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Email Address</label>
                     <input
-                        type="email"
+                        type="text"
                         name="email"
                         id="edit-email"
                         value="<%= user.email %>"
                         <%= user.googleId ? "disabled" : "" %>
-                        class="w-full px-5 py-4 border border-stone-300 text-sm"
-                        />
-                        <% if (user.googleId) { %>
-                        <p class="text-xs text-stone-500 mt-2 italic">
-                            Email is managed by Google and cannot be changed
-                        </p>
-                        <% } else { %>
-
+                        class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all"
+                    />
+                    <% if (user.googleId) { %>
+                        <p class="text-xs text-stone-500 mt-2 italic">Email is managed by Google and cannot be changed</p>
+                    <% } else { %>
                         <p class="text-xs text-stone-500 mt-2 italic">Changing email will require OTP verification</p>
-                       <% } %>
+                    <% } %>
+                    <p id="edit-email-error" class="text-xs text-red-500 mt-1 hidden">Please enter a valid email</p>
                 </div>
 
                 <div>
                     <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Phone Number</label>
-                    <input type="tel" name="phone" id="edit-phone" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
+                    <input type="text" name="phone" id="edit-phone" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                    <p id="edit-phone-error" class="text-xs text-red-500 mt-1 hidden">Please enter a valid 10-digit phone number</p>
                 </div>
 
                 <div class="flex gap-4 pt-6">
@@ -282,6 +252,7 @@
                 <div>
                     <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3 text-center">Enter OTP Code</label>
                     <input type="text" id="otp-code" maxlength="6" class="w-full px-5 py-4 border border-stone-300 text-center text-2xl tracking-widest focus:border-stone-950 transition-all" placeholder="000000" required>
+                    <p id="otp-error" class="text-xs text-red-500 mt-2 hidden text-center">Please enter a valid 6-digit code</p>
                 </div>
 
                 <button type="submit" class="w-full px-10 py-4 bg-stone-950 text-white text-[10px] tracking-[0.4em] uppercase font-black hover:bg-stone-700 transition-all duration-500">
@@ -289,27 +260,26 @@
                 </button>
 
                 <div class="text-center space-y-3">
-                <p id="otp-timer" class="text-xs text-stone-500">
-                    Resend code in <span class="font-semibold">05:00</span>
-                </p>
-
-                <button
-                    type="button"
-                    id="resend-otp-btn"
-                    onclick="ProfileApp.resendOTP()"
-                    class="text-xs text-stone-400 underline cursor-not-allowed"
-                    disabled
-                >
-                    Resend Code
-                </button>
-            </div>
-
+                    <p id="otp-timer" class="text-xs text-stone-500">
+                        Resend code in <span class="font-semibold">05:00</span>
+                    </p>
+                    <button
+                        type="button"
+                        id="resend-otp-btn"
+                        onclick="ProfileApp.resendOTP()"
+                        class="text-xs text-stone-400 underline cursor-not-allowed"
+                        disabled
+                    >
+                        Resend Code
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 </div>
 
 <!-- ADD ADDRESS MODAL -->
+<!-- FIX: Field names now match controller (firstName, lastName, address1, address2, city, state, pincode, phone) -->
 <div id="add-address-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
     <div class="modal-content bg-white max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="p-12">
@@ -318,48 +288,59 @@
                 <button onclick="ProfileApp.closeModal('add-address-modal')" class="text-4xl text-stone-400 hover:text-stone-900 leading-none">&times;</button>
             </div>
             
-            <form id="add-address-form" class="space-y-6">
+            <form id="add-address-form" class="space-y-6" novalidate>
                 <div class="grid grid-cols-2 gap-6">
                     <div>
-                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Full Name</label>
-                        <input type="text" name="fullName" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
+                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">First Name</label>
+                        <input type="text" name="firstName" id="add-firstName" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                        <p id="add-firstName-error" class="text-xs text-red-500 mt-1 hidden">First name is required</p>
                     </div>
                     <div>
-                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Phone Number</label>
-                        <input type="tel" name="phone" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
+                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Last Name</label>
+                        <input type="text" name="lastName" id="add-lastName" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                        <p id="add-lastName-error" class="text-xs text-red-500 mt-1 hidden">Last name is required</p>
                     </div>
                 </div>
 
                 <div>
-                    <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Street Address</label>
-                    <input type="text" name="street" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
+                    <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Phone Number</label>
+                    <input type="tel" name="phone" id="add-phone" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                    <p id="add-phone-error" class="text-xs text-red-500 mt-1 hidden">Please enter a valid 10-digit phone number</p>
+                </div>
+
+                <div>
+                    <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Address Line 1</label>
+                    <input type="text" name="address1" id="add-address1" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                    <p id="add-address1-error" class="text-xs text-red-500 mt-1 hidden">Address is required</p>
+                </div>
+
+                <div>
+                    <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Address Line 2 <span class="text-stone-300">(Optional)</span></label>
+                    <input type="text" name="address2" id="add-address2" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
                 </div>
 
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">City</label>
-                        <input type="text" name="city" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
+                        <input type="text" name="city" id="add-city" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                        <p id="add-city-error" class="text-xs text-red-500 mt-1 hidden">City is required</p>
                     </div>
                     <div>
-                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">State/Province</label>
-                        <input type="text" name="state" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
+                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">State</label>
+                        <input type="text" name="state" id="add-state" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                        <p id="add-state-error" class="text-xs text-red-500 mt-1 hidden">State is required</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">ZIP/Postal Code</label>
-                        <input type="text" name="zipCode" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
-                    </div>
-                    <div>
-                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Country</label>
-                        <input type="text" name="country" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all" required>
-                    </div>
+                <div>
+                    <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">PIN Code</label>
+                    <input type="text" name="pincode" id="add-pincode" maxlength="6" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                    <p id="add-pincode-error" class="text-xs text-red-500 mt-1 hidden">Please enter a valid 6-digit PIN code</p>
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <input type="checkbox" name="isDefault" id="is-default" class="w-5 h-5">
-                    <label for="is-default" class="text-sm text-stone-700">Set as default address</label>
+                    <input type="checkbox" name="isDefault" id="add-isDefault" class="w-5 h-5 cursor-pointer">
+                    <label for="add-isDefault" class="text-sm text-stone-700 cursor-pointer">Set as default address</label>
                 </div>
 
                 <div class="flex gap-4 pt-6">
@@ -376,56 +357,79 @@
 </div>
 
 <!-- EDIT ADDRESS MODAL -->
+<!-- FIX: Field names now match controller (firstName, lastName, address1, address2, city, state, pincode, phone, isDefault) -->
+<!-- FIX: All IDs renamed to edit-* to avoid conflicts with add-address form -->
 <div id="edit-address-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
-    <div class="modal-content bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="p-8">
-            <div class="flex justify-between items-center mb-8 pb-6 border-b border-stone-200">
-                <h2 class="text-2xl font-semibold text-gray-900">Edit Address</h2>
-                <button onclick="ProfileApp.closeModal('edit-address-modal')" class="text-gray-400 hover:text-gray-600 transition-colors duration-200 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100" aria-label="Close modal">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
+    <div class="modal-content bg-white max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="p-12">
+            <div class="flex justify-between items-center mb-10 pb-8 border-b border-stone-100">
+                <h2 class="text-3xl font-serif text-gray-900">Edit Address</h2>
+                <button onclick="ProfileApp.closeModal('edit-address-modal')" class="text-4xl text-stone-400 hover:text-stone-900 leading-none">&times;</button>
             </div>
-            <form id="edit-address-form" class="space-y-5">
+            
+            <form id="edit-address-form" class="space-y-6" novalidate>
                 <input type="hidden" id="edit-address-id">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                        <input id="edit-fullName" type="text" placeholder="Enter full name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:border-transparent transition-all duration-200" required>
+                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">First Name</label>
+                        <input type="text" id="edit-addr-firstName" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                        <p id="edit-addr-firstName-error" class="text-xs text-red-500 mt-1 hidden">First name is required</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                        <input id="edit-phone" type="tel" placeholder="Enter phone number" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:border-transparent transition-all duration-200" required>
+                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Last Name</label>
+                        <input type="text" id="edit-addr-lastName" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                        <p id="edit-addr-lastName-error" class="text-xs text-red-500 mt-1 hidden">Last name is required</p>
                     </div>
                 </div>
+
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
-                    <input id="edit-street" type="text" placeholder="Enter street address" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:border-transparent transition-all duration-200" required>
+                    <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Phone Number</label>
+                    <input type="tel" id="edit-addr-phone" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                    <p id="edit-addr-phone-error" class="text-xs text-red-500 mt-1 hidden">Please enter a valid 10-digit phone number</p>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+
+                <div>
+                    <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Address Line 1</label>
+                    <input type="text" id="edit-addr-address1" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                    <p id="edit-addr-address1-error" class="text-xs text-red-500 mt-1 hidden">Address is required</p>
+                </div>
+
+                <div>
+                    <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Address Line 2 <span class="text-stone-300">(Optional)</span></label>
+                    <input type="text" id="edit-addr-address2" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
-                        <input id="edit-city" type="text" placeholder="Enter city" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:border-transparent transition-all duration-200" required>
+                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">City</label>
+                        <input type="text" id="edit-addr-city" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                        <p id="edit-addr-city-error" class="text-xs text-red-500 mt-1 hidden">City is required</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
-                        <input id="edit-state" type="text" placeholder="Enter state" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:border-transparent transition-all duration-200" required>
+                        <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">State</label>
+                        <input type="text" id="edit-addr-state" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                        <p id="edit-addr-state-error" class="text-xs text-red-500 mt-1 hidden">State is required</p>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
-                        <input id="edit-zipCode" type="text" placeholder="Enter ZIP code" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:border-transparent transition-all duration-200" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                        <input id="edit-country" type="text" placeholder="Enter country" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:border-transparent transition-all duration-200" required>
-                    </div>
+
+                <div>
+                    <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">PIN Code</label>
+                    <input type="text" id="edit-addr-pincode" maxlength="6" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
+                    <p id="edit-addr-pincode-error" class="text-xs text-red-500 mt-1 hidden">Please enter a valid 6-digit PIN code</p>
                 </div>
-                <div class="flex gap-3 pt-6 border-t border-stone-200 mt-6">
-                    <button type="submit" class="flex-1 bg-stone-900 text-white py-3 px-6 rounded-lg hover:bg-stone-800 transition-colors duration-200 font-medium shadow-sm">Update Address</button>
-                    <button type="button" onclick="ProfileApp.closeModal('edit-address-modal')" class="flex-1 border border-gray-300 py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium text-gray-700">Cancel</button>
+
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="edit-addr-isDefault" class="w-5 h-5 cursor-pointer">
+                    <label for="edit-addr-isDefault" class="text-sm text-stone-700 cursor-pointer">Set as default address</label>
+                </div>
+
+                <div class="flex gap-4 pt-6">
+                    <button type="submit" class="flex-1 px-10 py-4 bg-stone-950 text-white text-[10px] tracking-[0.4em] uppercase font-black hover:bg-stone-700 transition-all duration-500">
+                        Update Address
+                    </button>
+                    <button type="button" onclick="ProfileApp.closeModal('edit-address-modal')" class="flex-1 px-10 py-4 bg-white border-2 border-stone-300 text-stone-700 text-[10px] tracking-[0.4em] uppercase font-black hover:bg-stone-100 transition-all duration-500">
+                        Cancel
+                    </button>
                 </div>
             </form>
         </div>
@@ -438,19 +442,17 @@
         <div class="p-10 text-center">
             <h3 class="text-2xl font-serif mb-4">Delete Address?</h3>
             <p class="text-sm text-stone-600 mb-8">This action cannot be undone.</p>
-
             <div class="flex gap-4">
-                <button onclick="ProfileApp.confirmDeleteAddress()" class="flex-1 bg-red-600 text-white py-3">
+                <button onclick="ProfileApp.confirmDeleteAddress()" class="flex-1 px-6 py-3 bg-red-600 text-white text-[10px] tracking-[0.3em] uppercase font-black hover:bg-red-700 transition-all">
                     Delete
                 </button>
-                <button onclick="ProfileApp.closeModal('delete-address-modal')" class="flex-1 border py-3">
+                <button onclick="ProfileApp.closeModal('delete-address-modal')" class="flex-1 px-6 py-3 border-2 border-stone-300 text-stone-700 text-[10px] tracking-[0.3em] uppercase font-black hover:bg-stone-100 transition-all">
                     Cancel
                 </button>
             </div>
         </div>
     </div>
 </div>
-
 
 <!-- CANCEL ORDER CONFIRMATION MODAL -->
 <div id="cancel-order-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
@@ -460,7 +462,6 @@
                 <h2 class="text-3xl font-serif text-gray-900 mb-4">Cancel Order</h2>
                 <p class="text-sm text-stone-600">Are you sure you want to cancel order <span id="cancel-order-id" class="font-bold"></span>?</p>
             </div>
-            
             <div class="mb-6">
                 <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Reason for Cancellation</label>
                 <select id="cancel-reason" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
@@ -471,8 +472,8 @@
                     <option value="delivery-too-long">Delivery time too long</option>
                     <option value="other">Other</option>
                 </select>
+                <p id="cancel-reason-error" class="text-xs text-red-500 mt-2 hidden">Please select a reason</p>
             </div>
-
             <div class="flex gap-4">
                 <button onclick="ProfileApp.confirmCancelOrder()" class="flex-1 px-10 py-4 bg-red-600 text-white text-[10px] tracking-[0.4em] uppercase font-black hover:bg-red-700 transition-all duration-500">
                     Yes, Cancel Order
@@ -486,7 +487,6 @@
 </div>
 
 <!-- ============================================ -->
-<!-- EMERA MODALS (Feedback Only) -->
 <!-- ============================================ -->
 
 <!-- Profile Updated Successfully -->
@@ -532,19 +532,22 @@
 </div>
 
 <style>
-/* Tab Styles */
 .tab-active {
     background-color: #f5f5f4;
     color: #000;
 }
 
-/* Modal Base Styles */
 .modal {
     display: none;
 }
 
 .modal.active {
     display: flex !important;
+}
+
+/* Input error state */
+.input-error {
+    border-color: #ef4444 !important;
 }
 
 .emera-overlay {
@@ -583,7 +586,6 @@
     opacity: 1;
 }
 
-/* Loading Spinner */
 .spinner {
     border: 3px solid #f3f3f3;
     border-top: 3px solid #292524;
@@ -599,7 +601,6 @@
     100% { transform: rotate(360deg); }
 }
 
-/* Emerald Colors */
 :root {
     --emerald-deep: #10422f;
     --emerald-rich: #1a5c42;
@@ -610,7 +611,6 @@
     --ivory: #fdfbf7;
 }
 
-/* Success Icon Animation */
 .success-icon {
     width: 80px;
     height: 80px;
@@ -651,14 +651,13 @@
 
 @keyframes emeraldGlow {
     0%, 100% {
-        box-shadow: 0 0 20px rgba(29, 122, 95, 0.3), 0 0 40px rgba(29, 122, 95, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 20px rgba(29,122,95,0.3), 0 0 40px rgba(29,122,95,0.15), inset 0 0 20px rgba(255,255,255,0.1);
     }
     50% {
-        box-shadow: 0 0 30px rgba(29, 122, 95, 0.5), 0 0 60px rgba(29, 122, 95, 0.25), inset 0 0 30px rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 30px rgba(29,122,95,0.5), 0 0 60px rgba(29,122,95,0.25), inset 0 0 30px rgba(255,255,255,0.15);
     }
 }
 
-/* Error Icon */
 .error-icon {
     width: 80px;
     height: 80px;
@@ -684,7 +683,6 @@
     75% { transform: translateX(8px); }
 }
 
-/* Button Styling */
 .emera-btn {
     width: 100%;
     padding: 16px 32px;
@@ -703,14 +701,13 @@
 
 .emera-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(29, 122, 95, 0.3), 0 0 40px rgba(29, 122, 95, 0.2);
+    box-shadow: 0 8px 24px rgba(29,122,95,0.3), 0 0 40px rgba(29,122,95,0.2);
 }
 
 .emera-btn:active {
     transform: translateY(0);
 }
 
-/* Typography */
 .modal-title {
     font-size: 32px;
     font-weight: 500;
@@ -726,7 +723,6 @@
     font-weight: 300;
 }
 
-/* Gemstone sparkle effect */
 @keyframes sparkle {
     0%, 100% { opacity: 0; }
     50% { opacity: 1; }
@@ -741,33 +737,17 @@
     animation: sparkle 2s ease-in-out infinite;
 }
 
-.sparkle:nth-child(1) {
-    top: 15%;
-    right: 25%;
-    animation-delay: 0s;
-}
-
-.sparkle:nth-child(2) {
-    top: 30%;
-    right: 15%;
-    animation-delay: 0.6s;
-}
-
-.sparkle:nth-child(3) {
-    top: 45%;
-    right: 30%;
-    animation-delay: 1.2s;
-}
+.sparkle:nth-child(1) { top: 15%; right: 25%; animation-delay: 0s; }
+.sparkle:nth-child(2) { top: 30%; right: 15%; animation-delay: 0.6s; }
+.sparkle:nth-child(3) { top: 45%; right: 30%; animation-delay: 1.2s; }
 </style>
 
 <script>
-
 const ProfileApp = (function() {
     'use strict';
 
     let originalEmailAtEdit = null;
 
-    // State management
     let state = {
         currentUser: {
             name: "<%= user.name %>",
@@ -776,11 +756,148 @@ const ProfileApp = (function() {
             profileImage: "<%= user.profileImage || '' %>",
             googleId: "<%= user.googleId || '' %>"
         },
-        pendingEmailChange: null, // {formData, newEmail}
+        pendingEmailChange: null,
         currentOrderToCancel: null,
         addressToDelete: null
     };
 
+    // ============================================
+    // VALIDATION HELPERS
+    // ============================================
+
+    function showFieldError(fieldId, errorId, show) {
+        const field = document.getElementById(fieldId);
+        const error = document.getElementById(errorId);
+        if (!field || !error) return;
+        if (show) {
+            field.classList.add('input-error');
+            error.classList.remove('hidden');
+        } else {
+            field.classList.remove('input-error');
+            error.classList.add('hidden');
+        }
+    }
+
+    function clearFormErrors(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        form.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+        form.querySelectorAll('[id$="-error"]').forEach(el => el.classList.add('hidden'));
+    }
+
+    function isValidPhone(phone) {
+        return /^[6-9]\d{9}$/.test(phone.replace(/\s/g, ''));
+    }
+
+    function isValidPincode(pin) {
+        return /^\d{6}$/.test(pin.trim());
+    }
+
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function validateAddAddressForm() {
+        let valid = true;
+
+        const firstName = document.getElementById('add-firstName').value.trim();
+        const lastName = document.getElementById('add-lastName').value.trim();
+        const phone = document.getElementById('add-phone').value.trim();
+        const address1 = document.getElementById('add-address1').value.trim();
+        const city = document.getElementById('add-city').value.trim();
+        const state = document.getElementById('add-state').value.trim();
+        const pincode = document.getElementById('add-pincode').value.trim();
+
+        showFieldError('add-firstName', 'add-firstName-error', !firstName);
+        if (!firstName) valid = false;
+
+        showFieldError('add-lastName', 'add-lastName-error', !lastName);
+        if (!lastName) valid = false;
+
+        const phoneInvalid = !phone || !isValidPhone(phone);
+        showFieldError('add-phone', 'add-phone-error', phoneInvalid);
+        if (phoneInvalid) valid = false;
+
+        showFieldError('add-address1', 'add-address1-error', !address1);
+        if (!address1) valid = false;
+
+        showFieldError('add-city', 'add-city-error', !city);
+        if (!city) valid = false;
+
+        showFieldError('add-state', 'add-state-error', !state);
+        if (!state) valid = false;
+
+        const pincodeInvalid = !pincode || !isValidPincode(pincode);
+        showFieldError('add-pincode', 'add-pincode-error', pincodeInvalid);
+        if (pincodeInvalid) valid = false;
+
+        return valid;
+    }
+
+    function validateEditAddressForm() {
+        let valid = true;
+
+        const firstName = document.getElementById('edit-addr-firstName').value.trim();
+        const lastName = document.getElementById('edit-addr-lastName').value.trim();
+        const phone = document.getElementById('edit-addr-phone').value.trim();
+        const address1 = document.getElementById('edit-addr-address1').value.trim();
+        const city = document.getElementById('edit-addr-city').value.trim();
+        const state = document.getElementById('edit-addr-state').value.trim();
+        const pincode = document.getElementById('edit-addr-pincode').value.trim();
+
+        showFieldError('edit-addr-firstName', 'edit-addr-firstName-error', !firstName);
+        if (!firstName) valid = false;
+
+        showFieldError('edit-addr-lastName', 'edit-addr-lastName-error', !lastName);
+        if (!lastName) valid = false;
+
+        const phoneInvalid = !phone || !isValidPhone(phone);
+        showFieldError('edit-addr-phone', 'edit-addr-phone-error', phoneInvalid);
+        if (phoneInvalid) valid = false;
+
+        showFieldError('edit-addr-address1', 'edit-addr-address1-error', !address1);
+        if (!address1) valid = false;
+
+        showFieldError('edit-addr-city', 'edit-addr-city-error', !city);
+        if (!city) valid = false;
+
+        showFieldError('edit-addr-state', 'edit-addr-state-error', !state);
+        if (!state) valid = false;
+
+        const pincodeInvalid = !pincode || !isValidPincode(pincode);
+        showFieldError('edit-addr-pincode', 'edit-addr-pincode-error', pincodeInvalid);
+        if (pincodeInvalid) valid = false;
+
+        return valid;
+    }
+
+    function validateEditProfileForm() {
+        let valid = true;
+
+        const firstName = document.getElementById('edit-firstname').value.trim();
+        const phone = document.getElementById('edit-phone').value.trim();
+        const emailInput = document.getElementById('edit-email');
+        const email = emailInput.value.trim();
+
+        showFieldError('edit-firstname', 'edit-firstname-error', !firstName);
+        if (!firstName) valid = false;
+
+        if (!emailInput.disabled) {
+            const emailInvalid = !email || !isValidEmail(email);
+            showFieldError('edit-email', 'edit-email-error', emailInvalid);
+            if (emailInvalid) valid = false;
+        }
+
+        const phoneInvalid = !phone || !isValidPhone(phone);
+        showFieldError('edit-phone', 'edit-phone-error', phoneInvalid);
+        if (phoneInvalid) valid = false;
+
+        return valid;
+    }
+
+    // ============================================
+    // MODAL MANAGEMENT
+    // ============================================
 
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
@@ -796,7 +913,7 @@ const ProfileApp = (function() {
             modal.classList.remove('active');
             document.body.style.overflow = '';
         }
-        if(modalId === "email-verification-modal"){
+        if (modalId === 'email-verification-modal') {
             clearInterval(otpInterval);
         }
     }
@@ -819,54 +936,47 @@ const ProfileApp = (function() {
 
     function showError(message) {
         const errorEl = document.getElementById('error-message');
-        if (errorEl) {
-            errorEl.textContent = message;
-        }
+        if (errorEl) errorEl.textContent = message;
         openEmera('error');
     }
 
- 
+    // ============================================
+    // TAB MANAGEMENT
+    // ============================================
+
     function showTab(tabName) {
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.style.display = 'none';
         });
-
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('tab-active');
         });
 
         const selectedTab = document.getElementById(tabName + '-tab');
-        if (selectedTab) {
-            selectedTab.style.display = 'block';
-        }
+        if (selectedTab) selectedTab.style.display = 'block';
 
         const selectedBtn = document.querySelector(`[data-tab="${tabName}"]`);
-        if (selectedBtn) {
-            selectedBtn.classList.add('tab-active');
-        }
+        if (selectedBtn) selectedBtn.classList.add('tab-active');
 
-        if (tabName === 'addresses') {
-            loadAddresses();
-        } else if (tabName === 'orders') {
-            loadOrders();
-        }
+        if (tabName === 'addresses') loadAddresses();
+        else if (tabName === 'orders') loadOrders();
     }
 
+    // ============================================
+    // PROFILE MANAGEMENT
+    // ============================================
 
     function openEditProfileModal() {
+        clearFormErrors('edit-profile-form');
         const nameParts = state.currentUser.name.split(' ');
-        
         document.getElementById('edit-firstname').value = nameParts[0];
         document.getElementById('edit-lastname').value = nameParts.slice(1).join(' ') || '';
         document.getElementById('edit-email').value = state.currentUser.email;
         document.getElementById('edit-phone').value = state.currentUser.phone;
-
         if (state.currentUser.profileImage) {
             document.getElementById('edit-profile-img-preview').src = state.currentUser.profileImage;
         }
-
         originalEmailAtEdit = state.currentUser.email;
-
         openModal('edit-profile-modal');
     }
 
@@ -882,6 +992,7 @@ const ProfileApp = (function() {
 
     async function handleEditProfileSubmit(e) {
         e.preventDefault();
+        if (!validateEditProfileForm()) return;
 
         const firstName = document.getElementById('edit-firstname').value.trim();
         const lastName = document.getElementById('edit-lastname').value.trim();
@@ -895,7 +1006,6 @@ const ProfileApp = (function() {
 
         try {
             if (emailChanged && !isGoogleAccount) {
-                // BACKEND MATCH: requestEmailOtp endpoint
                 const otpResponse = await fetch('/profile/request-email-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -906,36 +1016,23 @@ const ProfileApp = (function() {
                     const formData = new FormData();
                     formData.append('name', `${firstName} ${lastName}`.trim());
                     formData.append('phone', phone);
-                    if (profileImageFile) {
-                        formData.append('profileImage', profileImageFile);
-                    }
+                    if (profileImageFile) formData.append('profileImage', profileImageFile);
 
-                    state.pendingEmailChange = {
-                        formData: formData,
-                        newEmail: email
-                    };
-
+                    state.pendingEmailChange = { formData, newEmail: email };
                     document.getElementById('new-email-display').textContent = email;
                     closeModal('edit-profile-modal');
                     openModal('email-verification-modal');
                     startOtpTimer();
-                    
-                    setTimeout(() => {
-                        document.getElementById('otp-code').focus();
-                    }, 300);
-
+                    setTimeout(() => document.getElementById('otp-code').focus(), 300);
                 } else {
                     const error = await otpResponse.json();
                     showError(error.message || 'Failed to send verification code');
                 }
             } else {
-                // BACKEND MATCH: editProfile expects 'name' field (not firstName/lastName)
                 const formData = new FormData();
                 formData.append('name', `${firstName} ${lastName}`.trim());
                 formData.append('phone', phone);
-                if (profileImageFile) {
-                    formData.append('profileImage', profileImageFile);
-                }
+                if (profileImageFile) formData.append('profileImage', profileImageFile);
 
                 const response = await fetch('/profile/edit', {
                     method: 'POST',
@@ -945,9 +1042,7 @@ const ProfileApp = (function() {
                 if (response.ok) {
                     closeModal('edit-profile-modal');
                     openEmera('profileUpdated');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
+                    setTimeout(() => location.reload(), 1500);
                 } else {
                     const error = await response.json();
                     showError(error.message || 'Failed to update profile');
@@ -959,32 +1054,34 @@ const ProfileApp = (function() {
         }
     }
 
+    // ============================================
+    // OTP MANAGEMENT
+    // ============================================
 
     async function handleOTPVerification(e) {
         e.preventDefault();
 
+        const otpError = document.getElementById('otp-error');
         if (!state.pendingEmailChange) {
             showError('No pending email change found');
             return;
         }
 
         const otp = document.getElementById('otp-code').value.trim();
-
         if (otp.length !== 6) {
-            showError('Please enter a valid 6-digit code');
+            otpError.classList.remove('hidden');
             return;
         }
+        otpError.classList.add('hidden');
 
         try {
-            // Step 1: Verify OTP (BACKEND: verifyEmailOtp)
             const verifyResponse = await fetch('/profile/verify-email-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ otp: otp })
+                body: JSON.stringify({ otp })
             });
 
             if (verifyResponse.ok) {
-                // Step 2: Update profile first (name, phone, image)
                 if (state.pendingEmailChange.formData) {
                     await fetch('/profile/edit', {
                         method: 'POST',
@@ -992,7 +1089,6 @@ const ProfileApp = (function() {
                     });
                 }
 
-                // Step 3: Update email (BACKEND: updateProfileAfterOtp)
                 const updateResponse = await fetch('/profile/update-after-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
@@ -1003,10 +1099,7 @@ const ProfileApp = (function() {
                     document.getElementById('otp-code').value = '';
                     closeModal('email-verification-modal');
                     openEmera('emailVerified');
-                    
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
+                    setTimeout(() => location.reload(), 1500);
                 } else {
                     const error = await updateResponse.json();
                     showError(error.message || 'Failed to update email');
@@ -1025,46 +1118,37 @@ const ProfileApp = (function() {
     }
 
     let otpInterval = null;
-    let otpTimeLeft = 300; // 5 minutes
+    let otpTimeLeft = 300;
 
     function startOtpTimer() {
         clearInterval(otpInterval);
         otpTimeLeft = 300;
 
-        const timerEl = document.getElementById("otp-timer");
-        const resendBtn = document.getElementById("resend-otp-btn");
-
+        const resendBtn = document.getElementById('resend-otp-btn');
         resendBtn.disabled = true;
-        resendBtn.classList.add("cursor-not-allowed", "text-stone-400");
-        resendBtn.classList.remove("text-stone-600");
+        resendBtn.classList.add('cursor-not-allowed', 'text-stone-400');
+        resendBtn.classList.remove('text-stone-600');
 
         updateOtpTimerUI();
 
         otpInterval = setInterval(() => {
             otpTimeLeft--;
             updateOtpTimerUI();
-
             if (otpTimeLeft <= 0) {
                 clearInterval(otpInterval);
-                timerEl.innerHTML = "Didn't receive the code?";
+                document.getElementById('otp-timer').innerHTML = "Didn't receive the code?";
                 resendBtn.disabled = false;
-                resendBtn.classList.remove("cursor-not-allowed", "text-stone-400");
-                resendBtn.classList.add("text-stone-600");
+                resendBtn.classList.remove('cursor-not-allowed', 'text-stone-400');
+                resendBtn.classList.add('text-stone-600');
             }
         }, 1000);
     }
 
     function updateOtpTimerUI() {
-        const timerEl = document.getElementById("otp-timer");
+        const timerEl = document.getElementById('otp-timer');
         const minutes = Math.floor(otpTimeLeft / 60);
         const seconds = otpTimeLeft % 60;
-
-        timerEl.innerHTML = `
-            Resend code in
-            <span class="font-semibold">
-                ${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}
-            </span>
-        `;
+        timerEl.innerHTML = `Resend code in <span class="font-semibold">${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}</span>`;
     }
 
     async function resendOTP() {
@@ -1072,7 +1156,6 @@ const ProfileApp = (function() {
             showError('No pending email change found');
             return;
         }
-
         try {
             const response = await fetch('/profile/request-email-otp', {
                 method: 'POST',
@@ -1082,23 +1165,18 @@ const ProfileApp = (function() {
 
             if (response.ok) {
                 startOtpTimer();
-                
                 const titleEl = document.querySelector('#profileUpdated .modal-title');
                 const subtitleEl = document.querySelector('#profileUpdated .modal-subtitle');
                 const originalTitle = titleEl.textContent;
                 const originalSubtitle = subtitleEl.textContent;
-                
                 titleEl.textContent = 'Code Resent';
                 subtitleEl.textContent = 'A new verification code has been sent to your email.';
-                
                 openEmera('profileUpdated');
-                
                 setTimeout(() => {
                     closeEmera('profileUpdated');
                     titleEl.textContent = originalTitle;
                     subtitleEl.textContent = originalSubtitle;
                 }, 1500);
-
             } else {
                 showError('Failed to resend code');
             }
@@ -1108,9 +1186,13 @@ const ProfileApp = (function() {
         }
     }
 
+    // ============================================
+    // ADDRESS MANAGEMENT
+    // ============================================
 
     function openAddAddressModal() {
         document.getElementById('add-address-form').reset();
+        clearFormErrors('add-address-form');
         openModal('add-address-modal');
     }
 
@@ -1135,42 +1217,27 @@ const ProfileApp = (function() {
                 container.innerHTML = addresses.map(addr => `
                     <div class="border border-stone-200 p-8 relative">
                         ${addr.isDefault ? `
-                            <span class="absolute top-4 right-4 px-3 py-1 bg-stone-950 text-white text-[8px] tracking-wider uppercase">
-                                Default
-                            </span>
+                            <span class="absolute top-4 right-4 px-3 py-1 bg-stone-950 text-white text-[8px] tracking-wider uppercase">Default</span>
                         ` : ''}
-
                         <h4 class="font-serif text-lg mb-4">${addr.fullName}</h4>
-
                         <p class="text-sm text-stone-600">${addr.street}</p>
-                        <p class="text-sm text-stone-600">
-                            ${addr.city}, ${addr.state} ${addr.zipCode}
-                        </p>
-                        <p class="text-sm text-stone-600 mb-2">${addr.country}</p>
+                        <p class="text-sm text-stone-600">${addr.city}, ${addr.state} ${addr.zipCode}</p>
+                        <p class="text-sm text-stone-600 mb-2">India</p>
                         <p class="text-sm text-stone-600 mb-6">Phone: ${addr.phone}</p>
-
                         <div class="flex gap-4">
                             <button
                                 onclick='ProfileApp.openEditAddress(${JSON.stringify(addr).replace(/'/g, "&#39;")})'
                                 class="text-[10px] uppercase tracking-wider text-stone-700 hover:underline font-bold"
-                            >
-                                Edit
-                            </button>
-
+                            >Edit</button>
                             <button
                                 onclick="ProfileApp.deleteAddress('${addr._id}')"
                                 class="text-[10px] uppercase tracking-wider text-red-600 hover:underline font-bold"
-                            >
-                                Delete
-                            </button>
-
+                            >Delete</button>
                             ${!addr.isDefault ? `
                                 <button
                                     onclick="ProfileApp.setDefaultAddress('${addr._id}')"
                                     class="text-[10px] uppercase tracking-wider text-stone-600 hover:underline font-bold"
-                                >
-                                    Set as Default
-                                </button>
+                                >Set as Default</button>
                             ` : ''}
                         </div>
                     </div>
@@ -1182,19 +1249,21 @@ const ProfileApp = (function() {
         }
     }
 
+    // FIX: Send field names that match the controller (firstName, lastName, address1, address2, city, state, pincode, phone, isDefault)
     async function handleAddAddressSubmit(e) {
         e.preventDefault();
+        if (!validateAddAddressForm()) return;
 
-        const formData = new FormData(e.target);
         const addressData = {
-            fullName: formData.get('fullName'),
-            phone: formData.get('phone'),
-            street: formData.get('street'),
-            city: formData.get('city'),
-            state: formData.get('state'),
-            zipCode: formData.get('zipCode'),
-            country: formData.get('country'),
-            isDefault: formData.get('isDefault') === 'on'
+            firstName: document.getElementById('add-firstName').value.trim(),
+            lastName: document.getElementById('add-lastName').value.trim(),
+            phone: document.getElementById('add-phone').value.trim(),
+            address1: document.getElementById('add-address1').value.trim(),
+            address2: document.getElementById('add-address2').value.trim(),
+            city: document.getElementById('add-city').value.trim(),
+            state: document.getElementById('add-state').value.trim(),
+            pincode: document.getElementById('add-pincode').value.trim(),
+            isDefault: document.getElementById('add-isDefault').checked
         };
 
         try {
@@ -1221,32 +1290,53 @@ const ProfileApp = (function() {
         }
     }
 
+    // FIX: Parse fullName back into firstName/lastName when opening edit modal
+    // FIX: Parse street back into address1/address2
+    // FIX: Parse zipCode back into pincode
     function openEditAddress(address) {
+        clearFormErrors('edit-address-form');
+
         document.getElementById('edit-address-id').value = address._id;
-        document.getElementById('edit-fullName').value = address.fullName;
-        document.getElementById('edit-phone').value = address.phone;
-        document.getElementById('edit-street').value = address.street;
-        document.getElementById('edit-city').value = address.city;
-        document.getElementById('edit-state').value = address.state;
-        document.getElementById('edit-zipCode').value = address.zipCode;
-        document.getElementById('edit-country').value = address.country;
+
+        // Split fullName into first/last name
+        const nameParts = (address.fullName || '').split(' ');
+        document.getElementById('edit-addr-firstName').value = nameParts[0] || '';
+        document.getElementById('edit-addr-lastName').value = nameParts.slice(1).join(' ') || '';
+
+        document.getElementById('edit-addr-phone').value = address.phone || '';
+
+        // Split street into address1/address2
+        const streetParts = (address.street || '').split(', ');
+        document.getElementById('edit-addr-address1').value = streetParts[0] || '';
+        document.getElementById('edit-addr-address2').value = streetParts.slice(1).join(', ') || '';
+
+        document.getElementById('edit-addr-city').value = address.city || '';
+        document.getElementById('edit-addr-state').value = address.state || '';
+
+        // zipCode from DB maps to pincode for controller
+        document.getElementById('edit-addr-pincode').value = address.zipCode || '';
+        document.getElementById('edit-addr-isDefault').checked = address.isDefault || false;
 
         openModal('edit-address-modal');
     }
 
+    // FIX: Send correct field names to match controller
     async function handleEditAddressSubmit(e) {
         e.preventDefault();
+        if (!validateEditAddressForm()) return;
 
         const id = document.getElementById('edit-address-id').value;
 
         const data = {
-            fullName: document.getElementById('edit-fullName').value,
-            phone: document.getElementById('edit-phone').value,
-            street: document.getElementById('edit-street').value,
-            city: document.getElementById('edit-city').value,
-            state: document.getElementById('edit-state').value,
-            zipCode: document.getElementById('edit-zipCode').value,
-            country: document.getElementById('edit-country').value
+            firstName: document.getElementById('edit-addr-firstName').value.trim(),
+            lastName: document.getElementById('edit-addr-lastName').value.trim(),
+            phone: document.getElementById('edit-addr-phone').value.trim(),
+            address1: document.getElementById('edit-addr-address1').value.trim(),
+            address2: document.getElementById('edit-addr-address2').value.trim(),
+            city: document.getElementById('edit-addr-city').value.trim(),
+            state: document.getElementById('edit-addr-state').value.trim(),
+            pincode: document.getElementById('edit-addr-pincode').value.trim(),
+            isDefault: document.getElementById('edit-addr-isDefault').checked
         };
 
         try {
@@ -1264,7 +1354,8 @@ const ProfileApp = (function() {
                     loadAddresses();
                 }, 1500);
             } else {
-                showError('Failed to update address');
+                const error = await res.json();
+                showError(error.message || 'Failed to update address');
             }
         } catch (error) {
             console.error('Error updating address:', error);
@@ -1320,6 +1411,10 @@ const ProfileApp = (function() {
         }
     }
 
+    // ============================================
+    // ORDER MANAGEMENT
+    // ============================================
+
     async function loadOrders() {
         const container = document.getElementById('orders-container');
         container.innerHTML = '<div class="spinner"></div>';
@@ -1348,7 +1443,6 @@ const ProfileApp = (function() {
 
                 container.innerHTML = orders.map(order => {
                     const canCancel = ['pending', 'processing'].includes(order.status);
-
                     return `
                         <div class="border border-stone-200 p-8">
                             <div class="flex justify-between items-start mb-6">
@@ -1356,11 +1450,10 @@ const ProfileApp = (function() {
                                     <h4 class="font-serif text-xl mb-2">Order #${order.orderNumber}</h4>
                                     <p class="text-xs text-stone-500">Placed on ${new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                 </div>
-                                <span class="px-4 py-2 ${statusColors[order.status]} text-[10px] tracking-wider uppercase font-bold rounded">
+                                <span class="px-4 py-2 ${statusColors[order.status] || 'bg-stone-100 text-stone-800'} text-[10px] tracking-wider uppercase font-bold rounded">
                                     ${order.status}
                                 </span>
                             </div>
-
                             <div class="space-y-4 mb-6">
                                 ${order.items.map(item => `
                                     <div class="flex gap-6">
@@ -1368,16 +1461,15 @@ const ProfileApp = (function() {
                                         <div class="flex-1">
                                             <h5 class="font-serif text-base mb-1">${item.product.name}</h5>
                                             <p class="text-sm text-stone-600">Quantity: ${item.quantity}</p>
-                                            <p class="text-sm font-bold text-stone-900">${item.price.toFixed(2)}</p>
+                                            <p class="text-sm font-bold text-stone-900">₹${item.price.toFixed(2)}</p>
                                         </div>
                                     </div>
                                 `).join('')}
                             </div>
-
                             <div class="pt-6 border-t border-stone-200 flex justify-between items-center">
                                 <div>
                                     <span class="text-[10px] uppercase tracking-wider text-stone-400 font-bold">Total Amount</span>
-                                    <p class="text-2xl font-serif text-gray-900">${order.totalAmount.toFixed(2)}</p>
+                                    <p class="text-2xl font-serif text-gray-900">₹${order.totalAmount.toFixed(2)}</p>
                                 </div>
                                 <div class="flex gap-4">
                                     <a href="/orders/${order._id}" class="px-8 py-3 bg-white border-2 border-stone-300 text-stone-700 text-[10px] tracking-[0.3em] uppercase font-bold hover:bg-stone-100 transition-all">
@@ -1403,22 +1495,26 @@ const ProfileApp = (function() {
     function openCancelOrderModal(orderId, orderNumber) {
         state.currentOrderToCancel = orderId;
         document.getElementById('cancel-order-id').textContent = `#${orderNumber}`;
+        document.getElementById('cancel-reason').value = '';
+        document.getElementById('cancel-reason-error').classList.add('hidden');
         openModal('cancel-order-modal');
     }
 
     async function confirmCancelOrder() {
         const reason = document.getElementById('cancel-reason').value;
+        const reasonError = document.getElementById('cancel-reason-error');
 
         if (!reason) {
-            showError('Please select a reason for cancellation');
+            reasonError.classList.remove('hidden');
             return;
         }
+        reasonError.classList.add('hidden');
 
         try {
             const response = await fetch(`/orders/${state.currentOrderToCancel}/cancel`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reason: reason })
+                body: JSON.stringify({ reason })
             });
 
             if (response.ok) {
@@ -1449,33 +1545,48 @@ const ProfileApp = (function() {
         const newPassword = document.getElementById('new-password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
 
-        if (newPassword !== confirmPassword) {
-            showError('New passwords do not match');
-            return;
+        const currentEl = document.getElementById('current-password');
+        const newEl = document.getElementById('new-password');
+        const confirmEl = document.getElementById('confirm-password');
+        const currentError = document.getElementById('current-password-error');
+        const newError = document.getElementById('new-password-error');
+        const confirmError = document.getElementById('confirm-password-error');
+
+        // Clear all errors first
+        [currentEl, newEl, confirmEl].forEach(el => el.classList.remove('input-error'));
+        [currentError, newError, confirmError].forEach(el => el.classList.add('hidden'));
+
+        let valid = true;
+
+        if (!currentPassword) {
+            currentEl.classList.add('input-error');
+            currentError.classList.remove('hidden');
+            valid = false;
         }
 
-        if (newPassword.length < 8) {
-            showError('Password must be at least 8 characters long');
-            return;
+        const pwInvalid = !newPassword || newPassword.length < 8 ||
+            !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword);
+
+        if (pwInvalid) {
+            newEl.classList.add('input-error');
+            newError.classList.remove('hidden');
+            valid = false;
         }
 
-        const hasUpperCase = /[A-Z]/.test(newPassword);
-        const hasLowerCase = /[a-z]/.test(newPassword);
-        const hasNumber = /[0-9]/.test(newPassword);
-
-        if (!hasUpperCase || !hasLowerCase || !hasNumber) {
-            showError('Password must contain uppercase, lowercase, and numbers');
-            return;
+        if (!confirmPassword || newPassword !== confirmPassword) {
+            confirmEl.classList.add('input-error');
+            confirmError.textContent = !confirmPassword ? 'Please confirm your new password' : 'Passwords do not match';
+            confirmError.classList.remove('hidden');
+            valid = false;
         }
+
+        if (!valid) return;
 
         try {
             const response = await fetch('/profile/change-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    currentPassword,
-                    newPassword
-                })
+                body: JSON.stringify({ currentPassword, newPassword })
             });
 
             const data = await response.json();
@@ -1485,24 +1596,19 @@ const ProfileApp = (function() {
                 return;
             }
 
-            // Success
             const titleEl = document.querySelector('#profileUpdated .modal-title');
             const subtitleEl = document.querySelector('#profileUpdated .modal-subtitle');
             const originalTitle = titleEl.textContent;
             const originalSubtitle = subtitleEl.textContent;
-            
             titleEl.textContent = 'Password Changed';
             subtitleEl.textContent = 'Your password has been updated successfully.';
-            
             openEmera('profileUpdated');
             e.target.reset();
-            
             setTimeout(() => {
                 closeEmera('profileUpdated');
                 titleEl.textContent = originalTitle;
                 subtitleEl.textContent = originalSubtitle;
             }, 1500);
-
         } catch (error) {
             console.error('Error changing password:', error);
             showError('Network error. Please try again.');
@@ -1510,44 +1616,79 @@ const ProfileApp = (function() {
     }
 
     function handleForgotPassword() {
-        window.location.href = "/forgot-password";
+        window.location.href = '/forgot-password';
     }
 
+    // ============================================
+    // INIT
+    // ============================================
 
     function init() {
         showTab('profile');
 
-        // Profile image preview
         document.getElementById('profile-image-input')?.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) previewProfileImage(file);
         });
 
-        // Form handlers
         document.getElementById('edit-profile-form')?.addEventListener('submit', handleEditProfileSubmit);
         document.getElementById('verify-email-form')?.addEventListener('submit', handleOTPVerification);
         document.getElementById('add-address-form')?.addEventListener('submit', handleAddAddressSubmit);
         document.getElementById('edit-address-form')?.addEventListener('submit', handleEditAddressSubmit);
         document.getElementById('change-password-form')?.addEventListener('submit', handleChangePassword);
 
+        // Password live validation listeners
+        document.getElementById('new-password')?.addEventListener('input', function() {
+            const val = this.value;
+            const newError = document.getElementById('new-password-error');
+            const invalid = val && (val.length < 8 || !/[A-Z]/.test(val) || !/[a-z]/.test(val) || !/[0-9]/.test(val));
+            this.classList.toggle('input-error', !!invalid);
+            newError?.classList.toggle('hidden', !invalid);
+
+            // Also re-check confirm match live
+            const confirmVal = document.getElementById('confirm-password')?.value;
+            const confirmEl = document.getElementById('confirm-password');
+            const confirmError = document.getElementById('confirm-password-error');
+            if (confirmVal) {
+                const mismatch = val !== confirmVal;
+                confirmEl?.classList.toggle('input-error', mismatch);
+                if (confirmError) {
+                    confirmError.textContent = 'Passwords do not match';
+                    confirmError.classList.toggle('hidden', !mismatch);
+                }
+            }
+        });
+
+        document.getElementById('confirm-password')?.addEventListener('input', function() {
+            const newPw = document.getElementById('new-password').value;
+            const confirmError = document.getElementById('confirm-password-error');
+            const mismatch = this.value && this.value !== newPw;
+            this.classList.toggle('input-error', !!mismatch);
+            if (confirmError) {
+                confirmError.textContent = 'Passwords do not match';
+                confirmError.classList.toggle('hidden', !mismatch);
+            }
+        });
+
+        document.getElementById('current-password')?.addEventListener('input', function() {
+            const err = document.getElementById('current-password-error');
+            this.classList.toggle('input-error', !this.value);
+            err?.classList.toggle('hidden', !!this.value);
+        });
+
         // Close modals on background click
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeModal(modal.id);
-                }
+                if (e.target === modal) closeModal(modal.id);
             });
         });
 
         document.querySelectorAll('.emera-overlay').forEach(overlay => {
             overlay.addEventListener('click', function(e) {
-                if (e.target === overlay) {
-                    closeEmera(overlay.id);
-                }
+                if (e.target === overlay) closeEmera(overlay.id);
             });
         });
 
-        // ESC key to close modals
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal.active').forEach(m => closeModal(m.id));
