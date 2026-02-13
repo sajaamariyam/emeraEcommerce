@@ -23,10 +23,7 @@ const loadCart = async (req, res) => {
       });
     }
 
-    const cartCount = cart.items.reduce(
-      (sum, item) => sum + item.quantity,
-      0
-    );
+    const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
     let subtotal = 0;
     const cartItems = [];
@@ -82,13 +79,6 @@ const addToCart = async (req, res) => {
       });
     }
 
-    if (!color) {
-      return res.status(400).json({
-        success: false,
-        message: "Please select a color",
-      });
-    }
-
     const product = await Product.findById(productId);
 
     if (!product || product.isBlocked || !product.isListed) {
@@ -98,7 +88,26 @@ const addToCart = async (req, res) => {
       });
     }
 
-    const variant = product.variants.find((v) => v.color === color);
+    let selectedColor = color;
+
+    if (!selectedColor) {
+      const firstAvailable = product.variants.find(
+        (v) => v.quantity > 0
+      );
+
+      if (!firstAvailable) {
+        return res.status(400).json({
+          success: false,
+          message: "Out of stock",
+        });
+      }
+
+      selectedColor = firstAvailable.color;
+    }
+
+    const variant = product.variants.find(
+      (v) => v.color === selectedColor
+    );
 
     if (!variant || variant.quantity <= 0) {
       return res.status(400).json({
@@ -108,12 +117,15 @@ const addToCart = async (req, res) => {
     }
 
     let cart = await Cart.findOne({ userId });
+
     if (!cart) {
       cart = new Cart({ userId, items: [] });
     }
 
     const existingItem = cart.items.find(
-      (i) => i.productId.toString() === productId && i.color === color,
+      (i) =>
+        i.productId.toString() === productId &&
+        i.color === selectedColor
     );
 
     if (existingItem) {
@@ -123,11 +135,12 @@ const addToCart = async (req, res) => {
           message: "Stock limit reached",
         });
       }
+
       existingItem.quantity += 1;
     } else {
       cart.items.push({
         productId,
-        color,
+        color: selectedColor,
         quantity: 1,
         price: product.salePrice,
       });
@@ -142,12 +155,16 @@ const addToCart = async (req, res) => {
       });
     }
 
-    const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    const cartCount = cart.items.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
 
-    res.json({
+    return res.json({
       success: true,
       cartCount,
     });
+
   } catch (error) {
     console.error("ADD TO CART ERROR:", error);
     res.status(500).json({
@@ -156,6 +173,7 @@ const addToCart = async (req, res) => {
     });
   }
 };
+
 
 const incrementQty = async (req, res) => {
   try {

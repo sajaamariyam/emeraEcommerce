@@ -123,17 +123,21 @@ const addAllToCart = async (req, res) => {
       });
     }
 
-    if(!userId){
-      return res.status(401).json({success: false, message: "Login required"});
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Login required" });
     }
 
     const user = await User.findById(userId).populate("wishlist");
 
-
     let addedCount = 0;
 
     for (const product of user.wishlist) {
-      const totalStock = product.variants.reduce((sum, v) => sum + v.quantity, 0);
+      const totalStock = product.variants.reduce(
+        (sum, v) => sum + v.quantity,
+        0,
+      );
 
       if (totalStock > 0) {
         const exists = cart.items.find(

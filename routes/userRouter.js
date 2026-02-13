@@ -70,7 +70,7 @@ router.get("/pageNotFound", userController.pageNotFound);
 router.get("/search", userController.searchProducts);
 
 //PROFILE ROUTES
-router.get("/profile", saveRedirect, noCache, userController.loadProfile);
+router.get("/profile", requireLogin, noCache, userController.loadProfile);
 router.get(
   "/api/profile/orders",
   userAuth,

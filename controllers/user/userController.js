@@ -654,7 +654,7 @@ const searchProducts = async (req, res) => {
 
 const loadProfile = async (req, res) => {
   try {
-    const userData = req.user;
+    const userData = await User.findById(req.session.user);
 
     if (!userData) {
       return res.redirect("/login");
@@ -672,10 +672,7 @@ const loadProfile = async (req, res) => {
 
 const editProfile = async (req, res) => {
   try {
-    const userId = req.user._id;
-
-    console.log("REQ BODY:", req.body);
-
+    const userId = req.session.user;
     const { name, phone } = req.body;
 
     const updateData = {

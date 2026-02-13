@@ -5,7 +5,7 @@ const User = require("../../models/userSchema");
 
 const loadCheckout = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.session.user;
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
 
@@ -59,7 +59,7 @@ const loadCheckout = async (req, res) => {
 
 const placeOrder = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.session.user;
     const { addressId, email, phone, paymentMethod } = req.body;
 
     const user = await User.findById(userId);

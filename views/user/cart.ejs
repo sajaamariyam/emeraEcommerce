@@ -188,7 +188,34 @@
     </main>
 
 
+<!-- Modal -->
+<div id="cartModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+  <div class="bg-white p-8 max-w-md w-full mx-4">
+    <h3 id="modalTitle" class="text-2xl font-serif text-gray-900 mb-4"></h3>
+    <p id="modalMessage" class="text-sm text-gray-600 mb-8"></p>
+    <button id="modalClose" class="w-full bg-emera-950 text-white py-4 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-800 transition-colors">
+      Close
+    </button>
+  </div>
+</div>
+
 <script>
+  const modal = document.getElementById('cartModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalMessage = document.getElementById('modalMessage');
+  const modalClose = document.getElementById('modalClose');
+
+  function showModal(title, message) {
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modal.classList.remove('hidden');
+  }
+
+  modalClose.addEventListener('click', () => {
+    modal.classList.add('hidden');
+    location.reload();
+  });
+
   document.querySelectorAll(".qty-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const action = btn.dataset.action;
@@ -206,16 +233,12 @@
         body: JSON.stringify({ color }),
       });
 
-      if (!res.ok) {
-        alert("Try again, error occurred");
-        return;
-      }
-
       const data = await res.json();
+      
       if (data.success) {
         location.reload();
       } else {
-        alert(data.message || "Quantity update failed");
+        showModal('Update Failed', data.message || 'Quantity update failed');
       }
     });
   });
@@ -231,12 +254,13 @@
         body: JSON.stringify({ color }),
       });
 
-      if (!res.ok) {
-        alert("Try again, error occurred");
-        return;
+      const data = await res.json();
+      
+      if (data.success) {
+        location.reload();
+      } else {
+        showModal('Remove Failed', data.message || 'Failed to remove item');
       }
-
-      location.reload();
     });
   });
 </script>
