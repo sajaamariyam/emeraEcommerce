@@ -43,8 +43,6 @@ const getWishlist = async (req, res) => {
 };
 
 const addToWishlist = async (req, res) => {
-  console.log("SESSION: ", req.session);
-  console.log("User Id:", req.session.user);
   try {
     const { productId } = req.params;
 
@@ -125,6 +123,10 @@ const addAllToCart = async (req, res) => {
       });
     }
 
+    if(!userId){
+      return res.status(401).json({success: false, message: "Login required"});
+    }
+
     const user = await User.findById(userId).populate("wishlist");
 
 
@@ -134,13 +136,13 @@ const addAllToCart = async (req, res) => {
       const totalStock = product.variants.reduce((sum, v) => sum + v.quantity, 0);
 
       if (totalStock > 0) {
-        const exists = user.cart.find(
-          (item) => item.product.toString() === product._id.toString(),
+        const exists = cart.items.find(
+          (item) => item.productId.toString() === product._id.toString(),
         );
 
         if (!exists) {
           cart.items.push({
-            product: product._id,
+            productId: product._id,
             color: product.variants[0]?.color || "Default",
             quantity: 1,
             price: product.salePrice,
@@ -150,7 +152,7 @@ const addAllToCart = async (req, res) => {
       }
     }
 
-    await user.save();
+    await cart.save();
 
     return res.json({
       success: true,

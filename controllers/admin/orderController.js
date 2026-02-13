@@ -51,9 +51,9 @@ const loadOrders = async (req, res) => {
         sortQuery.createdAt = -1;
     }
 
-    const totalOrders = await Order.countDocuments(searchQuery);
+    const totalOrders = await Order.countDocuments(query);
 
-    const orders = await Order.find(searchQuery)
+    const orders = await Order.find(query)
       .populate("userId")
       .sort(sortQuery)
       .skip(skip)

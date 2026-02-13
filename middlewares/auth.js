@@ -42,6 +42,15 @@ const saveRedirect = (req, res, next) => {
   next();
 };
 
+const requireLogin = (req, res, next) => {
+  if (!req.session.user) {
+    req.session.redirectTo = req.originalUrl;
+    console.log("saved redirect:", req.session.redirectTo);
+    return res.redirect("/login");
+  }
+  next();
+};
+
 const noCache = (req, res, next) => {
   res.set("Cache-control", "no-store, no-cache, must-revalidate, private");
   res.set("Pragma", "no-cache");
@@ -76,4 +85,5 @@ module.exports = {
   adminAuth,
   noCache,
   saveRedirect,
+  requireLogin,
 };

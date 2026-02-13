@@ -4,7 +4,12 @@ const passport = require("passport");
 
 const userController = require("../controllers/user/userController");
 const cartController = require("../controllers/user/cartController");
-const { userAuth, noCache, saveRedirect } = require("../middlewares/auth");
+const {
+  requireLogin,
+  userAuth,
+  noCache,
+  saveRedirect,
+} = require("../middlewares/auth");
 const { uploadProduct, uploadProfile } = require("../middlewares/upload");
 const checkoutController = require("../controllers/user/checkoutController");
 const orderController = require("../controllers/user/orderController");
@@ -65,7 +70,7 @@ router.get("/pageNotFound", userController.pageNotFound);
 router.get("/search", userController.searchProducts);
 
 //PROFILE ROUTES
-router.get("/profile", userAuth, noCache, userController.loadProfile);
+router.get("/profile", saveRedirect, noCache, userController.loadProfile);
 router.get(
   "/api/profile/orders",
   userAuth,
@@ -111,14 +116,14 @@ router.post(
 );
 
 //CART ROUTES
-router.get("/cart", userAuth, noCache, cartController.loadCart);
-router.post("/cart/add", userAuth, cartController.addToCart);
+router.get("/cart", requireLogin, noCache, cartController.loadCart);
+router.post("/cart/add", requireLogin, cartController.addToCart);
 router.put("/cart/increment/:productId", userAuth, cartController.incrementQty);
 router.put("/cart/decrement/:productId", userAuth, cartController.decrementQty);
 router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
 
 //CHECKOUT ROUTES
-router.get("/checkout", userAuth, noCache, checkoutController.loadCheckout);
+router.get("/checkout", requireLogin, noCache, checkoutController.loadCheckout);
 router.post("/checkout", userAuth, checkoutController.placeOrder);
 
 //ORDER ROUTES
@@ -145,13 +150,21 @@ router.get(
 );
 
 //WISHLIST
-router.get("/wishlist", userAuth, wishlistController.getWishlist);
-router.post("/wishlist/add/:productId", userAuth, wishlistController.addToWishlist);
+router.get("/wishlist", requireLogin, wishlistController.getWishlist);
+router.post(
+  "/wishlist/add/:productId",
+  requireLogin,
+  wishlistController.addToWishlist,
+);
 router.delete(
   "/wishlist/remove/:productId",
   userAuth,
   wishlistController.removeFromWishlist,
 );
-router.post("/wishlist/add-all-to-cart", userAuth, wishlistController.addAllToCart);
+router.post(
+  "/wishlist/add-all-to-cart",
+  userAuth,
+  wishlistController.addAllToCart,
+);
 
 module.exports = router;

@@ -11,6 +11,9 @@ const passport = require("./config/passport");
 const db = require("./config/db");
 const userRouter = require("./routes/userRouter");
 const adminRouter = require("./routes/adminRouter");
+const User = require("./models/userSchema");
+
+
 db()
 const app = express();
 
@@ -25,6 +28,20 @@ app.use(session({
         maxAge: 72*60*60*1000
     }
 }));
+
+app.use(async (req, res, next) => {
+    try{
+        if(req.session.user){
+            const user = await User.findById(req.session.user);
+            res.locals.user = user;
+        }else{
+            res.locals.user = null;
+        }
+    }catch(error){
+        res.locals.user = null;
+    }
+    next();
+})
 
 app.use(flash());
 app.use((req, res, next) => {
@@ -42,6 +59,7 @@ app.use(express.urlencoded({extended: true, limit: "10mb"}));
 app.use(express.json());
 
 app.use(passport.initialize());
+app.use(passport.session());
 
 
 app.set("view engine", "ejs")

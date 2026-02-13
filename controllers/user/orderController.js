@@ -75,14 +75,15 @@ const loadOrderDetails = async (req, res) => {
 const loadOrder = async (req, res) => {
   try {
     const userId = req.user._id;
+    const search = req.query.search?.trim() || "";
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
-    const search = req.query.search || "";
 
-    let searchQuery = { userId };
+    let query = {userId};
+
     if (search) {
-      searchQuery.$or = [
+      query.$or = [
         { orderId: { $regex: search, $options: "i" } },
         { status: { $regex: search, $options: "i" } },
       ];
@@ -103,6 +104,7 @@ const loadOrder = async (req, res) => {
       orders,
       currentPage: page,
       totalPages,
+      search,
       showAnnouncement: false,
       messages: {
         success: req.flash("success"),

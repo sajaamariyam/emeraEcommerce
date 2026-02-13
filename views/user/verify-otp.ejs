@@ -155,18 +155,44 @@
 const otpHidden = document.getElementById("otpHidden");
 const otpForm = document.querySelector("form");
 
-otpForm.addEventListener("submit", (e) => {
+otpForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
     const otp = Array.from(otpInputs).map(input => input.value).join("");
 
     if (otp.length !== 6) {
-        e.preventDefault();
         errorMsg.textContent = "Please enter all 6 digits.";
         errorMsg.classList.remove("hidden");
         return;
     }
 
-    otpHidden.value = otp;
+    try {
+        const verifyUrl = OTP_MODE === "signup"
+            ? "/verify-otp"
+            : "/verify-forgot-otp";
+
+        const res = await fetch(verifyUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ otp }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            window.location.href = data.redirectTo;
+        } else {
+            errorMsg.textContent = data.message || "Invalid OTP";
+            errorMsg.classList.remove("hidden");
+        }
+    } catch (error) {
+        errorMsg.textContent = "Server error. Try again.";
+        errorMsg.classList.remove("hidden");
+    }
 });
+
 
 
 

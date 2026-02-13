@@ -16,7 +16,6 @@ const loadCheckout = async (req, res) => {
     const user = await User.findById(userId);
     const addresses = user?.addresses || [];
 
-
     let subtotal = 0;
     const cartItems = [];
 
@@ -39,9 +38,7 @@ const loadCheckout = async (req, res) => {
     const tax = Math.round(subtotal * 0.18);
     const total = subtotal + tax;
 
-    const cartCount = cart.items.reduce(
-      (sum, item) => sum + item.quantity, 0
-    )
+    const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
     res.render("user/checkout", {
       user: req.user,
@@ -60,11 +57,10 @@ const loadCheckout = async (req, res) => {
   }
 };
 
-
 const placeOrder = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { addressId, email, phone } = req.body;
+    const { addressId, email, phone, paymentMethod } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -87,7 +83,14 @@ const placeOrder = async (req, res) => {
     for (const item of cart.items) {
       const product = item.productId;
 
-      const variant = product.variants.find(v => v.color === item.color);
+      if (!product || product.isBlocked) {
+        return res.status(400).json({
+          success: false,
+          message: `${product?.name || "product"} unavailable`,
+        });
+      }
+
+      const variant = product.variants.find((v) => v.color === item.color);
       if (!variant || variant.quantity < item.quantity) {
         return res.status(400).json({
           message: `${product.name} (${item.color}) out of stock`,
@@ -117,16 +120,15 @@ const placeOrder = async (req, res) => {
       status: "pending",
 
       shippingAddress: {
-      name: selectedAddress.fullName, 
-      phone: selectedAddress.phone,
-      email,
-      address: selectedAddress.street, 
-      city: selectedAddress.city,
-      state: selectedAddress.state,
-      pincode: selectedAddress.zipCode,
-      country: selectedAddress.country,
-    },
-
+        name: selectedAddress.firstName && selectedAddress.lastName ? `${selectedAddress.firstName} ${selectedAddress.lastName}` : selectedAddress,
+        phone: selectedAddress.phone || phone,
+        email,
+        address: selectedAddress.address1 || selectedAddress.street,
+        city: selectedAddress.city,
+        state: selectedAddress.state,
+        pincode: selectedAddress.pincode || selectedAddress.zipCode,
+        country: selectedAddress || "India",
+      },
     });
 
     await newOrder.save();
@@ -134,7 +136,7 @@ const placeOrder = async (req, res) => {
     for (const item of cart.items) {
       await Product.updateOne(
         { _id: item.productId._id, "variants.color": item.color },
-        { $inc: { "variants.$.quantity": -item.quantity } }
+        { $inc: { "variants.$.quantity": -item.quantity } },
       );
     }
 

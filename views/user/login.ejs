@@ -179,7 +179,7 @@
             const data = await res.json();
 
             if (data.success) {
-              window.location.href = data.redirectTo || "/";
+              window.location.href = data.redirectTo;
             } else {
               showAlert(data.message || "Invalid email or password");
             }

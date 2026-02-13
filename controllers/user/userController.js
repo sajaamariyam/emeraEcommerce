@@ -161,11 +161,18 @@ const verifyOtp = async (req, res) => {
 
       await saveUserData.save();
 
+      const redirectTo = req.session.redirectTo || "/";
+
       req.session.userOtp = null;
       req.session.userData = null;
 
       req.session.user = saveUserData._id;
-      return res.redirect("/");
+
+      delete req.session.redirectTo;
+
+      console.log("Redirecting to:", redirectTo);
+
+      return res.redirect(redirectTo);
     } else {
       res
         .status(400)
@@ -240,7 +247,7 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const findUser = await User.findOne({ isAdmin: false, email: email });
+    const findUser = await User.findOne({ isAdmin: false, email });
 
     if (!findUser) {
       return res.status(401).json({
@@ -265,6 +272,9 @@ const login = async (req, res) => {
       });
     }
 
+    const redirectTo = req.session.redirectTo || "/";
+    const pendingAction = req.session.pendingAction;
+
     req.session.regenerate((err) => {
       if (err) {
         return res.status(500).json({
@@ -275,12 +285,15 @@ const login = async (req, res) => {
 
       req.session.user = findUser._id;
 
-      const redirectTo = req.session.redirectTo || "/";
+      req.session.redirectTo = redirectTo;
+      req.session.pendingAction = pendingAction;
+
+      const finalRedirect = req.session.redirectTo || "/";
       delete req.session.redirectTo;
 
       return res.json({
         success: true,
-        redirectTo,
+        redirectTo: finalRedirect,
       });
     });
   } catch (error) {
