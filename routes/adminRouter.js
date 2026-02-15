@@ -96,7 +96,7 @@ router.post(
 
 //OFFER ROUTES
 router.get("/offers", adminAuth, offerController.loadOffers);
-router.post("/offers/create", adminAuth, offerController.createOffer);
+router.post("/offers", adminAuth, offerController.createOffer);
 router.post("/offers/toggle/:id", adminAuth, offerController.toggleOfferStatus);
 router.post("/offers/delete/:id", adminAuth, offerController.deleteOffer)
 

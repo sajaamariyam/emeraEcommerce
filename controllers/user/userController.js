@@ -539,6 +539,7 @@ const loadProducts = async (req, res) => {
       .sort(sortOption);
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const updatedProducts = [];
 
@@ -620,6 +621,7 @@ const loadProductDetails = async (req, res) => {
     }
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const productOffer = await Offer.findOne({
       offerType: "product",
