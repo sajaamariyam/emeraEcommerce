@@ -4,21 +4,26 @@ const router = express.Router();
 const adminController = require("../controllers/admin/adminController");
 const orderController = require("../controllers/admin/orderController");
 const productController = require("../controllers/admin/productController");
+const offerController = require("../controllers/admin/offerController");
 
 const upload = require("../middlewares/multer");
 const { adminAuth, noCache } = require("../middlewares/auth");
 const { uploadCategory, uploadProduct } = require("../middlewares/upload");
 
+//AUTH ROUTES
 router.get("/adminLogin", adminController.loadLogin);
 router.post("/adminLogin", adminController.login);
 router.get("/logout", adminController.logout);
 
+//DASHBOARD ROUTES
 router.get("/adminDashboard", adminAuth, adminController.loadDashboard);
 
+//USER ROUTES
 router.get("/users", adminAuth, adminController.loadUsers);
 router.post("/users/block/:id", adminAuth, adminController.blockUser);
 router.post("/users/unblock/:id", adminAuth, adminController.unblockUser);
 
+//CATEGORY ROUTES
 router.get("/categories", adminAuth, adminController.loadCategories);
 router.post(
   "/categories",
@@ -45,6 +50,7 @@ router.delete(
   adminController.deleteCategory,
 );
 
+//PRODUCT ROUTES
 router.get("/products", adminAuth, productController.loadProducts);
 router.get("/products/:id", productController.getProduct);
 router.get("/products/:id", adminAuth, async (req, res) => {
@@ -79,7 +85,6 @@ router.post(
 router.post("/products/delete/:id", adminAuth, productController.deleteProduct);
 
 //ORDER ROUTES
-
 router.get("/orders", adminAuth, noCache, orderController.loadOrders);
 router.get("/orders/:id", adminAuth, orderController.getOrderDetails);
 router.post(
@@ -88,5 +93,12 @@ router.post(
   upload.none(),
   orderController.updateOrderStatus,
 );
+
+//OFFER ROUTES
+router.get("/offers", adminAuth, offerController.loadOffers);
+router.post("/offers/create", adminAuth, offerController.createOffer);
+router.post("/offers/toggle/:id", adminAuth, offerController.toggleOfferStatus);
+router.post("/offers/delete/:id", adminAuth, offerController.deleteOffer)
+
 
 module.exports = router;
