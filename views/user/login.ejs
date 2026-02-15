@@ -33,11 +33,7 @@
       <form id="loginForm" class="space-y-5">
         <!-- Email Field -->
         <div>
-          <label
-            for="email"
-            class="block text-sm font-medium text-gray-700 mb-2"
-            >Email</label
-          >
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
           <input
             type="email"
             id="email"
@@ -49,56 +45,57 @@
 
         <!-- Password Field -->
         <div>
-        <div class="flex justify-between items-center mb-2">
-            <label for="password" class="block text-sm font-medium text-gray-700">
-            Password
-            </label>
-            <a
-            href="/forgot-password"
-            class="text-sm text-[#c9a961] hover:underline"
-            >Forgot Password?</a
-            >
-        </div>
+          <div class="flex justify-between items-center mb-2">
+            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+            <a href="/forgot-password" class="text-sm text-[#c9a961] hover:underline">Forgot Password?</a>
+          </div>
 
-        <div class="relative">
+          <div class="relative">
             <input
-            type="password"
-            id="password"
-            placeholder="••••••••"
-            class="w-full px-4 py-3 pr-12 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0f6b5a] focus:border-transparent transition"
-            required
+              type="password"
+              id="password"
+              placeholder="••••••••"
+              class="w-full px-4 py-3 pr-12 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0f6b5a] focus:border-transparent transition"
+              required
             />
 
-            <!-- Eye Icon -->
+            <!-- Eye Icon Button -->
             <button
-            type="button"
-            onclick="togglePassword()"
-            class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-[#0f6b5a]"
+              type="button"
+              onclick="togglePassword()"
+              class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-[#0f6b5a] transition-colors"
+              aria-label="Toggle password visibility"
             >
-            <svg
-                id="eyeIcon"
+              <!-- Eye OPEN (visible by default = password is hidden) -->
+              <svg
+                id="eyeOpen"
                 xmlns="http://www.w3.org/2000/svg"
                 class="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 stroke-width="2"
-            >
-                <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
-            </svg>
-            </button>
-        </div>
-        </div>
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
 
+              <!-- Eye SLASH (hidden by default) -->
+              <svg
+                id="eyeSlash"
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 hidden"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.477 10.477A3 3 0 0013.5 13.5M6.357 6.357A9.956 9.956 0 002.458 12C3.732 16.057 7.523 19 12 19c1.744 0 3.382-.45 4.8-1.242M9.53 4.122A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-2.428 3.844" />
+              </svg>
+            </button>
+          </div>
+        </div>
 
         <!-- Login Button -->
         <button
@@ -121,7 +118,6 @@
 
       <!-- Social Login Buttons -->
       <div class="space-y-3">
-        <!-- Google Button -->
         <button
           type="button"
           onclick="handleGoogleLogin()"
@@ -132,20 +128,14 @@
             alt="Google"
             class="w-5 h-5"
           />
-          <span class="text-gray-700 font-medium"
-            >Continue with <span class="text-[#c9a961]">Google</span></span
-          >
+          <span class="text-gray-700 font-medium">Continue with <span class="text-[#c9a961]">Google</span></span>
         </button>
       </div>
 
       <!-- Sign Up Link -->
       <p class="text-center text-gray-600 text-sm mt-8">
         Don't have an account?
-        <a
-          href="/signup"
-          class="text-[#c9a961] font-medium hover:underline ml-1"
-          >Sign Up</a
-        >
+        <a href="/signup" class="text-[#c9a961] font-medium hover:underline ml-1">Sign Up</a>
       </p>
     </div>
 
@@ -159,34 +149,31 @@
     </div>
 
     <script>
-      document
-        .getElementById("loginForm")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
+      // ── Login form submit ──────────────────────────────────────────────
+      document.getElementById("loginForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
 
-          const email = document.getElementById("email").value;
-          const password = document.getElementById("password").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
 
-          try {
-            const res = await fetch("/login", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ email, password }),
-            });
+        try {
+          const res = await fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
 
-            const data = await res.json();
+          const data = await res.json();
 
-            if (data.success) {
-              window.location.href = data.redirectTo;
-            } else {
-              showAlert(data.message || "Invalid email or password");
-            }
-          } catch (error) {
-            showAlert("Server error. Please try again.");
+          if (data.success) {
+            window.location.href = data.redirectTo;
+          } else {
+            showAlert(data.message || "Invalid email or password");
           }
-        });
+        } catch (error) {
+          showAlert("Server error. Please try again.");
+        }
+      });
 
       function handleGoogleLogin() {
         window.location.href = "/auth/google";
@@ -198,33 +185,22 @@
         alertBox.classList.remove("hidden");
       }
 
+      // ✅ FIX: swap two pre-built SVGs instead of injecting broken innerHTML
       function togglePassword() {
-        const passwordInput = document.getElementById("password");
-        const eyeIcon = document.getElementById("eyeIcon");
+        const input    = document.getElementById("password");
+        const eyeOpen  = document.getElementById("eyeOpen");
+        const eyeSlash = document.getElementById("eyeSlash");
 
-        if (passwordInput.type === "password") {
-        passwordInput.type = "text";
-        eyeIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round"
-            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478
-            0-8.268-2.943-9.543-7a9.97 9.97 0 012.042-3.368M6.223
-            6.223A9.956 9.956 0 0112 5c4.478 0 8.268 2.943
-            9.543 7a9.97 9.97 0 01-4.132 5.411M15
-            12a3 3 0 00-3-3m0 0a3 3 0 013 3m-3
-            -3L3 21" />
-        `;
+        if (input.type === "password") {
+          input.type = "text";
+          eyeOpen.classList.add("hidden");
+          eyeSlash.classList.remove("hidden");
         } else {
-        passwordInput.type = "password";
-        eyeIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round"
-            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478
-            0 8.268 2.943 9.542 7-1.274 4.057-5.064
-            7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        `;
+          input.type = "password";
+          eyeSlash.classList.add("hidden");
+          eyeOpen.classList.remove("hidden");
         }
-    }
+      }
     </script>
   </body>
 </html>

@@ -95,7 +95,7 @@ const signup = async (req, res) => {
     req.session.userOtp = null;
     req.session.userData = null;
 
-    const { name, email, phone, password, cPassword } = req.body;
+    const { name, email, phone, password, cPassword, referralCode } = req.body;
 
     if (password !== cPassword) {
       return res.render("user/signup", { message: "Password do not match" });
@@ -117,7 +117,7 @@ const signup = async (req, res) => {
     }
 
     req.session.userOtp = otp;
-    req.session.userData = { name, phone, email, password };
+    req.session.userData = { name, phone, email, password, referralCode };
 
     res.render("user/verify-otp", { otpMode: "signup", userEmail: email });
     console.log("OTP sent", otp);
@@ -139,46 +139,68 @@ const verifyOtp = async (req, res) => {
   try {
     const { otp } = req.body;
 
-    if (otp === req.session.userOtp) {
-      const user = req.session.userData;
-
-      const existingUser = await User.findOne({ email: user.email });
-
-      if (existingUser) {
-        return res.status(409).json({
-          success: false,
-          message: "User already registered. Please login.",
-        });
-      }
-
-      const passwordHash = await securePassword(user.password);
-
-      const saveUserData = new User({
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        password: passwordHash,
-      });
-
-      await saveUserData.save();
-
-      const redirectTo = req.session.redirectTo || "/";
-
-      req.session.userOtp = null;
-      req.session.userData = null;
-
-      req.session.user = saveUserData._id;
-
-      delete req.session.redirectTo;
-
-      console.log("Redirecting to:", redirectTo);
-
-      return res.redirect(redirectTo);
-    } else {
-      res
+    if (otp !== req.session.userOtp) {
+      return res
         .status(400)
         .json({ success: false, message: "Invalid OTP, Please try again" });
     }
+
+    const user = req.session.userData;
+
+    const existingUser = await User.findOne({ email: user.email });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "User already registered. Please Login.",
+      });
+    }
+
+    const passwordHash = await securePassword(user.password);
+
+    const generateReferralCode = () => {
+      return "REF" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    };
+
+    const newReferralCode = generateReferralCode();
+
+    const newUser = new User({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      password: passwordHash,
+      referralCode: newReferralCode,
+      redeemed: false,
+    });
+
+    await newUser.save();
+
+    if (user.referralCode) {
+      const referrer = await User.findOne({
+        referralCode: user.referralCode,
+      });
+
+      if (referrer && referrer._id.toString() !== newUser._id.toString()) {
+        if (!referrer.redeemedUsers.includes(newUser._id)) {
+          referrer.wallet += 200;
+          referrer.redeemedUsers.push(newUser._id);
+
+          await referrer.save();
+        }
+      }
+    }
+
+    req.session.userOtp = null;
+    req.session.userData = null;
+    req.session.user = newUser._id;
+
+    const redirectTo = req.session.redirectTo || "/";
+    delete req.session.redirectTo;
+
+    return res.json({
+      success: true,
+      redirectTo: redirectTo,
+    });
   } catch (error) {
     console.error("Error Verifying OTP", error);
 
@@ -201,29 +223,32 @@ const loadOtp = async (req, res) => {
 
 const resendOtp = async (req, res) => {
   try {
-    const { email } = req.session.userData;
-
-    if (!email) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email not found in session" });
+    if (!req.session.userData || !req.session.userData.email) {
+      return res.status(400).json({
+        success: false,
+        message: "Session expired. Please signup again.",
+      });
     }
+
+    const email = req.session.userData.email;
 
     const otp = generateOtp();
     req.session.userOtp = otp;
 
     const emailSent = await sendVerificationEmail(email, otp);
-    if (emailSent) {
-      console.log("Resend OTP:", otp);
-      res
-        .status(200)
-        .json({ success: true, message: "OTP Resend successfully" });
-    } else {
-      res.status(500).json({
+
+    if (!emailSent) {
+      return res.status(500).json({
         success: false,
-        message: "Failed to resend OTP, Please try again",
+        message: "Failed to red=send OTP",
       });
     }
+
+    console.log("RESEND OTP: ", otp);
+
+    return res.json({
+      success: true,
+    });
   } catch (error) {
     console.error("Error resending OTP", error);
     res.status(500).json({
