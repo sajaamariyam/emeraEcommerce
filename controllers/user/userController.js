@@ -841,6 +841,10 @@ const loadProfile = async (req, res) => {
       return res.redirect("/login");
     }
 
+    userData.addresses = userData.addresses.sort(
+      (a, b) => b.isDefault - a.isDefault,
+    );
+
     res.render("user/profile", {
       user: userData,
       showAnnouncement: false,
@@ -985,7 +989,11 @@ const getAddresses = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json(user.addresses || []);
+    const sortedAddresses = (user.addresses || []).sort((a, b) => {
+      return b.isDefault - a.isDefault;
+    });
+
+    res.json(sortedAddresses);
   } catch (error) {
     console.log("GET ADDRESSES ERROR", error);
     res.status(500).json({ message: "failed to load addresses" });

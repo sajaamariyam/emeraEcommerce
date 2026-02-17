@@ -109,8 +109,11 @@ const getOrderDetails = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Order not found" });
     }
-
-    res.json(order);
+    res.render("admin/orderDetails",{
+      admin: res.locals.admin,
+      order
+    });
+    
   } catch (error) {
     console.error("GET ORDER DETAILS ERROR:", error);
     res.status(500).json({ message: "Failed to load order details" });

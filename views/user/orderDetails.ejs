@@ -127,6 +127,7 @@
 
                     <% if (order.shippingAddress) { %>
                         <div class="space-y-2">
+
                             <% if (order.shippingAddress.name) { %>
                                 <p class="text-lg font-semibold text-gray-900">
                                     <%= order.shippingAddress.name %>
@@ -141,7 +142,10 @@
 
                             <% if (order.shippingAddress.city || order.shippingAddress.state || order.shippingAddress.pincode) { %>
                                 <p class="text-sm text-gray-600">
-                                    <%= order.shippingAddress.city || '' %><%= order.shippingAddress.city && order.shippingAddress.state ? ', ' : '' %><%= order.shippingAddress.state || '' %> <%= order.shippingAddress.pincode || '' %>
+                                    <%= order.shippingAddress.city || '' %>
+                                    <%= order.shippingAddress.city && order.shippingAddress.state ? ', ' : '' %>
+                                    <%= order.shippingAddress.state || '' %>
+                                    <%= order.shippingAddress.pincode ? ' - ' + order.shippingAddress.pincode : '' %>
                                 </p>
                             <% } %>
 
@@ -162,11 +166,14 @@
                                     <strong>Email:</strong> <%= order.shippingAddress.email %>
                                 </p>
                             <% } %>
+
                         </div>
                     <% } else { %>
                         <p class="text-sm text-gray-500">Shipping address not available</p>
                     <% } %>
                 </div>
+
+
 
                 
                 <!-- Order Items -->
@@ -397,12 +404,19 @@
                         </a>
 
                         <!-- Cancel Order Button -->
-                        <% if (lowerStatus === 'pending' || lowerStatus === 'processing') { %>
+                       <% if (
+                            (lowerStatus === 'pending' || lowerStatus === 'processing') 
+                            && order.items 
+                            && order.items.length > 1
+                        ) { %>
+
                             <button onclick="openCancelModal('<%= order.orderId %>', 'order')"
                                     class="block text-center w-full border-2 border-red-600 text-red-600 py-6 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-red-600 hover:text-white transition-all duration-300">
                                 Cancel Entire Order
                             </button>
+
                         <% } %>
+
                         
                         <!-- Return Order Button -->
                         <% if (lowerStatus === 'delivered') { %>

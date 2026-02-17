@@ -182,12 +182,12 @@
               d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
           </svg>
 
-          <% if (cartCount && cartCount > 0) { %>
-            <span class="absolute -top-2 -right-2 bg-white text-emera-950 text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
-              <%= cartCount %>
-            </span>
-          <% } %>
+          <span id="cart-count-badge"
+                class="absolute -top-2 -right-2 bg-white text-emera-950 text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <%= cartCount || 0 %>
+          </span>
         </a>
+
 
         <!-- Auth -->
         <% if (!user) { %>
