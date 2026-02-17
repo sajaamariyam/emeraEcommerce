@@ -429,30 +429,54 @@
   let appliedCouponCode = '';
   let appliedDiscount = 0;
 
-  function applyCoupon(code, discountAmount) {
-    appliedCouponCode = code;
-    appliedDiscount = discountAmount;
-    const newTotal = Math.max(0, BASE_TOTAL - discountAmount);
-    document.getElementById('discountRow').classList.remove('hidden');
-    document.getElementById('discountDisplay').textContent = `-₹${discountAmount.toLocaleString('en-IN')}`;
-    document.getElementById('totalDisplay').textContent = `₹${newTotal.toLocaleString('en-IN')}`;
-    document.getElementById('appliedCouponCode').textContent = code;
-    document.getElementById('appliedCouponTag').classList.remove('hidden');
-    document.querySelectorAll('.coupon-chip').forEach(btn => {
-      btn.classList.toggle('border-emera-950', btn.dataset.code === code);
-      btn.classList.toggle('bg-emera-50', btn.dataset.code === code);
-    });
+  // Validate coupon against server before applying
+  async function applyCoupon(code, discountAmountHint) {
+    try {
+      const res = await fetch('/checkout/apply-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ couponCode: code }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        showModal('Coupon Invalid', data.message || 'This coupon cannot be applied.', 'error');
+        return;
+      }
+
+      appliedCouponCode = code;
+      appliedDiscount = data.discountAmount;
+
+      document.getElementById('discountRow').classList.remove('hidden');
+      document.getElementById('discountDisplay').textContent = `-₹${data.discountAmount.toLocaleString('en-IN')}`;
+      document.getElementById('totalDisplay').textContent = `₹${data.newTotal.toLocaleString('en-IN')}`;
+      document.getElementById('appliedCouponCode').textContent = code;
+      document.getElementById('appliedCouponTag').classList.remove('hidden');
+
+      document.querySelectorAll('.coupon-chip').forEach(btn => {
+        btn.classList.toggle('border-emera-950', btn.dataset.code === code);
+        btn.classList.toggle('bg-emera-50', btn.dataset.code === code);
+      });
+
+    } catch (err) {
+      showModal('Error', 'Failed to validate coupon. Please try again.', 'error');
+    }
   }
 
-  function applyManualCoupon() {
+  async function applyManualCoupon() {
     const code = document.getElementById('couponInput').value.trim().toUpperCase();
     if (!code) return;
+
+    // Check if it's one of the displayed chips
     const chip = document.querySelector(`.coupon-chip[data-code="${code}"]`);
     if (chip) {
-      applyCoupon(code, Number(chip.dataset.discount));
+      await applyCoupon(code, Number(chip.dataset.discount));
       document.getElementById('couponInput').value = '';
     } else {
-      showModal('Invalid Coupon', 'This coupon code is not valid or has already been used.', 'error');
+      // Try validating with server even if not in the chip list
+      await applyCoupon(code, 0);
+      document.getElementById('couponInput').value = '';
     }
   }
 

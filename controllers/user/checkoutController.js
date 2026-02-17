@@ -65,6 +65,66 @@ const loadCheckout = async (req, res) => {
   }
 };
 
+const applyCoupon = async (req, res) => {
+  try {
+    const userId = req.session.user;
+    const { couponCode } = req.body;
+
+    if (!couponCode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Coupon code is required" });
+    }
+
+    const coupon = await Coupon.findOne({
+      code: couponCode.trim().toUpperCase(),
+      userId,
+      isUsed: false,
+      expiryDate: { $gte: new Date() },
+    });
+
+    if (!coupon) {
+      return res.status(404).json({
+        success: false,
+        message: "Invalid or expired coupon code",
+      });
+    }
+
+    const cart = await Cart.findOne({ userId }).populate("items.productId");
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ success: false, message: "Cart is empty" });
+    }
+
+    let subtotal = 0;
+    for (const item of cart.items) {
+      if (!item.productId || item.productId.isBlocked) continue;
+      subtotal += item.price * item.quantity;
+    }
+
+    const tax = Math.round(subtotal * 0.18);
+    const grossTotal = subtotal + tax;
+
+    if (coupon.discountAmount > grossTotal) {
+      return res.status(400).json({
+        success: false,
+        message: "Coupon discount exceeds order total",
+      });
+    }
+
+    const newTotal = Math.max(0, grossTotal - coupon.discountAmount);
+
+    return res.json({
+      success: true,
+      discountAmount: coupon.discountAmount,
+      newTotal,
+      message: `Coupon applied! You saved ₹${coupon.discountAmount}`,
+    });
+  } catch (error) {
+    console.error("APPLY COUPON ERROR:", error);
+    res.status(500).json({ success: false, message: "Failed to apply coupon" });
+  }
+};
+
 const placeOrder = async (req, res) => {
   try {
     const userId = req.session.user;
@@ -90,7 +150,7 @@ const placeOrder = async (req, res) => {
       if (!product || product.isBlocked)
         return res.status(400).json({ message: "Product unavailable" });
 
-      const variant = product.variants.find(v => v.color === item.color);
+      const variant = product.variants.find((v) => v.color === item.color);
 
       if (!variant || variant.quantity < item.quantity)
         return res.status(400).json({ message: "Out of stock" });
@@ -107,7 +167,30 @@ const placeOrder = async (req, res) => {
 
     const tax = Math.round(totalPrice * 0.18);
     const grossAmount = totalPrice + tax;
-    const finalAmount = grossAmount;
+
+    let discount = 0;
+    let appliedCoupon = null;
+
+    if (couponCode && couponCode.trim() !== "") {
+      const coupon = await Coupon.findOne({
+        code: couponCode.trim().toUpperCase(),
+        userId,
+        isUsed: false,
+        expiryDate: { $gte: new Date() },
+      });
+
+      if (!coupon) {
+        return res.status(400).json({
+          success: false,
+          message: "Coupon is invalid, expired, or already used",
+        });
+      }
+
+      discount = Math.min(coupon.discountAmount, grossAmount);
+      appliedCoupon = coupon;
+    }
+
+    const finalAmount = Math.max(0, grossAmount - discount);
 
     const finalPaymentMethod =
       paymentMethod === "razorpay" || paymentMethod === "wallet"
@@ -119,6 +202,7 @@ const placeOrder = async (req, res) => {
       userId,
       orderedItems,
       totalPrice,
+      discount,
       finalAmount,
       paymentMethod: finalPaymentMethod,
       status: "pending",
@@ -137,11 +221,16 @@ const placeOrder = async (req, res) => {
 
     await newOrder.save();
 
+    if (appliedCoupon) {
+      appliedCoupon.isUsed = true;
+      await appliedCoupon.save();
+    }
+
     if (finalPaymentMethod === "COD") {
       for (const item of cart.items) {
         await Product.updateOne(
           { _id: item.productId._id, "variants.color": item.color },
-          { $inc: { "variants.$.quantity": -item.quantity } }
+          { $inc: { "variants.$.quantity": -item.quantity } },
         );
       }
 
@@ -153,20 +242,18 @@ const placeOrder = async (req, res) => {
       });
     }
 
-
     return res.json({
       success: true,
       redirectUrl: `/payment/${newOrder.orderId}`,
     });
-
   } catch (error) {
     console.error("PLACE ORDER ERROR", error);
     res.status(500).json({ message: "Order failed" });
   }
 };
 
-
 module.exports = {
   loadCheckout,
+  applyCoupon,
   placeOrder,
 };

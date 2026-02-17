@@ -344,10 +344,9 @@ const returnOrder = async (req, res) => {
     });
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     const lowerStatus = order.status.toLowerCase();
@@ -355,6 +354,13 @@ const returnOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Only delivered orders can be returned",
+      });
+    }
+
+    if (!req.body.reason || req.body.reason.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Return reason is mandatory",
       });
     }
 
@@ -372,7 +378,9 @@ const returnOrder = async (req, res) => {
     }
 
     order.status = "return-requested";
+    order.returnStatus = "requested";
     order.returnReason = req.body.reason;
+
     await order.save();
 
     res.json({
@@ -381,10 +389,7 @@ const returnOrder = async (req, res) => {
     });
   } catch (error) {
     console.error("RETURN ORDER ERROR", error);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong",
-    });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 

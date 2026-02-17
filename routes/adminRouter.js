@@ -6,6 +6,7 @@ const orderController = require("../controllers/admin/orderController");
 const productController = require("../controllers/admin/productController");
 const offerController = require("../controllers/admin/offerController");
 const salesController = require("../controllers/admin/salesController");
+const couponController = require("../controllers/admin/couponController");
 const upload = require("../middlewares/multer");
 const { adminAuth, noCache } = require("../middlewares/auth");
 const { uploadCategory, uploadProduct } = require("../middlewares/upload");
@@ -37,13 +38,11 @@ router.post(
   uploadCategory.single("image"),
   adminController.editCategory,
 );
-
 router.patch(
   "/categories/toggleCategoryStatus/:id",
   adminAuth,
   adminController.toggleCategoryStatus,
 );
-
 router.delete(
   "/categories/delete/:id",
   adminAuth,
@@ -53,16 +52,6 @@ router.delete(
 //PRODUCT ROUTES
 router.get("/products", adminAuth, productController.loadProducts);
 router.get("/products/:id", productController.getProduct);
-router.get("/products/:id", adminAuth, async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id).populate("category");
-    if (!product) return res.status(404).json({ message: "Not found" });
-    res.json(product);
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching product" });
-  }
-});
-
 router.post(
   "/products/add",
   adminAuth,
@@ -110,6 +99,11 @@ router.post("/offers", adminAuth, offerController.createOffer);
 router.post("/offers/toggle/:id", adminAuth, offerController.toggleOfferStatus);
 router.post("/offers/delete/:id", adminAuth, offerController.deleteOffer);
 
+//COUPON ROUTES
+router.get("/coupons", adminAuth, couponController.loadCoupons);
+router.post("/coupons", adminAuth, couponController.createCoupon);
+router.delete("/coupons/:id", adminAuth, couponController.deleteCoupon);
+
 //SALES ROUTES
 router.get("/sales-report", adminAuth, salesController.loadSalesReport);
 router.get("/sales-report/pdf", adminAuth, salesController.downloadSalesPDF);
@@ -118,4 +112,5 @@ router.get(
   adminAuth,
   salesController.downloadSalesExcel,
 );
+
 module.exports = router;

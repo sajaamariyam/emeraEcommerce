@@ -15,10 +15,7 @@ const checkoutController = require("../controllers/user/checkoutController");
 const orderController = require("../controllers/user/orderController");
 const wishlistController = require("../controllers/user/wishlistController");
 
-console.log("loadOtp:", userController.loadOtp);
-
 //AUTHENTICATION ROUTES
-
 router.get("/login", noCache, userController.loadLogin);
 router.post("/login", userController.login);
 
@@ -41,10 +38,8 @@ router.get(
   }),
   (req, res) => {
     req.session.user = req.user._id;
-
     const redirectTo = req.session.redirectTo || "/";
     delete req.session.redirectTo;
-
     res.redirect(redirectTo);
   },
 );
@@ -124,6 +119,7 @@ router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
 
 //CHECKOUT ROUTES
 router.get("/checkout", requireLogin, noCache, checkoutController.loadCheckout);
+router.post("/checkout/apply-coupon", userAuth, checkoutController.applyCoupon);
 router.post("/checkout", userAuth, checkoutController.placeOrder);
 
 //ORDER ROUTES
@@ -140,7 +136,7 @@ router.post("/orders/:orderId/cancel", userAuth, orderController.cancelOrder);
 router.post(
   "/orders/:orderId/cancel-product",
   userAuth,
-  orderController.cancelOrder,
+  orderController.cancelProduct,
 );
 router.post("/orders/:orderId/return", userAuth, orderController.returnOrder);
 router.get(

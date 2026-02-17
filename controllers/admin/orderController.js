@@ -138,10 +138,9 @@ const updateOrderStatus = async (req, res) => {
     ];
 
     if (!ALLOWED_STATUSES.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid status" });
     }
 
     const order = await Order.findById(orderId).populate(
@@ -149,14 +148,12 @@ const updateOrderStatus = async (req, res) => {
     );
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     if (status === "cancelled" && order.status !== "cancelled") {
-      // Restore stock
       for (const item of order.orderedItems) {
         if (item.productId && item.productId._id) {
           await Product.updateOne(
@@ -168,18 +165,14 @@ const updateOrderStatus = async (req, res) => {
 
       if (order.paymentMethod !== "COD" && order.paymentStatus !== "refunded") {
         const user = await User.findById(order.userId);
-
         user.wallet += order.finalAmount;
-
         user.walletTransactions.push({
           type: "credit",
           amount: order.finalAmount,
           description: `Refund for cancelled order ${order.orderId}`,
           date: new Date(),
         });
-
         await user.save();
-
         order.paymentStatus = "refunded";
       }
     }
@@ -203,22 +196,20 @@ const updateOrderStatus = async (req, res) => {
 
 const approveReturn = async (req, res) => {
   try {
-    const { orderId } = req.params;
+    const { id } = req.params;
 
-    const order = await Order.findOne({ orderId });
+    const order = await Order.findById(id);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     if (order.returnStatus !== "requested") {
-      return res.status(400).json({
-        success: false,
-        message: "Return not pending",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Return not pending" });
     }
 
     for (const item of order.orderedItems) {
@@ -230,18 +221,14 @@ const approveReturn = async (req, res) => {
 
     if (order.paymentMethod !== "COD" && order.paymentStatus !== "refunded") {
       const user = await User.findById(order.userId);
-
       user.wallet += order.finalAmount;
-
       user.walletTransactions.push({
         type: "credit",
         amount: order.finalAmount,
         description: `Refund for returned order ${order.orderId}`,
         date: new Date(),
       });
-
       await user.save();
-
       order.paymentStatus = "refunded";
     }
 
@@ -257,31 +244,26 @@ const approveReturn = async (req, res) => {
     });
   } catch (error) {
     console.error("APPROVE RETURN ERROR:", error);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong",
-    });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
 const rejectReturn = async (req, res) => {
   try {
-    const { orderId } = req.params;
+    const { id } = req.params;
 
-    const order = await Order.findOne({ orderId });
+    const order = await Order.findById(id);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     if (order.returnStatus !== "requested") {
-      return res.status(400).json({
-        success: false,
-        message: "Return not pending",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Return not pending" });
     }
 
     order.status = "delivered";
@@ -289,16 +271,10 @@ const rejectReturn = async (req, res) => {
 
     await order.save();
 
-    res.json({
-      success: true,
-      message: "Return request rejected",
-    });
+    res.json({ success: true, message: "Return request rejected" });
   } catch (error) {
     console.error("REJECT RETURN ERROR:", error);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong",
-    });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
