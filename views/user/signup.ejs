@@ -144,14 +144,22 @@
                 <!-- Referral Code -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Have a referral code?</label>
-                    <input 
+                   <input 
                         type="text" 
                         id="referralCode"
                         name="referralCode"
                         placeholder="Enter referral code (optional)"
+                        value="<%= refToken ? 'Referral Applied' : '' %>"
+                        <%= refToken ? 'readonly' : '' %>
                         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
-                    >
+                    />
+
                 </div>
+
+                    <% if (refToken) { %>
+                    <input type="hidden" name="referralToken" value="<%= refToken %>">
+                    <% } %>
+
 
                 <!-- Submit Button -->
                 <button 
@@ -318,11 +326,12 @@
                 passwordValidateChecking();
 
                 const hasError =
-                    error1.innerHTML ||
-                    error2.innerHTML ||
-                    error3.innerHTML ||
-                    error4.innerHTML ||
-                    error5.innerHTML;
+                error1.style.display === "block" ||
+                error2.style.display === "block" ||
+                error3.style.display === "block" ||
+                error4.style.display === "block" ||
+                error5.style.display === "block";
+
 
                 if (hasError) {
                     e.preventDefault();

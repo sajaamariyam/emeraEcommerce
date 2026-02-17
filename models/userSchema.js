@@ -91,9 +91,9 @@ const userSchema = new Schema({
       description: String,
       date: {
         type: Date,
-        default: Date.now
-      }
-    }
+        default: Date.now,
+      },
+    },
   ],
   orderHistory: [
     {
@@ -108,6 +108,10 @@ const userSchema = new Schema({
   referralCode: {
     type: String,
   },
+  referralToken: {
+    type: String,
+    unique: true,
+  },
   redeemed: {
     type: Boolean,
   },
@@ -121,10 +125,10 @@ const userSchema = new Schema({
     {
       product: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Product"
+        ref: "Product",
       },
-      quantity: Number
-    }
+      quantity: Number,
+    },
   ],
   redeemedUsers: [
     {

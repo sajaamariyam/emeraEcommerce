@@ -81,6 +81,29 @@
                             </div>
                         </div>
                     </div>
+
+                       <!-- Referral Link Section -->
+                    <div class="mt-10 pt-10 border-t border-stone-100">
+                        <h3 class="text-xl font-serif text-gray-900 mb-2">Refer a Friend</h3>
+                        <p class="text-sm text-stone-500 mb-6">Share your unique referral link and earn rewards when friends sign up.</p>
+                        <div class="flex items-center gap-3">
+                            <input
+                                type="text"
+                                id="referral-link-input"
+                                value="<%= `${process.env.BASE_URL || 'https://yourdomain.com'}/register?ref=${user.referralCode || user._id}` %>"
+                                readonly
+                                class="flex-1 px-5 py-4 border border-stone-200 bg-stone-50 text-sm text-stone-600 cursor-pointer"
+                                onclick="this.select()"
+                            >
+                            <button onclick="ProfileApp.copyReferralLink()" id="copy-referral-btn"
+                                class="px-8 py-4 bg-stone-950 text-white text-[10px] tracking-[0.4em] uppercase font-black hover:bg-stone-700 transition-all duration-500 whitespace-nowrap">
+                                Copy Link
+                            </button>
+                        </div>
+                        <p id="referral-copied-msg" class="text-xs text-green-600 mt-2 hidden">✓ Copied to clipboard!</p>
+                    </div>
+                </div>
+            </div>
                 </div>
             </div>
 
@@ -1619,6 +1642,26 @@ const ProfileApp = (function() {
         window.location.href = '/forgot-password';
     }
 
+    function copyReferralLink() {
+        const input = document.getElementById('referral-link-input');
+        const msg = document.getElementById('referral-copied-msg');
+        const btn = document.getElementById('copy-referral-btn');
+
+        navigator.clipboard.writeText(input.value).then(() => {
+            msg.classList.remove('hidden');
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                msg.classList.add('hidden');
+                btn.textContent = 'Copy Link';
+            }, 2500);
+        }).catch(() => {
+            input.select();
+            document.execCommand('copy');
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 2500);
+        });
+    }
+
     // ============================================
     // INIT
     // ============================================
@@ -1713,7 +1756,8 @@ const ProfileApp = (function() {
         confirmDeleteAddress,
         setDefaultAddress,
         resendOTP,
-        handleForgotPassword
+        handleForgotPassword,
+        copyReferralLink
     };
 })();
 

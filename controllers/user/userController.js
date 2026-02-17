@@ -20,7 +20,9 @@ const loadSignup = async (req, res) => {
     if (req.session.user) {
       return res.redirect("/");
     }
-    return res.render("user/signup");
+    const refToken = req.query.ref || null;
+
+    return res.render("user/signup", { refToken });
   } catch (error) {
     console.log("Home page not loading", error);
     res.status(500).send("Server Error");
@@ -96,7 +98,15 @@ const signup = async (req, res) => {
     req.session.userOtp = null;
     req.session.userData = null;
 
-    const { name, email, phone, password, cPassword, referralCode } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      password,
+      cPassword,
+      referralCode,
+      referralToken,
+    } = req.body;
 
     if (password !== cPassword) {
       return res.render("user/signup", { message: "Password do not match" });
@@ -118,7 +128,14 @@ const signup = async (req, res) => {
     }
 
     req.session.userOtp = otp;
-    req.session.userData = { name, phone, email, password, referralCode };
+    req.session.userData = {
+      name,
+      phone,
+      email,
+      password,
+      referralCode,
+      referralToken,
+    };
 
     res.render("user/verify-otp", { otpMode: "signup", userEmail: email });
     console.log("OTP sent", otp);
@@ -170,7 +187,13 @@ const verifyOtp = async (req, res) => {
       return "REF" + Math.random().toString(36).substring(2, 8).toUpperCase();
     };
 
+    const generateReferralToken = () => {
+      return crypto.randomBytes(16).toString("hex");
+    };
+
     const newReferralCode = generateReferralCode();
+
+    const newReferralToken = generateReferralToken();
 
     const newUser = new User({
       name: sessionUser.name,
@@ -178,10 +201,40 @@ const verifyOtp = async (req, res) => {
       phone: sessionUser.phone,
       password: passwordHash,
       referralCode: newReferralCode,
+      referralToken: newReferralToken,
       redeemed: false,
     });
 
     await newUser.save();
+
+    if (sessionUser.referralToken) {
+      const referrer = await User.findOne({
+        referralToken: sessionUser.referralToken,
+      });
+
+      if (
+        referrer &&
+        referrer._id.toString() !== newUser._id.toString() &&
+        !referrer.redeemedUsers.some(
+          (id) => id.toString() === newUser._id.toString(),
+        )
+      ) {
+        const couponCode =
+          "COUP" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+        const newCoupon = new Coupon({
+          code: couponCode,
+          userId: referrer._id,
+          discountAmount: 200,
+          expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        });
+
+        await newCoupon.save();
+
+        referrer.redeemedUsers.push(newUser._id);
+        await referrer.save();
+      }
+    }
 
     if (sessionUser.referralCode) {
       const referrer = await User.findOne({
