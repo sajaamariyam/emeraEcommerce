@@ -2,17 +2,28 @@ const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
 const User = require("../../models/userSchema");
 const PDFDocument = require("pdfkit");
-const fs = require("fs");
-const path = require("path");
+const QRCode = require("qrcode");
+
+const calculateAmounts = (order) => {
+  const subtotal = order.totalPrice;
+  const tax = Math.round(subtotal * 0.18);
+  const grossAmount = subtotal + tax;
+
+  let discount = order.discount || 0;
+  if (discount > grossAmount) {
+    discount = grossAmount;
+  }
+
+  const finalAmount = grossAmount - discount;
+
+  return { subtotal, tax, finalAmount };
+};
 
 const loadOrderConfirmation = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const { orderId } = req.params;
-
     const order = await Order.findOne({
-      orderId,
-      userId,
+      orderId: req.params.orderId,
+      userId: req.user._id,
     }).populate("orderedItems.productId");
 
     if (!order) {
@@ -20,16 +31,13 @@ const loadOrderConfirmation = async (req, res) => {
       return res.redirect("/pageNotFound");
     }
 
-    const subtotal = order.totalPrice;
-    const tax = order.finalAmount - order.totalPrice;
-    const total = order.finalAmount;
+    const { subtotal, tax, finalAmount } = calculateAmounts(order);
 
     res.render("user/orderConfirmation", {
-      userId: req.user,
       order,
       subtotal,
       tax,
-      total,
+      total: finalAmount,
       showAnnouncement: false,
     });
   } catch (error) {
@@ -38,14 +46,12 @@ const loadOrderConfirmation = async (req, res) => {
     res.redirect("/pageNotFound");
   }
 };
+
 const loadOrderDetails = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const { orderId } = req.params;
-
     const order = await Order.findOne({
-      orderId,
-      userId,
+      orderId: req.params.orderId,
+      userId: req.user._id,
     }).populate("orderedItems.productId");
 
     if (!order) {
@@ -53,16 +59,13 @@ const loadOrderDetails = async (req, res) => {
       return res.redirect("/pageNotFound");
     }
 
-    const subtotal = order.totalPrice;
-    const tax = order.finalAmount - order.totalPrice;
-    const total = order.finalAmount;
+    const { subtotal, tax, finalAmount } = calculateAmounts(order);
 
     res.render("user/orderDetails", {
-      userId: req.user,
       order,
       subtotal,
       tax,
-      total,
+      total: finalAmount,
       showAnnouncement: false,
     });
   } catch (error) {
@@ -80,7 +83,7 @@ const loadOrder = async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    let query = {userId};
+    let query = { userId };
 
     if (search) {
       query.$or = [
@@ -89,21 +92,18 @@ const loadOrder = async (req, res) => {
       ];
     }
 
-    const totalOrders = await Order.countDocuments({ userId });
+    const totalOrders = await Order.countDocuments(query);
 
-    const orders = await Order.find({ userId })
+    const orders = await Order.find(query)
       .populate("orderedItems.productId")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const totalPages = Math.ceil(totalOrders / limit);
-
     res.render("user/order", {
-      userId: req.user,
       orders,
       currentPage: page,
-      totalPages,
+      totalPages: Math.ceil(totalOrders / limit),
       search,
       showAnnouncement: false,
       messages: {
@@ -142,20 +142,19 @@ const getProfileOrders = async (req, res) => {
 
     res.json(formattedOrders);
   } catch (error) {
-    console.log("PROFILE ORDERES ERROR:", error);
+    console.log("PROFILE ORDERS ERROR:", error);
     res.status(500).json({ success: false, message: "Failed to fetch orders" });
   }
 };
 
 const cancelOrder = async (req, res) => {
   try {
-    const userId = req.user._id;
     const { orderId } = req.params;
     const { reason } = req.body;
 
     const order = await Order.findOne({
       orderId,
-      userId,
+      userId: req.user._id,
     });
 
     if (!order) {
@@ -165,11 +164,12 @@ const cancelOrder = async (req, res) => {
       });
     }
 
-    const lowerStatus = order.status.toLowerCase();
+    const currentStatus = order.status.toLowerCase();
+
     if (
-      lowerStatus === "delivered" ||
-      lowerStatus === "cancelled" ||
-      lowerStatus === "return-requested"
+      currentStatus === "delivered" ||
+      currentStatus === "cancelled" ||
+      currentStatus === "return-requested"
     ) {
       return res.status(400).json({
         success: false,
@@ -184,78 +184,79 @@ const cancelOrder = async (req, res) => {
       );
     }
 
-    order.status = "cancelled";
-    order.cancelReason = reason || "No reason provided";
-    order.orderedItems = [];
-    order.totalPrice = 0;
-    order.finalAmount = 0;
-    
-    if(order.paymentMethod === "ONLINE"){
-      order.paymentStatus = "refunded"
+    if (order.paymentMethod !== "COD") {
+      if (order.paymentStatus !== "refunded") {
+        const user = await User.findById(order.userId);
+
+        user.wallet += order.finalAmount;
+
+        user.walletTransactions.push({
+          type: "credit",
+          amount: order.finalAmount,
+          description: `Refund for cancelled order ${order.orderId}`,
+          date: new Date(),
+        });
+
+        await user.save();
+
+        order.paymentStatus = "refunded";
+      }
     }
+
+    order.status = "cancelled";
+    order.cancelReason = reason || "Cancelled by user";
 
     await order.save();
 
-    res.json({
+    return res.json({
       success: true,
-      message: "Order cancelled successfully.",
+      message:
+        "Order cancelled successfully and refund processed if applicable.",
     });
   } catch (error) {
-    console.error("CANCEL ORDER ERROR", error);
-    res.status(500).json({
+    console.error("CANCEL ORDER ERROR:", error);
+    return res.status(500).json({
       success: false,
-      message: "Something went wrong",
+      message: "Something went wrong while cancelling order",
     });
   }
 };
 
 const cancelProduct = async (req, res) => {
   try {
-    const userId = req.user._id;
     const { orderId } = req.params;
     const { productId, color, reason } = req.body;
 
-    if (!productId) {
-      return res.status(400).json({
-        success: false,
-        message: "Product ID is required",
-      });
-    }
-
     const order = await Order.findOne({
       orderId,
-      userId,
+      userId: req.user._id,
     });
 
     if (!order) {
       return res.status(404).json({
-        success: fasle,
+        success: false,
         message: "Order not found",
       });
     }
 
-    const lowerStatus = order.status.toLowerCase();
+    const status = order.status.toLowerCase();
+
     if (
-      lowerStatus === "delivered" ||
-      lowerStatus === "cancelled" ||
-      lowerStatus === "return-requested"
+      status === "delivered" ||
+      status === "cancelled" ||
+      status === "return-requested"
     ) {
       return res.status(400).json({
         success: false,
-        message: "Cannot cancel items from ths order",
+        message: "Cannot cancel items from this order",
       });
     }
 
-    const itemIndex = order.orderedItems.findIndex((item) => {
-      if (item.productId.toString() !== productId) {
-        return false;
-      }
-      if (item.color && color) {
-        return item.color === color;
-      }
-
-      return true;
-    });
+    const itemIndex = order.orderedItems.findIndex(
+      (item) =>
+        item.productId.toString() === productId &&
+        (!color || item.color === color),
+    );
 
     if (itemIndex === -1) {
       return res.status(404).json({
@@ -271,30 +272,64 @@ const cancelProduct = async (req, res) => {
       { $inc: { "variants.$.quantity": cancelledItem.quantity } },
     );
 
-    const itemTotal = cancelledItem.price * cancelledItem.quantity;
-    order.totalPrice -= itemTotal;
+    const itemSubtotal = cancelledItem.price * cancelledItem.quantity;
+    const itemTax = Math.round(itemSubtotal * 0.18);
+    const itemTotal = itemSubtotal + itemTax;
 
-    const tax = Math.round(order.totalPrice * 0.18);
-    order.finalAmount = order.totalPrice + tax;
+    let refundAmount = itemTotal;
+
+    if (order.discount > 0) {
+      const orderGross = order.totalPrice + Math.round(order.totalPrice * 0.18);
+      const discountRatio = order.discount / orderGross;
+
+      const itemDiscountShare = Math.round(itemTotal * discountRatio);
+      refundAmount = itemTotal - itemDiscountShare;
+
+      order.discount -= itemDiscountShare;
+      if (order.discount < 0) order.discount = 0;
+    }
+
+    order.totalPrice -= itemSubtotal;
+    if (order.totalPrice < 0) order.totalPrice = 0;
 
     order.orderedItems.splice(itemIndex, 1);
+
+    const newTax = Math.round(order.totalPrice * 0.18);
+    order.finalAmount = order.totalPrice + newTax - order.discount;
+
+    if (order.finalAmount < 0) order.finalAmount = 0;
+
+    if (order.paymentMethod !== "COD" && order.paymentStatus !== "refunded") {
+      const user = await User.findById(order.userId);
+
+      user.wallet += refundAmount;
+
+      user.walletTransactions.push({
+        type: "credit",
+        amount: refundAmount,
+        description: `Refund for cancelled product in order ${order.orderId}`,
+        date: new Date(),
+      });
+
+      await user.save();
+    }
 
     if (order.orderedItems.length === 0) {
       order.status = "cancelled";
       order.cancelReason = reason || "All items cancelled";
-      order.totalPrice = 0;
-      order.finalAmount = 0;
+      order.paymentStatus =
+        order.paymentMethod !== "COD" ? "refunded" : order.paymentStatus;
     }
 
     await order.save();
 
-    res.json({
+    return res.json({
       success: true,
-      message: "Product cancelled successfully. Stock has been restored.",
+      message: "Product cancelled and refund processed successfully.",
     });
   } catch (error) {
     console.error("CANCEL PRODUCT ERROR:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to cancel product. Please try again.",
     });
@@ -303,21 +338,10 @@ const cancelProduct = async (req, res) => {
 
 const returnOrder = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const { orderId } = req.params;
-    const { reason } = req.body;
-
-    if (!reason || reason.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Return reason is required",
-      });
-    }
-
     const order = await Order.findOne({
-      orderId,
-      userId,
-    }).populate("orderedItems.productId");
+      orderId: req.params.orderId,
+      userId: req.user._id,
+    });
 
     if (!order) {
       return res.status(404).json({
@@ -334,8 +358,8 @@ const returnOrder = async (req, res) => {
       });
     }
 
-    const deliveredDate = order.updatedAt;
     const currentDate = new Date();
+    const deliveredDate = order.updatedAt;
     const daysSinceDelivery = Math.floor(
       (currentDate - deliveredDate) / (1000 * 60 * 60 * 24),
     );
@@ -348,12 +372,12 @@ const returnOrder = async (req, res) => {
     }
 
     order.status = "return-requested";
-    order.returnReason = reason.trim();
+    order.returnReason = req.body.reason;
     await order.save();
 
     res.json({
       success: true,
-      message: "Return request submitted successfully. We'll review shortly",
+      message: "Return request submitted successfully. We'll review shortly.",
     });
   } catch (error) {
     console.error("RETURN ORDER ERROR", error);
@@ -366,382 +390,47 @@ const returnOrder = async (req, res) => {
 
 const downloadInvoice = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const { orderId } = req.params;
-
     const order = await Order.findOne({
-      orderId,
-      userId,
+      orderId: req.params.orderId,
+      userId: req.user._id,
     }).populate("orderedItems.productId");
 
     if (!order) {
       return res.status(404).send("Order not found");
     }
 
-    const doc = new PDFDocument({
-      margin: 40,
-      size: "A4",
-      bufferPages: true,
-    });
+    const { subtotal, tax, finalAmount } = calculateAmounts(order);
 
+    const doc = new PDFDocument({ margin: 40 });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=invoice-${orderId}.pdf`,
+      `attachment; filename=invoice-${order.orderId}.pdf`,
     );
-
     doc.pipe(res);
 
-    // Minimalist color palette
-    const colors = {
-      primary: "#000000", // Pure black
-      secondary: "#4A4A4A", // Dark gray
-      border: "#E5E5E5", // Light gray
-      subtle: "#F8F8F8", // Very light gray
-    };
+    doc.fontSize(22).text("EMERA", { align: "center" });
+    doc.moveDown();
 
-    // ============================================
-    // HEADER SECTION
-    // ============================================
+    doc.fontSize(10).text(`Order ID: ${order.orderId}`);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`);
+    doc.moveDown();
 
-    // Thin top border
-    doc.rect(0, 0, 612, 1).fill(colors.primary);
-
-    // Company Name - Minimalist
-    doc
-      .fontSize(32)
-      .font("Helvetica-Bold")
-      .fillColor(colors.primary)
-      .text("EMERA", 40, 35);
-
-    doc
-      .fontSize(9)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text("LUXURY BAGS", 40, 70);
-
-    // Invoice Title & Number - Right aligned
-    doc
-      .fontSize(10)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text("INVOICE", 450, 40, { align: "right", width: 122 });
-
-    doc
-      .fontSize(18)
-      .font("Helvetica-Bold")
-      .fillColor(colors.primary)
-      .text(`#${orderId}`, 450, 55, { align: "right", width: 122 });
-
-    // Date
-    doc
-      .fontSize(9)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text(
-        new Date(order.createdAt).toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-        450,
-        78,
-        { align: "right", width: 122 },
-      );
-
-    // Separator line
-    doc
-      .moveTo(40, 105)
-      .lineTo(572, 105)
-      .strokeColor(colors.border)
-      .lineWidth(0.5)
-      .stroke();
-
-    // ============================================
-    // BILLING & ORDER INFO
-    // ============================================
-
-    let currentY = 125;
-
-    // Bill To Section
-    doc
-      .fontSize(8)
-      .font("Helvetica-Bold")
-      .fillColor(colors.secondary)
-      .text("BILL TO", 40, currentY);
-
-    doc
-      .fontSize(10)
-      .font("Helvetica-Bold")
-      .fillColor(colors.primary)
-      .text(order.shippingAddress.name, 40, currentY + 15);
-
-    doc
-      .fontSize(9)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text(order.shippingAddress.address, 40, currentY + 30, { width: 220 });
-
-    doc.text(
-      `${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.pincode}`,
-      40,
-      currentY + 44,
-      { width: 220 },
-    );
-
-    doc.text(order.shippingAddress.phone, 40, currentY + 58, { width: 220 });
-
-    // Order Details Section - Right side
-    doc
-      .fontSize(8)
-      .font("Helvetica-Bold")
-      .fillColor(colors.secondary)
-      .text("ORDER DETAILS", 320, currentY);
-
-    // Status
-    const lowerStatus = order.status.toLowerCase();
-    doc
-      .fontSize(9)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text("Status:", 320, currentY + 15)
-      .font("Helvetica-Bold")
-      .fillColor(colors.primary)
-      .text(order.status.toUpperCase(), 390, currentY + 15);
-
-    // Payment Method
-    doc
-      .fontSize(9)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text("Payment:", 320, currentY + 30)
-      .font("Helvetica-Bold")
-      .fillColor(colors.primary)
-      .text(order.paymentMethod.toUpperCase(), 390, currentY + 30);
-
-    // Payment Status
-    doc
-      .fontSize(9)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text("Status:", 320, currentY + 45)
-      .font("Helvetica-Bold")
-      .fillColor(colors.primary)
-      .text(order.paymentStatus || "Pending", 390, currentY + 45);
-
-    // ============================================
-    // ITEMS TABLE
-    // ============================================
-
-    const tableTop = 230;
-
-    // Table Header with subtle background
-    doc.rect(40, tableTop, 532, 20).fill(colors.subtle);
-
-    doc
-      .fontSize(8)
-      .font("Helvetica-Bold")
-      .fillColor(colors.secondary)
-      .text("ITEM", 50, tableTop + 6)
-      .text("QTY", 360, tableTop + 6, { width: 40, align: "center" })
-      .text("PRICE", 420, tableTop + 6, { width: 70, align: "right" })
-      .text("AMOUNT", 510, tableTop + 6, { width: 52, align: "right" });
-
-    // Table Header Border
-    doc
-      .moveTo(40, tableTop + 20)
-      .lineTo(572, tableTop + 20)
-      .strokeColor(colors.border)
-      .lineWidth(0.5)
-      .stroke();
-
-    let yPosition = tableTop + 30;
-
-    // Items - Calculate available space
-    const maxItems = 8; // Maximum items that fit on one page
-    const itemsToShow = order.orderedItems.slice(0, maxItems);
-
-    itemsToShow.forEach((item, index) => {
+    order.orderedItems.forEach((item) => {
       const itemTotal = item.price * item.quantity;
-
-      // Subtle alternating rows
-      if (index % 2 === 1) {
-        doc.rect(40, yPosition - 5, 532, 20).fill(colors.subtle);
-      }
-
-      doc
-        .fontSize(9)
-        .font("Helvetica")
-        .fillColor(colors.primary)
-        .text(item.productId.name, 50, yPosition, {
-          width: 300,
-          lineBreak: false,
-        });
-
-      doc.text(item.quantity.toString(), 360, yPosition, {
-        width: 40,
-        align: "center",
-      });
-
-      doc
-        .fillColor(colors.secondary)
-        .text(`₹${item.price.toLocaleString("en-IN")}`, 420, yPosition, {
-          width: 70,
-          align: "right",
-        });
-
-      doc
-        .font("Helvetica-Bold")
-        .fillColor(colors.primary)
-        .text(`₹${itemTotal.toLocaleString("en-IN")}`, 510, yPosition, {
-          width: 52,
-          align: "right",
-        });
-
-      yPosition += 20;
+      doc.text(`${item.productId.name} x${item.quantity} - ₹${itemTotal}`);
     });
 
-    // If more items, show indicator
-    if (order.orderedItems.length > maxItems) {
-      doc
-        .fontSize(8)
-        .font("Helvetica-Oblique")
-        .fillColor(colors.secondary)
-        .text(
-          `+ ${order.orderedItems.length - maxItems} more item(s)`,
-          50,
-          yPosition,
-          { width: 300 },
-        );
-      yPosition += 20;
-    }
+    doc.moveDown();
+    doc.text(`Subtotal: ₹${subtotal}`);
+    doc.text(`Tax (18%): ₹${tax}`);
+    if (order.discount > 0) doc.text(`Discount: -₹${order.discount}`);
+    doc.text(`Total: ₹${finalAmount}`);
 
-    // ============================================
-    // TOTALS SECTION
-    // ============================================
-
-    const totalsY = 620; // Fixed position for totals
-
-    // Separator before totals
-    doc
-      .moveTo(350, totalsY - 15)
-      .lineTo(572, totalsY - 15)
-      .strokeColor(colors.border)
-      .lineWidth(0.5)
-      .stroke();
-
-    const subtotal = order.totalPrice;
-    const tax = order.finalAmount - order.totalPrice;
-    const total = order.finalAmount;
-
-    let summaryY = totalsY;
-
-    // Subtotal
-    doc
-      .fontSize(9)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text("Subtotal:", 420, summaryY, { width: 80, align: "right" })
-      .fillColor(colors.primary)
-      .text(`₹${subtotal.toLocaleString("en-IN")}`, 510, summaryY, {
-        width: 52,
-        align: "right",
-      });
-
-    summaryY += 18;
-
-    // Tax
-    doc
-      .fillColor(colors.secondary)
-      .text("Tax (GST 18%):", 420, summaryY, { width: 80, align: "right" })
-      .fillColor(colors.primary)
-      .text(`₹${tax.toLocaleString("en-IN")}`, 510, summaryY, {
-        width: 52,
-        align: "right",
-      });
-
-    summaryY += 18;
-
-    // Discount (if applicable)
-    if (order.discount > 0) {
-      doc
-        .fillColor(colors.secondary)
-        .text("Discount:", 420, summaryY, { width: 80, align: "right" })
-        .fillColor(colors.primary)
-        .text(`-₹${order.discount.toLocaleString("en-IN")}`, 510, summaryY, {
-          width: 52,
-          align: "right",
-        });
-      summaryY += 18;
-    }
-
-    doc
-      .fillColor(colors.secondary)
-      .text("Shipping:", 420, summaryY, { width: 80, align: "right" })
-      .font("Helvetica-Bold")
-      .fillColor(colors.primary)
-      .text("FREE", 510, summaryY, { width: 52, align: "right" });
-
-    summaryY += 10;
-
-    doc
-      .moveTo(350, summaryY)
-      .lineTo(572, summaryY)
-      .strokeColor(colors.primary)
-      .lineWidth(1)
-      .stroke();
-
-    summaryY += 12;
-
-    doc
-      .fontSize(11)
-      .font("Helvetica-Bold")
-      .fillColor(colors.primary)
-      .text("TOTAL:", 420, summaryY, { width: 80, align: "right" })
-      .fontSize(14)
-      .text(`₹${total.toLocaleString("en-IN")}`, 510, summaryY, {
-        width: 52,
-        align: "right",
-      });
-
-    const QRCode = require("qrcode");
-    const qrData = `EMERA-ORDER-${orderId}-${order.finalAmount}`;
-    const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
-      width: 80,
-      margin: 0,
-      color: {
-        dark: colors.primary,
-        light: "#FFFFFF",
-      },
-    });
-
-    const qrBuffer = Buffer.from(qrCodeDataUrl.split(",")[1], "base64");
-    doc.image(qrBuffer, 40, 720, { width: 60, height: 60 });
-
-    doc
-      .fontSize(7)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text("Scan to verify", 40, 785, { width: 60, align: "center" });
-
-    doc
-      .fontSize(8)
-      .font("Helvetica")
-      .fillColor(colors.secondary)
-      .text("Thank you for your purchase", 120, 730, {
-        align: "center",
-        width: 372,
-      });
-
-    doc
-      .fontSize(7)
-      .fillColor(colors.secondary)
-      .text("For support: support@emera.com | +91 1800 123 4567", 120, 750, {
-        align: "center",
-        width: 372,
-      });
-
-    doc.rect(0, 841, 612, 1).fill(colors.primary);
+    const qrData = `EMERA-${order.orderId}-${finalAmount}`;
+    const qrImage = await QRCode.toDataURL(qrData);
+    const qrBuffer = Buffer.from(qrImage.split(",")[1], "base64");
+    doc.image(qrBuffer, { width: 80 });
 
     doc.end();
   } catch (error) {

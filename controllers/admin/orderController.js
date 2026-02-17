@@ -122,9 +122,10 @@ const updateOrderStatus = async (req, res) => {
     const { orderId, status } = req.body;
 
     if (!orderId || !status) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing orderId or status" });
+      return res.status(400).json({
+        success: false,
+        message: "Missing orderId or status",
+      });
     }
 
     const ALLOWED_STATUSES = [
@@ -134,14 +135,13 @@ const updateOrderStatus = async (req, res) => {
       "out-for-delivery",
       "delivered",
       "cancelled",
-      "return-requested",
-      "returned",
     ];
 
     if (!ALLOWED_STATUSES.includes(status)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid status" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status",
+      });
     }
 
     const order = await Order.findById(orderId).populate(
@@ -149,27 +149,14 @@ const updateOrderStatus = async (req, res) => {
     );
 
     if (!order) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
-    }
-
-    if (order.status === "return-requested" && status === "returned") {
-      for (const item of order.orderedItems) {
-        if (item.productId && item.productId._id) {
-          await Product.updateOne(
-            { _id: item.productId._id, "variants.color": item.color },
-            { $inc: { "variants.$.quantity": item.quantity } },
-          );
-        }
-      }
-
-      if (order.paymentMethod === "ONLINE") {
-        order.paymentStatus = "refunded";
-      }
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
     }
 
     if (status === "cancelled" && order.status !== "cancelled") {
+      // Restore stock
       for (const item of order.orderedItems) {
         if (item.productId && item.productId._id) {
           await Product.updateOne(
@@ -179,7 +166,20 @@ const updateOrderStatus = async (req, res) => {
         }
       }
 
-      if (order.paymentMethod === "ONLINE") {
+      if (order.paymentMethod !== "COD" && order.paymentStatus !== "refunded") {
+        const user = await User.findById(order.userId);
+
+        user.wallet += order.finalAmount;
+
+        user.walletTransactions.push({
+          type: "credit",
+          amount: order.finalAmount,
+          description: `Refund for cancelled order ${order.orderId}`,
+          date: new Date(),
+        });
+
+        await user.save();
+
         order.paymentStatus = "refunded";
       }
     }
@@ -201,8 +201,111 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+const approveReturn = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findOne({ orderId });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.returnStatus !== "requested") {
+      return res.status(400).json({
+        success: false,
+        message: "Return not pending",
+      });
+    }
+
+    for (const item of order.orderedItems) {
+      await Product.updateOne(
+        { _id: item.productId, "variants.color": item.color },
+        { $inc: { "variants.$.quantity": item.quantity } },
+      );
+    }
+
+    if (order.paymentMethod !== "COD" && order.paymentStatus !== "refunded") {
+      const user = await User.findById(order.userId);
+
+      user.wallet += order.finalAmount;
+
+      user.walletTransactions.push({
+        type: "credit",
+        amount: order.finalAmount,
+        description: `Refund for returned order ${order.orderId}`,
+        date: new Date(),
+      });
+
+      await user.save();
+
+      order.paymentStatus = "refunded";
+    }
+
+    order.status = "returned";
+    order.returnStatus = "approved";
+    order.returnProcessedAt = new Date();
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: "Return approved and refund processed",
+    });
+  } catch (error) {
+    console.error("APPROVE RETURN ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+
+const rejectReturn = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findOne({ orderId });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.returnStatus !== "requested") {
+      return res.status(400).json({
+        success: false,
+        message: "Return not pending",
+      });
+    }
+
+    order.status = "delivered";
+    order.returnStatus = "rejected";
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: "Return request rejected",
+    });
+  } catch (error) {
+    console.error("REJECT RETURN ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+
 module.exports = {
   loadOrders,
   getOrderDetails,
   updateOrderStatus,
+  approveReturn,
+  rejectReturn,
 };

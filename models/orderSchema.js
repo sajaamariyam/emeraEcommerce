@@ -70,6 +70,13 @@ const orderSchema = new mongoose.Schema(
       type: String,
     },
 
+    returnStatus: {
+      type: String,
+      enum: ["none", "requested", "approved", "rejected"],
+      default: "none",
+    },
+    returnProcessedAt: Date,
+
     shippingAddress: {
       name: {
         type: String,

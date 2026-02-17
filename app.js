@@ -11,6 +11,7 @@ const passport = require("./config/passport");
 const db = require("./config/db");
 const userRouter = require("./routes/userRouter");
 const adminRouter = require("./routes/adminRouter");
+const paymentRouter = require("./routes/paymentRouter");
 const User = require("./models/userSchema");
 
 
@@ -71,6 +72,7 @@ app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 app.use("/admin", adminRouter);
 app.use("/", userRouter);
+app.use("/", paymentRouter);
 
 
 app.listen(process.env.PORT, () => {

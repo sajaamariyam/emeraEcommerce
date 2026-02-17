@@ -2,6 +2,7 @@ const User = require("../../models/userSchema");
 const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 const Offer = require("../../models/offerSchema");
+const Coupon = require("../../models/couponSchema");
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
@@ -139,15 +140,22 @@ const verifyOtp = async (req, res) => {
   try {
     const { otp } = req.body;
 
-    if (otp !== req.session.userOtp) {
+    if (!req.session.userOtp || otp !== req.session.userOtp) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid OTP, Please try again" });
     }
 
-    const user = req.session.userData;
+    const sessionUser = req.session.userData;
 
-    const existingUser = await User.findOne({ email: user.email });
+    if (!sessionUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Session expired. Please signup again.",
+      });
+    }
+
+    const existingUser = await User.findOne({ email: sessionUser.email });
 
     if (existingUser) {
       return res.status(409).json({
@@ -156,7 +164,7 @@ const verifyOtp = async (req, res) => {
       });
     }
 
-    const passwordHash = await securePassword(user.password);
+    const passwordHash = await securePassword(sessionUser.password);
 
     const generateReferralCode = () => {
       return "REF" + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -165,9 +173,9 @@ const verifyOtp = async (req, res) => {
     const newReferralCode = generateReferralCode();
 
     const newUser = new User({
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
+      name: sessionUser.name,
+      email: sessionUser.email,
+      phone: sessionUser.phone,
       password: passwordHash,
       referralCode: newReferralCode,
       redeemed: false,
@@ -175,18 +183,37 @@ const verifyOtp = async (req, res) => {
 
     await newUser.save();
 
-    if (user.referralCode) {
+    if (sessionUser.referralCode) {
       const referrer = await User.findOne({
-        referralCode: user.referralCode,
+        referralCode: sessionUser.referralCode,
       });
 
-      if (referrer && referrer._id.toString() !== newUser._id.toString()) {
-        if (!referrer.redeemedUsers.includes(newUser._id)) {
-          referrer.wallet += 200;
-          referrer.redeemedUsers.push(newUser._id);
+      if (
+        referrer &&
+        referrer._id.toString() !== newUser._id.toString() &&
+        !referrer.redeemedUsers.some(
+          (id) => id.toString() === newUser._id.toString(),
+        )
+      ) {
+        const generateCouponCode = () => {
+          return (
+            "COUP" + Math.random().toString(36).substring(2, 8).toUpperCase()
+          );
+        };
 
-          await referrer.save();
-        }
+        const couponCode = generateCouponCode();
+
+        const newCoupon = new Coupon({
+          code: couponCode,
+          userId: referrer._id,
+          discountAmount: 200,
+          expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        });
+
+        await newCoupon.save();
+
+        referrer.redeemedUsers.push(newUser._id);
+        await referrer.save();
       }
     }
 
@@ -199,7 +226,7 @@ const verifyOtp = async (req, res) => {
 
     return res.json({
       success: true,
-      redirectTo: redirectTo,
+      redirectTo,
     });
   } catch (error) {
     console.error("Error Verifying OTP", error);

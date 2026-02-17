@@ -82,6 +82,19 @@ const userSchema = new Schema({
     type: Number,
     default: 0,
   },
+  walletTransactions: [
+    {
+      type: {
+        type: String,
+      },
+      amount: Number,
+      description: String,
+      date: {
+        type: Date,
+        default: Date.now
+      }
+    }
+  ],
   orderHistory: [
     {
       type: Schema.Types.ObjectId,

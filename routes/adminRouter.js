@@ -5,7 +5,7 @@ const adminController = require("../controllers/admin/adminController");
 const orderController = require("../controllers/admin/orderController");
 const productController = require("../controllers/admin/productController");
 const offerController = require("../controllers/admin/offerController");
-
+const salesController = require("../controllers/admin/salesController");
 const upload = require("../middlewares/multer");
 const { adminAuth, noCache } = require("../middlewares/auth");
 const { uploadCategory, uploadProduct } = require("../middlewares/upload");
@@ -93,12 +93,29 @@ router.post(
   upload.none(),
   orderController.updateOrderStatus,
 );
+router.patch(
+  "/orders/:id/approve-return",
+  adminAuth,
+  orderController.approveReturn,
+);
+router.patch(
+  "/orders/:id/reject-return",
+  adminAuth,
+  orderController.rejectReturn,
+);
 
 //OFFER ROUTES
 router.get("/offers", adminAuth, offerController.loadOffers);
 router.post("/offers", adminAuth, offerController.createOffer);
 router.post("/offers/toggle/:id", adminAuth, offerController.toggleOfferStatus);
-router.post("/offers/delete/:id", adminAuth, offerController.deleteOffer)
+router.post("/offers/delete/:id", adminAuth, offerController.deleteOffer);
 
-
+//SALES ROUTES
+router.get("/sales-report", adminAuth, salesController.loadSalesReport);
+router.get("/sales-report/pdf", adminAuth, salesController.downloadSalesPDF);
+router.get(
+  "/sales-report/excel",
+  adminAuth,
+  salesController.downloadSalesExcel,
+);
 module.exports = router;

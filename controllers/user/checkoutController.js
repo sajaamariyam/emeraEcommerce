@@ -2,6 +2,7 @@ const Cart = require("../../models/cartSchema");
 const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
 const User = require("../../models/userSchema");
+const Coupon = require("../../models/couponSchema");
 
 const loadCheckout = async (req, res) => {
   try {
@@ -40,8 +41,14 @@ const loadCheckout = async (req, res) => {
 
     const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
+    const coupons = await Coupon.find({
+      userId,
+      isUsed: false,
+      expiryDate: { $gte: new Date() },
+    });
+
     res.render("user/checkout", {
-      user: req.user,
+      user,
       cartItems,
       addresses,
       subtotal,
@@ -49,6 +56,7 @@ const loadCheckout = async (req, res) => {
       total,
       cartCount,
       discount: 0,
+      coupons,
       showAnnouncement: false,
     });
   } catch (error) {
@@ -60,22 +68,18 @@ const loadCheckout = async (req, res) => {
 const placeOrder = async (req, res) => {
   try {
     const userId = req.session.user;
-    const { addressId, email, phone, paymentMethod } = req.body;
+    const { addressId, email, phone, paymentMethod, couponCode } = req.body;
 
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const selectedAddress = user.addresses.id(addressId);
-    if (!selectedAddress) {
+    if (!selectedAddress)
       return res.status(400).json({ message: "Invalid address selected" });
-    }
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
-    if (!cart || cart.items.length === 0) {
+    if (!cart || cart.items.length === 0)
       return res.status(400).json({ message: "Cart is empty" });
-    }
 
     let totalPrice = 0;
     const orderedItems = [];
@@ -83,21 +87,16 @@ const placeOrder = async (req, res) => {
     for (const item of cart.items) {
       const product = item.productId;
 
-      if (!product || product.isBlocked) {
-        return res.status(400).json({
-          success: false,
-          message: `${product?.name || "product"} unavailable`,
-        });
-      }
+      if (!product || product.isBlocked)
+        return res.status(400).json({ message: "Product unavailable" });
 
-      const variant = product.variants.find((v) => v.color === item.color);
-      if (!variant || variant.quantity < item.quantity) {
-        return res.status(400).json({
-          message: `${product.name} (${item.color}) out of stock`,
-        });
-      }
+      const variant = product.variants.find(v => v.color === item.color);
+
+      if (!variant || variant.quantity < item.quantity)
+        return res.status(400).json({ message: "Out of stock" });
 
       totalPrice += item.price * item.quantity;
+
       orderedItems.push({
         productId: product._id,
         color: item.color,
@@ -107,47 +106,65 @@ const placeOrder = async (req, res) => {
     }
 
     const tax = Math.round(totalPrice * 0.18);
-    const finalAmount = totalPrice + tax;
+    const grossAmount = totalPrice + tax;
+    const finalAmount = grossAmount;
+
+    const finalPaymentMethod =
+      paymentMethod === "razorpay" || paymentMethod === "wallet"
+        ? "ONLINE"
+        : "COD";
 
     const newOrder = new Order({
       orderId: `Emera-${Date.now()}`,
       userId,
       orderedItems,
       totalPrice,
-      discount: 0,
       finalAmount,
-      paymentMethod: "COD",
+      paymentMethod: finalPaymentMethod,
       status: "pending",
-
+      paymentStatus: "pending",
       shippingAddress: {
-        name: selectedAddress.firstName && selectedAddress.lastName ? `${selectedAddress.firstName} ${selectedAddress.lastName}` : selectedAddress,
+        name: selectedAddress.fullName,
         phone: selectedAddress.phone || phone,
         email,
-        address: selectedAddress.address1 || selectedAddress.street,
+        address: selectedAddress.street,
         city: selectedAddress.city,
         state: selectedAddress.state,
-        pincode: selectedAddress.pincode || selectedAddress.zipCode,
-        country: selectedAddress || "India",
+        pincode: selectedAddress.zipCode,
+        country: selectedAddress.country,
       },
     });
 
     await newOrder.save();
 
-    for (const item of cart.items) {
-      await Product.updateOne(
-        { _id: item.productId._id, "variants.color": item.color },
-        { $inc: { "variants.$.quantity": -item.quantity } },
-      );
+    if (finalPaymentMethod === "COD") {
+      for (const item of cart.items) {
+        await Product.updateOne(
+          { _id: item.productId._id, "variants.color": item.color },
+          { $inc: { "variants.$.quantity": -item.quantity } }
+        );
+      }
+
+      await Cart.deleteOne({ userId });
+
+      return res.json({
+        success: true,
+        redirectUrl: `/orderConfirmation/${newOrder.orderId}`,
+      });
     }
 
-    await Cart.deleteOne({ userId });
 
-    res.json({ success: true, orderId: newOrder.orderId });
+    return res.json({
+      success: true,
+      redirectUrl: `/payment/${newOrder.orderId}`,
+    });
+
   } catch (error) {
     console.error("PLACE ORDER ERROR", error);
     res.status(500).json({ message: "Order failed" });
   }
 };
+
 
 module.exports = {
   loadCheckout,
