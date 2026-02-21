@@ -14,6 +14,7 @@ const { uploadProduct, uploadProfile } = require("../middlewares/upload");
 const checkoutController = require("../controllers/user/checkoutController");
 const orderController = require("../controllers/user/orderController");
 const wishlistController = require("../controllers/user/wishlistController");
+const reviewController = require("../controllers/user/reviewController");
 
 //AUTHENTICATION ROUTES
 router.get("/login", noCache, userController.loadLogin);
