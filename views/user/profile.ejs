@@ -11,36 +11,37 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-16">
         
-        <!-- Sidebar Navigation -->
+        <!-- ===================== -->
+        <!-- Sidebar Navigation   -->
+        <!-- ===================== -->
         <div class="lg:col-span-1">
             <div class="bg-white border border-stone-200 sticky top-28">
                 <div class="text-center p-8 border-b border-stone-200">
                     <div class="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-stone-100">
                         <img id="sidebar-profile-img" src="<%= user.profileImage || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200' %>" alt="Profile" class="w-full h-full object-cover">
                     </div>
-                    <h3 class="font-serif text-xl mb-1 text-gray-900">
-                        <%= user.name %>
-                    </h3>
-                    <p class="text-[10px] text-stone-400 uppercase tracking-[0.3em]">
-                        <%= user.email %>
-                    </p>
+                    <h3 class="font-serif text-xl mb-1 text-gray-900"><%= user.name %></h3>
+                    <p class="text-[10px] text-stone-400 uppercase tracking-[0.3em]"><%= user.email %></p>
                 </div>
                 
                 <nav class="p-2">
                     <button onclick="ProfileApp.showTab('profile')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="profile">Profile Details</button>
                     <button onclick="ProfileApp.showTab('addresses')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="addresses">Addresses</button>
-                    <a href="/orders" class="tab-btn block w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50">
-                        My Orders
-                    </a>
+                    <a href="/orders" class="tab-btn block w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50">My Orders</a>
                     <button onclick="ProfileApp.showTab('security')" class="tab-btn w-full text-left px-6 py-4 text-[11px] uppercase tracking-[0.3em] font-bold transition-all hover:bg-stone-50" data-tab="security">Security</button>
                 </nav>
             </div>
         </div>
+        <!-- /Sidebar Navigation -->
 
-        <!-- Main Content Area -->
+        <!-- ===================== -->
+        <!-- Main Content Area    -->
+        <!-- ===================== -->
         <div class="lg:col-span-3">
-            
-            <!-- PROFILE DETAILS TAB -->
+
+            <!-- ================= -->
+            <!-- PROFILE TAB       -->
+            <!-- ================= -->
             <div id="profile-tab" class="tab-content">
                 <div class="bg-white border border-stone-200 p-12">
                     <div class="flex justify-between items-center mb-10 pb-8 border-b border-stone-100">
@@ -69,20 +70,19 @@
                                     <p class="text-lg text-gray-900"><%= user.name.split(' ').slice(1).join(' ') || 'N/A' %></p>
                                 </div>
                             </div>
-                            
                             <div>
                                 <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Email Address</label>
                                 <p class="text-lg text-gray-900"><%= user.email %></p>
                             </div>
-                            
                             <div>
                                 <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Phone Number</label>
                                 <p class="text-lg text-gray-900"><%= user.phone || 'Not provided' %></p>
                             </div>
                         </div>
                     </div>
+                    <!-- /grid -->
 
-                       <!-- Referral Link Section -->
+                    <!-- Referral Link Section -->
                     <div class="mt-10 pt-10 border-t border-stone-100">
                         <h3 class="text-xl font-serif text-gray-900 mb-2">Refer a Friend</h3>
                         <p class="text-sm text-stone-500 mb-6">Share your unique referral link and earn rewards when friends sign up.</p>
@@ -102,12 +102,15 @@
                         </div>
                         <p id="referral-copied-msg" class="text-xs text-green-600 mt-2 hidden">✓ Copied to clipboard!</p>
                     </div>
-                </div>
-            </div>
-                </div>
-            </div>
+                    <!-- /Referral Link Section -->
 
-            <!-- ADDRESSES TAB -->
+                </div><!-- /bg-white profile card -->
+            </div>
+            <!-- /PROFILE TAB -->
+
+            <!-- ================= -->
+            <!-- ADDRESSES TAB     -->
+            <!-- ================= -->
             <div id="addresses-tab" class="tab-content" style="display:none;">
                 <div class="bg-white border border-stone-200 p-12">
                     <div class="flex justify-between items-center mb-10 pb-8 border-b border-stone-100">
@@ -117,13 +120,15 @@
                         </button>
                     </div>
                     <div id="addresses-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- Addresses will be loaded here -->
+                        <!-- Addresses loaded dynamically -->
                     </div>
                 </div>
             </div>
+            <!-- /ADDRESSES TAB -->
 
-            <!-- SECURITY TAB -->
-            <!-- FIX: Corrected the broken EJS structure — "Forgot Password" was outside the else block -->
+            <!-- ================= -->
+            <!-- SECURITY TAB      -->
+            <!-- ================= -->
             <div id="security-tab" class="tab-content" style="display:none;">
                 <div class="bg-white border border-stone-200 p-12">
                     <div class="mb-10 pb-8 border-b border-stone-100">
@@ -132,7 +137,7 @@
 
                     <div class="space-y-10">
                         <% if (user.googleId) { %>
-                            <!-- GOOGLE ACCOUNT MESSAGE -->
+                            <!-- Google Account Message -->
                             <div class="border border-stone-200 p-10">
                                 <p class="text-sm text-stone-500 italic">
                                     This account is connected with Google.
@@ -140,7 +145,7 @@
                                 </p>
                             </div>
                         <% } else { %>
-                            <!-- CHANGE PASSWORD -->
+                            <!-- Change Password -->
                             <div class="border border-stone-200 p-10">
                                 <h3 class="text-xl font-serif mb-8 text-gray-900">Change Password</h3>
                                 <form id="change-password-form" class="space-y-6 max-w-md" novalidate>
@@ -170,7 +175,7 @@
                                 </form>
                             </div>
 
-                            <!-- FORGOT PASSWORD — FIX: Now correctly inside the else block -->
+                            <!-- Forgot Password -->
                             <div class="border border-stone-200 p-10">
                                 <h3 class="text-xl font-serif mb-4 text-gray-900">Forgot Password?</h3>
                                 <p class="text-sm text-stone-600 mb-6 leading-relaxed">
@@ -182,18 +187,25 @@
                                 </button>
                             </div>
                         <% } %>
-                    </div>
-                </div>
+                    </div><!-- /space-y-10 -->
+
+                </div><!-- /bg-white security card -->
             </div>
+            <!-- /SECURITY TAB -->
 
         </div>
+        <!-- /Main Content Area (lg:col-span-3) -->
+
     </div>
+    <!-- /grid grid-cols-1 lg:grid-cols-4 -->
+
 </div>
+<!-- /Profile Container -->
 
 
-<!-- ============================================ -->
-<!-- MODALS -->
-<!-- ============================================ -->
+<!-- ============================================================ -->
+<!-- MODALS                                                        -->
+<!-- ============================================================ -->
 
 <!-- EDIT PROFILE MODAL -->
 <div id="edit-profile-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
@@ -302,7 +314,6 @@
 </div>
 
 <!-- ADD ADDRESS MODAL -->
-<!-- FIX: Field names now match controller (firstName, lastName, address1, address2, city, state, pincode, phone) -->
 <div id="add-address-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
     <div class="modal-content bg-white max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="p-12">
@@ -380,8 +391,6 @@
 </div>
 
 <!-- EDIT ADDRESS MODAL -->
-<!-- FIX: Field names now match controller (firstName, lastName, address1, address2, city, state, pincode, phone, isDefault) -->
-<!-- FIX: All IDs renamed to edit-* to avoid conflicts with add-address form -->
 <div id="edit-address-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
     <div class="modal-content bg-white max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="p-12">
@@ -509,8 +518,10 @@
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- ============================================ -->
+
+<!-- ============================================================ -->
+<!-- EMERA MODALS (Success / Error)                                -->
+<!-- ============================================================ -->
 
 <!-- Profile Updated Successfully -->
 <div id="profileUpdated" class="emera-overlay">
@@ -554,6 +565,10 @@
     </div>
 </div>
 
+
+<!-- ============================================================ -->
+<!-- STYLES                                                        -->
+<!-- ============================================================ -->
 <style>
 .tab-active {
     background-color: #f5f5f4;
@@ -568,11 +583,11 @@
     display: flex !important;
 }
 
-/* Input error state */
 .input-error {
     border-color: #ef4444 !important;
 }
 
+/* ---- Emera overlays ---- */
 .emera-overlay {
     position: fixed;
     inset: 0;
@@ -609,6 +624,7 @@
     opacity: 1;
 }
 
+/* ---- Spinner ---- */
 .spinner {
     border: 3px solid #f3f3f3;
     border-top: 3px solid #292524;
@@ -624,6 +640,7 @@
     100% { transform: rotate(360deg); }
 }
 
+/* ---- CSS variables ---- */
 :root {
     --emerald-deep: #10422f;
     --emerald-rich: #1a5c42;
@@ -634,6 +651,7 @@
     --ivory: #fdfbf7;
 }
 
+/* ---- Success icon ---- */
 .success-icon {
     width: 80px;
     height: 80px;
@@ -681,6 +699,7 @@
     }
 }
 
+/* ---- Error icon ---- */
 .error-icon {
     width: 80px;
     height: 80px;
@@ -706,6 +725,7 @@
     75% { transform: translateX(8px); }
 }
 
+/* ---- Emera button ---- */
 .emera-btn {
     width: 100%;
     padding: 16px 32px;
@@ -731,6 +751,7 @@
     transform: translateY(0);
 }
 
+/* ---- Modal typography ---- */
 .modal-title {
     font-size: 32px;
     font-weight: 500;
@@ -746,6 +767,7 @@
     font-weight: 300;
 }
 
+/* ---- Sparkles ---- */
 @keyframes sparkle {
     0%, 100% { opacity: 0; }
     50% { opacity: 1; }
@@ -765,6 +787,10 @@
 .sparkle:nth-child(3) { top: 45%; right: 30%; animation-delay: 1.2s; }
 </style>
 
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT                                                    -->
+<!-- ============================================================ -->
 <script>
 const ProfileApp = (function() {
     'use strict';
@@ -824,12 +850,12 @@ const ProfileApp = (function() {
         let valid = true;
 
         const firstName = document.getElementById('add-firstName').value.trim();
-        const lastName = document.getElementById('add-lastName').value.trim();
-        const phone = document.getElementById('add-phone').value.trim();
-        const address1 = document.getElementById('add-address1').value.trim();
-        const city = document.getElementById('add-city').value.trim();
-        const state = document.getElementById('add-state').value.trim();
-        const pincode = document.getElementById('add-pincode').value.trim();
+        const lastName  = document.getElementById('add-lastName').value.trim();
+        const phone     = document.getElementById('add-phone').value.trim();
+        const address1  = document.getElementById('add-address1').value.trim();
+        const city      = document.getElementById('add-city').value.trim();
+        const state     = document.getElementById('add-state').value.trim();
+        const pincode   = document.getElementById('add-pincode').value.trim();
 
         showFieldError('add-firstName', 'add-firstName-error', !firstName);
         if (!firstName) valid = false;
@@ -861,12 +887,12 @@ const ProfileApp = (function() {
         let valid = true;
 
         const firstName = document.getElementById('edit-addr-firstName').value.trim();
-        const lastName = document.getElementById('edit-addr-lastName').value.trim();
-        const phone = document.getElementById('edit-addr-phone').value.trim();
-        const address1 = document.getElementById('edit-addr-address1').value.trim();
-        const city = document.getElementById('edit-addr-city').value.trim();
-        const state = document.getElementById('edit-addr-state').value.trim();
-        const pincode = document.getElementById('edit-addr-pincode').value.trim();
+        const lastName  = document.getElementById('edit-addr-lastName').value.trim();
+        const phone     = document.getElementById('edit-addr-phone').value.trim();
+        const address1  = document.getElementById('edit-addr-address1').value.trim();
+        const city      = document.getElementById('edit-addr-city').value.trim();
+        const state     = document.getElementById('edit-addr-state').value.trim();
+        const pincode   = document.getElementById('edit-addr-pincode').value.trim();
 
         showFieldError('edit-addr-firstName', 'edit-addr-firstName-error', !firstName);
         if (!firstName) valid = false;
@@ -897,10 +923,10 @@ const ProfileApp = (function() {
     function validateEditProfileForm() {
         let valid = true;
 
-        const firstName = document.getElementById('edit-firstname').value.trim();
-        const phone = document.getElementById('edit-phone').value.trim();
+        const firstName  = document.getElementById('edit-firstname').value.trim();
+        const phone      = document.getElementById('edit-phone').value.trim();
         const emailInput = document.getElementById('edit-email');
-        const email = emailInput.value.trim();
+        const email      = emailInput.value.trim();
 
         showFieldError('edit-firstname', 'edit-firstname-error', !firstName);
         if (!firstName) valid = false;
@@ -993,9 +1019,9 @@ const ProfileApp = (function() {
         clearFormErrors('edit-profile-form');
         const nameParts = state.currentUser.name.split(' ');
         document.getElementById('edit-firstname').value = nameParts[0];
-        document.getElementById('edit-lastname').value = nameParts.slice(1).join(' ') || '';
-        document.getElementById('edit-email').value = state.currentUser.email;
-        document.getElementById('edit-phone').value = state.currentUser.phone;
+        document.getElementById('edit-lastname').value  = nameParts.slice(1).join(' ') || '';
+        document.getElementById('edit-email').value     = state.currentUser.email;
+        document.getElementById('edit-phone').value     = state.currentUser.phone;
         if (state.currentUser.profileImage) {
             document.getElementById('edit-profile-img-preview').src = state.currentUser.profileImage;
         }
@@ -1017,14 +1043,14 @@ const ProfileApp = (function() {
         e.preventDefault();
         if (!validateEditProfileForm()) return;
 
-        const firstName = document.getElementById('edit-firstname').value.trim();
-        const lastName = document.getElementById('edit-lastname').value.trim();
-        const email = document.getElementById('edit-email').value.trim();
-        const phone = document.getElementById('edit-phone').value.trim();
+        const firstName        = document.getElementById('edit-firstname').value.trim();
+        const lastName         = document.getElementById('edit-lastname').value.trim();
+        const email            = document.getElementById('edit-email').value.trim();
+        const phone            = document.getElementById('edit-phone').value.trim();
         const profileImageFile = document.getElementById('profile-image-input').files[0];
 
-        const emailChanged = email !== originalEmailAtEdit;
-        const emailInput = document.getElementById('edit-email');
+        const emailChanged   = email !== originalEmailAtEdit;
+        const emailInput     = document.getElementById('edit-email');
         const isGoogleAccount = emailInput.disabled;
 
         try {
@@ -1168,9 +1194,9 @@ const ProfileApp = (function() {
     }
 
     function updateOtpTimerUI() {
-        const timerEl = document.getElementById('otp-timer');
-        const minutes = Math.floor(otpTimeLeft / 60);
-        const seconds = otpTimeLeft % 60;
+        const timerEl  = document.getElementById('otp-timer');
+        const minutes  = Math.floor(otpTimeLeft / 60);
+        const seconds  = otpTimeLeft % 60;
         timerEl.innerHTML = `Resend code in <span class="font-semibold">${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}</span>`;
     }
 
@@ -1188,17 +1214,17 @@ const ProfileApp = (function() {
 
             if (response.ok) {
                 startOtpTimer();
-                const titleEl = document.querySelector('#profileUpdated .modal-title');
+                const titleEl    = document.querySelector('#profileUpdated .modal-title');
                 const subtitleEl = document.querySelector('#profileUpdated .modal-subtitle');
-                const originalTitle = titleEl.textContent;
-                const originalSubtitle = subtitleEl.textContent;
-                titleEl.textContent = 'Code Resent';
+                const origTitle  = titleEl.textContent;
+                const origSub    = subtitleEl.textContent;
+                titleEl.textContent    = 'Code Resent';
                 subtitleEl.textContent = 'A new verification code has been sent to your email.';
                 openEmera('profileUpdated');
                 setTimeout(() => {
                     closeEmera('profileUpdated');
-                    titleEl.textContent = originalTitle;
-                    subtitleEl.textContent = originalSubtitle;
+                    titleEl.textContent    = origTitle;
+                    subtitleEl.textContent = origSub;
                 }, 1500);
             } else {
                 showError('Failed to resend code');
@@ -1224,7 +1250,7 @@ const ProfileApp = (function() {
         container.innerHTML = '<div class="spinner"></div>';
 
         try {
-            const response = await fetch('/profile/addresses');
+            const response  = await fetch('/profile/addresses');
             const addresses = await response.json();
 
             if (addresses.length === 0) {
@@ -1272,20 +1298,19 @@ const ProfileApp = (function() {
         }
     }
 
-    // FIX: Send field names that match the controller (firstName, lastName, address1, address2, city, state, pincode, phone, isDefault)
     async function handleAddAddressSubmit(e) {
         e.preventDefault();
         if (!validateAddAddressForm()) return;
 
         const addressData = {
             firstName: document.getElementById('add-firstName').value.trim(),
-            lastName: document.getElementById('add-lastName').value.trim(),
-            phone: document.getElementById('add-phone').value.trim(),
-            address1: document.getElementById('add-address1').value.trim(),
-            address2: document.getElementById('add-address2').value.trim(),
-            city: document.getElementById('add-city').value.trim(),
-            state: document.getElementById('add-state').value.trim(),
-            pincode: document.getElementById('add-pincode').value.trim(),
+            lastName:  document.getElementById('add-lastName').value.trim(),
+            phone:     document.getElementById('add-phone').value.trim(),
+            address1:  document.getElementById('add-address1').value.trim(),
+            address2:  document.getElementById('add-address2').value.trim(),
+            city:      document.getElementById('add-city').value.trim(),
+            state:     document.getElementById('add-state').value.trim(),
+            pincode:   document.getElementById('add-pincode').value.trim(),
             isDefault: document.getElementById('add-isDefault').checked
         };
 
@@ -1313,37 +1338,29 @@ const ProfileApp = (function() {
         }
     }
 
-    // FIX: Parse fullName back into firstName/lastName when opening edit modal
-    // FIX: Parse street back into address1/address2
-    // FIX: Parse zipCode back into pincode
     function openEditAddress(address) {
         clearFormErrors('edit-address-form');
 
         document.getElementById('edit-address-id').value = address._id;
 
-        // Split fullName into first/last name
         const nameParts = (address.fullName || '').split(' ');
         document.getElementById('edit-addr-firstName').value = nameParts[0] || '';
-        document.getElementById('edit-addr-lastName').value = nameParts.slice(1).join(' ') || '';
+        document.getElementById('edit-addr-lastName').value  = nameParts.slice(1).join(' ') || '';
 
         document.getElementById('edit-addr-phone').value = address.phone || '';
 
-        // Split street into address1/address2
         const streetParts = (address.street || '').split(', ');
         document.getElementById('edit-addr-address1').value = streetParts[0] || '';
         document.getElementById('edit-addr-address2').value = streetParts.slice(1).join(', ') || '';
 
-        document.getElementById('edit-addr-city').value = address.city || '';
-        document.getElementById('edit-addr-state').value = address.state || '';
-
-        // zipCode from DB maps to pincode for controller
-        document.getElementById('edit-addr-pincode').value = address.zipCode || '';
+        document.getElementById('edit-addr-city').value      = address.city || '';
+        document.getElementById('edit-addr-state').value     = address.state || '';
+        document.getElementById('edit-addr-pincode').value   = address.zipCode || '';
         document.getElementById('edit-addr-isDefault').checked = address.isDefault || false;
 
         openModal('edit-address-modal');
     }
 
-    // FIX: Send correct field names to match controller
     async function handleEditAddressSubmit(e) {
         e.preventDefault();
         if (!validateEditAddressForm()) return;
@@ -1352,13 +1369,13 @@ const ProfileApp = (function() {
 
         const data = {
             firstName: document.getElementById('edit-addr-firstName').value.trim(),
-            lastName: document.getElementById('edit-addr-lastName').value.trim(),
-            phone: document.getElementById('edit-addr-phone').value.trim(),
-            address1: document.getElementById('edit-addr-address1').value.trim(),
-            address2: document.getElementById('edit-addr-address2').value.trim(),
-            city: document.getElementById('edit-addr-city').value.trim(),
-            state: document.getElementById('edit-addr-state').value.trim(),
-            pincode: document.getElementById('edit-addr-pincode').value.trim(),
+            lastName:  document.getElementById('edit-addr-lastName').value.trim(),
+            phone:     document.getElementById('edit-addr-phone').value.trim(),
+            address1:  document.getElementById('edit-addr-address1').value.trim(),
+            address2:  document.getElementById('edit-addr-address2').value.trim(),
+            city:      document.getElementById('edit-addr-city').value.trim(),
+            state:     document.getElementById('edit-addr-state').value.trim(),
+            pincode:   document.getElementById('edit-addr-pincode').value.trim(),
             isDefault: document.getElementById('edit-addr-isDefault').checked
         };
 
@@ -1440,11 +1457,12 @@ const ProfileApp = (function() {
 
     async function loadOrders() {
         const container = document.getElementById('orders-container');
+        if (!container) return;
         container.innerHTML = '<div class="spinner"></div>';
 
         try {
             const response = await fetch('/api/profile/orders');
-            const orders = await response.json();
+            const orders   = await response.json();
 
             if (orders.length === 0) {
                 container.innerHTML = `
@@ -1457,11 +1475,11 @@ const ProfileApp = (function() {
                 `;
             } else {
                 const statusColors = {
-                    'pending': 'bg-yellow-100 text-yellow-800',
+                    'pending':    'bg-yellow-100 text-yellow-800',
                     'processing': 'bg-blue-100 text-blue-800',
-                    'shipped': 'bg-purple-100 text-purple-800',
-                    'delivered': 'bg-green-100 text-green-800',
-                    'cancelled': 'bg-red-100 text-red-800'
+                    'shipped':    'bg-purple-100 text-purple-800',
+                    'delivered':  'bg-green-100 text-green-800',
+                    'cancelled':  'bg-red-100 text-red-800'
                 };
 
                 container.innerHTML = orders.map(order => {
@@ -1524,7 +1542,7 @@ const ProfileApp = (function() {
     }
 
     async function confirmCancelOrder() {
-        const reason = document.getElementById('cancel-reason').value;
+        const reason      = document.getElementById('cancel-reason').value;
         const reasonError = document.getElementById('cancel-reason-error');
 
         if (!reason) {
@@ -1565,17 +1583,16 @@ const ProfileApp = (function() {
         e.preventDefault();
 
         const currentPassword = document.getElementById('current-password').value;
-        const newPassword = document.getElementById('new-password').value;
+        const newPassword     = document.getElementById('new-password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
 
-        const currentEl = document.getElementById('current-password');
-        const newEl = document.getElementById('new-password');
-        const confirmEl = document.getElementById('confirm-password');
+        const currentEl    = document.getElementById('current-password');
+        const newEl        = document.getElementById('new-password');
+        const confirmEl    = document.getElementById('confirm-password');
         const currentError = document.getElementById('current-password-error');
-        const newError = document.getElementById('new-password-error');
+        const newError     = document.getElementById('new-password-error');
         const confirmError = document.getElementById('confirm-password-error');
 
-        // Clear all errors first
         [currentEl, newEl, confirmEl].forEach(el => el.classList.remove('input-error'));
         [currentError, newError, confirmError].forEach(el => el.classList.add('hidden'));
 
@@ -1619,18 +1636,18 @@ const ProfileApp = (function() {
                 return;
             }
 
-            const titleEl = document.querySelector('#profileUpdated .modal-title');
+            const titleEl    = document.querySelector('#profileUpdated .modal-title');
             const subtitleEl = document.querySelector('#profileUpdated .modal-subtitle');
-            const originalTitle = titleEl.textContent;
-            const originalSubtitle = subtitleEl.textContent;
-            titleEl.textContent = 'Password Changed';
+            const origTitle  = titleEl.textContent;
+            const origSub    = subtitleEl.textContent;
+            titleEl.textContent    = 'Password Changed';
             subtitleEl.textContent = 'Your password has been updated successfully.';
             openEmera('profileUpdated');
             e.target.reset();
             setTimeout(() => {
                 closeEmera('profileUpdated');
-                titleEl.textContent = originalTitle;
-                subtitleEl.textContent = originalSubtitle;
+                titleEl.textContent    = origTitle;
+                subtitleEl.textContent = origSub;
             }, 1500);
         } catch (error) {
             console.error('Error changing password:', error);
@@ -1644,8 +1661,8 @@ const ProfileApp = (function() {
 
     function copyReferralLink() {
         const input = document.getElementById('referral-link-input');
-        const msg = document.getElementById('referral-copied-msg');
-        const btn = document.getElementById('copy-referral-btn');
+        const msg   = document.getElementById('referral-copied-msg');
+        const btn   = document.getElementById('copy-referral-btn');
 
         navigator.clipboard.writeText(input.value).then(() => {
             msg.classList.remove('hidden');
@@ -1680,17 +1697,16 @@ const ProfileApp = (function() {
         document.getElementById('edit-address-form')?.addEventListener('submit', handleEditAddressSubmit);
         document.getElementById('change-password-form')?.addEventListener('submit', handleChangePassword);
 
-        // Password live validation listeners
+        // Password live validation
         document.getElementById('new-password')?.addEventListener('input', function() {
-            const val = this.value;
+            const val      = this.value;
             const newError = document.getElementById('new-password-error');
-            const invalid = val && (val.length < 8 || !/[A-Z]/.test(val) || !/[a-z]/.test(val) || !/[0-9]/.test(val));
+            const invalid  = val && (val.length < 8 || !/[A-Z]/.test(val) || !/[a-z]/.test(val) || !/[0-9]/.test(val));
             this.classList.toggle('input-error', !!invalid);
             newError?.classList.toggle('hidden', !invalid);
 
-            // Also re-check confirm match live
-            const confirmVal = document.getElementById('confirm-password')?.value;
-            const confirmEl = document.getElementById('confirm-password');
+            const confirmVal   = document.getElementById('confirm-password')?.value;
+            const confirmEl    = document.getElementById('confirm-password');
             const confirmError = document.getElementById('confirm-password-error');
             if (confirmVal) {
                 const mismatch = val !== confirmVal;
@@ -1703,9 +1719,9 @@ const ProfileApp = (function() {
         });
 
         document.getElementById('confirm-password')?.addEventListener('input', function() {
-            const newPw = document.getElementById('new-password').value;
+            const newPw        = document.getElementById('new-password').value;
             const confirmError = document.getElementById('confirm-password-error');
-            const mismatch = this.value && this.value !== newPw;
+            const mismatch     = this.value && this.value !== newPw;
             this.classList.toggle('input-error', !!mismatch);
             if (confirmError) {
                 confirmError.textContent = 'Passwords do not match';

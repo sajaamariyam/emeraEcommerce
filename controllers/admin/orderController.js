@@ -102,6 +102,7 @@ const getOrderDetails = async (req, res) => {
     const order = await Order.findById(orderId)
       .populate("userId")
       .populate("orderedItems.productId")
+      .populate("address")
       .lean();
 
     if (!order) {
@@ -109,10 +110,8 @@ const getOrderDetails = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Order not found" });
     }
-    res.render("admin/orderDetails",{
-      admin: res.locals.admin,
-      order
-    });
+    res.json(order);
+
     
   } catch (error) {
     console.error("GET ORDER DETAILS ERROR:", error);

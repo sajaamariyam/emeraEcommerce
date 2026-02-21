@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const adminController = require("../controllers/admin/adminController");
+const dashboardController = require("../controllers/admin/dashboardController");
 const orderController = require("../controllers/admin/orderController");
 const productController = require("../controllers/admin/productController");
 const offerController = require("../controllers/admin/offerController");
@@ -17,7 +18,7 @@ router.post("/adminLogin", adminController.login);
 router.get("/logout", adminController.logout);
 
 //DASHBOARD ROUTES
-router.get("/adminDashboard", adminAuth, adminController.loadDashboard);
+router.get("/adminDashboard", adminAuth, dashboardController.loadDashboard);
 
 //USER ROUTES
 router.get("/users", adminAuth, adminController.loadUsers);

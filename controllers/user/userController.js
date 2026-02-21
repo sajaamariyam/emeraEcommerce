@@ -3,6 +3,7 @@ const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 const Offer = require("../../models/offerSchema");
 const Coupon = require("../../models/couponSchema");
+const Review = require("../../models/reviewSchema");
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
@@ -767,9 +768,62 @@ const loadProductDetails = async (req, res) => {
       "variants.quantity": { $gt: 0 },
     }).limit(4);
 
+    const reviews = await Review.find({
+      productId: product._id,
+      isApproved: true,
+    })
+      .populate("userId", "name profileImage")
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    const ratingStats = await Review.aggregate([
+      {
+        $match: {
+          productId: require("mongoose").Types.ObjectId(product._id),
+          isApproved: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$rating",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const ratingDistribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    ratingStats.forEach((stat) => {
+      ratingDistribution[stat._id] = stat.count;
+    });
+
+    let canReview = false;
+    let hasOrderedProduct = false;
+    let eligibleOrderId = null;
+
     let userData = null;
     if (req.session.user) {
       userData = await User.findById(req.session.user);
+
+      const deliveredOrder = await Order.findOne({
+        userId: userData._id,
+        status: "delivered",
+        "products.productId": product._id,
+      });
+
+      if (deliveredOrder) {
+        hasOrderedProduct = true;
+
+        const existingReview = await Review.findOne({
+          productId: product._id,
+          userId: userData._id,
+        });
+
+        if (!existingReview) {
+          canReview = true;
+          eligibleOrderId = deliveredOrder._id;
+        }
+      }
     }
 
     res.render("user/productDetails", {
@@ -779,6 +833,11 @@ const loadProductDetails = async (req, res) => {
       discount,
       finalPrice,
       showAnnouncement: false,
+      reviews,
+      ratingDistribution,
+      canReview,
+      hasOrderedProduct,
+      eligibleOrderId,
     });
   } catch (error) {
     console.log(error);

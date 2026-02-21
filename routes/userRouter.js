@@ -163,4 +163,18 @@ router.post(
   wishlistController.addAllToCart,
 );
 
+//REVIEW ROUTES
+router.post("/reviews/submit", userAuth, reviewController.submitReview);
+router.get("/reviews/product/:productId", reviewController.getProductReviews);
+router.get(
+  "/reviews/can-review/:productId",
+  userAuth,
+  reviewController.canUserReview,
+);
+router.post(
+  "/reviews/:reviewId/helpful",
+  userAuth,
+  reviewController.markHelpful,
+);
+
 module.exports = router;

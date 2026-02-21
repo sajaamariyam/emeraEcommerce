@@ -66,7 +66,7 @@
                     </div>
                 </div>
                 
-                <!-- ===== PRICE SECTION - UPDATED FOR OFFERS ===== -->
+                <!-- ===== PRICE & RATING SECTION ===== -->
                 <div class="flex items-center justify-between border-b border-gray-200 pb-6">
                     <div class="flex flex-col">
                         <div class="flex items-center space-x-4">
@@ -89,18 +89,34 @@
                         <span class="text-[10px] text-emera-700 font-bold uppercase tracking-[0.15em] mt-3">✓ Certified Premium Product</span>
                     </div>
                     
+                    <!-- ✅ REAL RATINGS DISPLAY -->
                     <div class="text-right">
                         <div class="flex gap-0.5 justify-end mb-2">
-                            <span class="star filled">★</span>
-                            <span class="star filled">★</span>
-                            <span class="star filled">★</span>
-                            <span class="star filled">★</span>
-                            <span class="star filled">★</span>
+                            <% 
+                            const avgRating = product.averageRating || 0;
+                            const fullStars = Math.floor(avgRating);
+                            const hasHalfStar = avgRating % 1 >= 0.5;
+                            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+                            %>
+                            
+                            <% for(let i = 0; i < fullStars; i++) { %>
+                                <span class="star filled">★</span>
+                            <% } %>
+                            
+                            <% if(hasHalfStar) { %>
+                                <span class="star half">★</span>
+                            <% } %>
+                            
+                            <% for(let i = 0; i < emptyStars; i++) { %>
+                                <span class="star empty">★</span>
+                            <% } %>
                         </div>
-                        <p class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">5.0 Rating</p>
+                        <p class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">
+                            <%= avgRating.toFixed(1) %> (<%= product.totalReviews || 0 %> reviews)
+                        </p>
                     </div>
                 </div>
-                <!-- ===== END PRICE SECTION ===== -->
+                <!-- ===== END PRICE & RATING SECTION ===== -->
             </div>
 
             <!-- Offers Card -->
@@ -184,7 +200,7 @@
                 </div>
             </div>
 
-            <!-- Specifications Accordion -->
+            <!-- ✅ DYNAMIC Specifications Accordion -->
             <div class="border-t border-gray-200 pt-8">
                 <details class="group" open>
                     <summary class="flex justify-between items-center cursor-pointer list-none text-[11px] uppercase tracking-[0.3em] font-bold text-gray-900 py-4">
@@ -192,27 +208,141 @@
                         <span class="group-open:rotate-45 transition-transform duration-300 text-2xl font-light text-gray-400">+</span>
                     </summary>
                     <div class="pt-8 grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-10 text-xs">
-                        <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                            <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Materials</p>
-                            <p class="text-gray-600">100% Full-grain Calfskin</p>
-                        </div>
-                        <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                            <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Hardware</p>
-                            <p class="text-gray-600">24k Gold-Finished Palladium</p>
-                        </div>
-                        <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                            <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Architecture</p>
-                            <p class="text-gray-600">Structured with Suede Lining</p>
-                        </div>
-                        <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                            <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Origin</p>
-                            <p class="text-gray-600">Handcrafted in Florence</p>
-                        </div>
+                        <% 
+                        // Convert specifications Map to array
+                        const specs = product.specifications || new Map();
+                        const specEntries = specs instanceof Map ? Array.from(specs.entries()) : Object.entries(specs);
+                        
+                        if (specEntries.length > 0) { 
+                            specEntries.forEach(([key, value]) => { %>
+                                <div class="border-l-2 border-emera-700 pl-5 space-y-1">
+                                    <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]"><%= key %></p>
+                                    <p class="text-gray-600"><%= value %></p>
+                                </div>
+                            <% });
+                        } else { %>
+                            <!-- Fallback if no specs in database -->
+                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
+                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Brand</p>
+                                <p class="text-gray-600"><%= product.brand %></p>
+                            </div>
+                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
+                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Category</p>
+                                <p class="text-gray-600"><%= product.category.name %></p>
+                            </div>
+                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
+                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Materials</p>
+                                <p class="text-gray-600">Premium Quality Materials</p>
+                            </div>
+                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
+                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Quality</p>
+                                <p class="text-gray-600">Handcrafted Excellence</p>
+                            </div>
+                        <% } %>
                     </div>
                 </details>
             </div>
         </div>
     </div>
+
+    <!-- ✅ REVIEWS & RATINGS SECTION -->
+    <section class="mt-32 border-t border-gray-200 pt-24">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex justify-between items-end mb-16">
+                <div class="space-y-3">
+                    <span class="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 block">Customer Feedback</span>
+                    <h2 class="text-4xl font-serif text-gray-900">Reviews & Ratings</h2>
+                </div>
+                
+                <% if (canReview) { %>
+                    <button onclick="openReviewModal()" class="text-[10px] uppercase tracking-widest border-b-2 border-gray-900 pb-1 font-bold hover:text-emera-700 hover:border-emera-700 transition-colors">
+                        Write a Review
+                    </button>
+                <% } %>
+            </div>
+
+            <!-- Rating Summary -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-16">
+                <!-- Average Rating -->
+                <div class="bg-gray-50 rounded-lg p-8 text-center">
+                    <div class="text-6xl font-bold text-gray-900 mb-3">
+                        <%= (product.averageRating || 0).toFixed(1) %>
+                    </div>
+                    <div class="flex gap-1 justify-center mb-3">
+                        <% for(let i = 0; i < 5; i++) { %>
+                            <span class="star <%= i < Math.round(product.averageRating || 0) ? 'filled' : 'empty' %>">★</span>
+                        <% } %>
+                    </div>
+                    <p class="text-sm text-gray-600">Based on <%= product.totalReviews || 0 %> reviews</p>
+                </div>
+
+                <!-- Rating Distribution -->
+                <div class="lg:col-span-2 space-y-3">
+                    <% 
+                    const totalReviewCount = product.totalReviews || 0;
+                    for(let rating = 5; rating >= 1; rating--) { 
+                        const count = ratingDistribution[rating] || 0;
+                        const percentage = totalReviewCount > 0 ? (count / totalReviewCount * 100).toFixed(0) : 0;
+                    %>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm font-medium text-gray-700 w-12"><%= rating %> ★</span>
+                            <div class="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
+                                <div class="bg-yellow-400 h-full transition-all duration-500" style="width: <%= percentage %>%"></div>
+                            </div>
+                            <span class="text-sm text-gray-600 w-16 text-right"><%= count %> (<%= percentage %>%)</span>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Reviews List -->
+            <div class="space-y-8">
+                <% if (reviews && reviews.length > 0) { %>
+                    <% reviews.forEach(review => { %>
+                        <div class="border-b border-gray-200 pb-8">
+                            <div class="flex items-start gap-6">
+                                <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 flex-shrink-0">
+                                    <%= review.userId.name.charAt(0).toUpperCase() %>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900"><%= review.userId.name %></h4>
+                                            <div class="flex gap-1 mt-1">
+                                                <% for(let i = 0; i < 5; i++) { %>
+                                                    <span class="star <%= i < review.rating ? 'filled' : 'empty' %> text-sm">★</span>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        <% if (review.isVerifiedPurchase) { %>
+                                            <span class="text-[9px] bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-200 uppercase tracking-wide font-bold">
+                                                ✓ Verified Purchase
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                    <h5 class="font-semibold text-gray-800 mb-2"><%= review.title %></h5>
+                                    <p class="text-sm text-gray-600 leading-relaxed mb-3"><%= review.comment %></p>
+                                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                                        <span><%= new Date(review.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></span>
+                                        <button onclick="markHelpful('<%= review._id %>')" class="hover:text-emera-700 transition-colors">
+                                            👍 Helpful (<%= review.helpful || 0 %>)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="text-center py-16">
+                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                        </svg>
+                        <p class="text-gray-500 text-sm">No reviews yet. Be the first to review this product!</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </section>
 
     <!-- Related Products -->
     <% if (relatedProducts && relatedProducts.length > 0) { %>
@@ -246,6 +376,54 @@
     </section>
     <% } %>
 </main>
+
+<!-- ✅ REVIEW SUBMISSION MODAL -->
+<div id="review-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 backdrop-blur-md" style="display: none;">
+    <div class="bg-white rounded-lg shadow-2xl p-8 max-w-2xl w-full mx-4 transform transition-all overflow-hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-serif text-gray-900">Write a Review</h3>
+            <button onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-900 text-3xl">×</button>
+        </div>
+
+        <form id="review-form" class="space-y-6">
+            <input type="hidden" name="productId" value="<%= product._id %>">
+            <input type="hidden" name="orderId" value="<%= eligibleOrderId %>">
+            
+            <!-- Rating -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-3">Your Rating</label>
+                <div class="flex gap-2">
+                    <% for(let i = 1; i <= 5; i++) { %>
+                        <button type="button" onclick="setRating(<%= i %>)" class="rating-star text-4xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                    <% } %>
+                </div>
+                <input type="hidden" name="rating" id="rating-input" required>
+            </div>
+
+            <!-- Title -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Review Title</label>
+                <input type="text" name="title" required maxlength="100" placeholder="Summarize your experience" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emera-700 outline-none">
+            </div>
+
+            <!-- Comment -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Your Review</label>
+                <textarea name="comment" required rows="5" maxlength="1000" placeholder="Share your thoughts about this product..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emera-700 outline-none resize-none"></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex gap-4">
+                <button type="submit" class="flex-1 bg-emera-950 text-white py-4 rounded-lg font-bold uppercase text-xs tracking-widest hover:bg-emera-700 transition-all">
+                    Submit Review
+                </button>
+                <button type="button" onclick="closeReviewModal()" class="flex-1 border-2 border-gray-300 py-4 rounded-lg font-bold uppercase text-xs tracking-widest hover:bg-gray-50 transition-all">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <!-- Success Modal -->
 <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 backdrop-blur-md" style="display: none;">
@@ -529,13 +707,98 @@
 </div>
 
 <script>
+// ========== BLOCK CHECK ==========
 if (<%= !!product.isBlocked %>) location.href = "/products";
 
+// ========== CONSTANTS ==========
 const variants = <%- JSON.stringify(product.variants) %>;
 const images = <%- JSON.stringify(product.productImage || []) %>;
 let activeVariant = 0;
 
-// Modal Functions
+// ========== REVIEW FUNCTIONS (NEW) ==========
+let selectedRating = 0;
+
+function setRating(rating) {
+    selectedRating = rating;
+    document.getElementById('rating-input').value = rating;
+    
+    document.querySelectorAll('.rating-star').forEach((star, index) => {
+        if (index < rating) {
+            star.classList.remove('text-gray-300');
+            star.classList.add('text-yellow-400');
+        } else {
+            star.classList.remove('text-yellow-400');
+            star.classList.add('text-gray-300');
+        }
+    });
+}
+
+function openReviewModal() {
+    <% if (!user) { %>
+        window.location.href = '/login';
+        return;
+    <% } %>
+    
+    document.getElementById('review-modal').style.display = 'flex';
+}
+
+function closeReviewModal() {
+    document.getElementById('review-modal').style.display = 'none';
+    document.getElementById('review-form').reset();
+    selectedRating = 0;
+    document.querySelectorAll('.rating-star').forEach(star => {
+        star.classList.remove('text-yellow-400');
+        star.classList.add('text-gray-300');
+    });
+}
+
+document.getElementById('review-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (!selectedRating) {
+        alert('Please select a rating');
+        return;
+    }
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const res = await fetch('/reviews/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+            closeReviewModal();
+            location.reload(); // Reload to show new review
+        } else {
+            alert(result.message || 'Failed to submit review');
+        }
+    } catch (error) {
+        console.error('Review submission error:', error);
+        alert('Failed to submit review. Please try again.');
+    }
+});
+
+async function markHelpful(reviewId) {
+    try {
+        const res = await fetch(`/reviews/${reviewId}/helpful`, {
+            method: 'POST'
+        });
+        
+        if (res.ok) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Mark helpful error:', error);
+    }
+}
+
+// ========== MODAL FUNCTIONS ==========
 function showSuccessModal(cartCount) {
     const modal = document.getElementById('success-modal');
     
@@ -613,12 +876,16 @@ document.getElementById('error-modal')?.addEventListener('click', function(e) {
     if (e.target === this) closeErrorModal();
 });
 
+document.getElementById('review-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeReviewModal();
+});
+
+// ========== IMAGE GALLERY ==========
 function changeImage(i) {
   if (!images[i]) return;
   const mainImg = document.getElementById("main-img");
   mainImg.src = images[i].url;
   
-  let zoomed;
   // Reset zoom when changing images
   mainImg.style.transform = "scale(1)";
   mainImg.style.transformOrigin = "center center";
@@ -634,6 +901,7 @@ function changeImage(i) {
   );
 }
 
+// ========== VARIANT SELECTION ==========
 function selectVariant(i) {
   if (!variants[i] || variants[i].quantity === 0) return;
 
@@ -650,7 +918,7 @@ function selectVariant(i) {
   if (btn) btn.disabled = false;
 }
 
-// Improved Zoom Functionality
+// ========== IMAGE ZOOM ==========
 const zoomArea = document.getElementById("main-zoom-area");
 const zoomImg = document.getElementById("main-img");
 let zoomed = false;
@@ -689,6 +957,7 @@ if (zoomArea && zoomImg) {
   });
 }
 
+// ========== CART ACTIONS ==========
 function addToCart(productId) {
   fetch("/cart/add", {
     method: "POST",
@@ -807,25 +1076,42 @@ function buyNow(productId) {
     });
 }
 
+// ========== INITIALIZE ==========
 if (variants.length) selectVariant(0);
 </script>
 
 <style>
+/* Star Rating Styles */
+.star {
+    font-size: 1.2em;
+}
+
+.star.filled {
+    color: #fbbf24;
+}
+
+.star.half {
+    background: linear-gradient(90deg, #fbbf24 50%, #d1d5db 50%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.star.empty {
+    color: #d1d5db;
+}
+
 /* Modal Base Animations */
-#success-modal, #wishlist-modal {
+#success-modal, #wishlist-modal, #error-modal, #review-modal {
     transition: all 0.3s ease-in-out;
 }
 
-#success-modal.show, #wishlist-modal.show {
+#success-modal.show, #wishlist-modal.show, #error-modal.show {
     animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #success-modal.show > div, #wishlist-modal.show > div {
     animation: modalSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-#error-modal.show {
-    animation: fadeIn 0.3s ease-in-out;
 }
 
 /* Fade and Slide Animations */

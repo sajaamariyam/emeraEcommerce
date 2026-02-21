@@ -165,6 +165,15 @@ const addProduct = async (req, res) => {
         .json({ success: false, message: "At least one variant required" });
     }
 
+    let specifications = {};
+    if (req.body.specifications) {
+      try {
+        specifications = JSON.parse(req.body.specifications);
+      } catch (e) {
+        console.log("Specifications parse error:", e);
+      }
+    }
+
     const productImages = req.files.map((file) => ({
       url: file.path,
       public_id: file.filename,
@@ -179,6 +188,7 @@ const addProduct = async (req, res) => {
       salePrice,
       variants: parsedVariants,
       productImage: productImages,
+      specifications: specifications,
       isListed: true,
       isBlocked: false,
     });
@@ -222,7 +232,7 @@ const editProduct = async (req, res) => {
     if (removedImages) {
       const removeIndexes = JSON.parse(removedImages);
       product.productImage = product.productImage.filter(
-        (_, index) => !removeIndexes.includes(index)
+        (_, index) => !removeIndexes.includes(index),
       );
     }
 
@@ -234,7 +244,6 @@ const editProduct = async (req, res) => {
       product.productImage.push(...newImages);
     }
 
-    
     product.name = name;
     product.description = description;
     product.category = category;
@@ -242,6 +251,14 @@ const editProduct = async (req, res) => {
     product.regularPrice = regularPrice;
     product.salePrice = salePrice;
     product.variants = parsedVariants;
+
+    if (req.body.specifications) {
+      try {
+        product.specifications = JSON.parse(req.body.specifications);
+      } catch (e) {
+        console.log("Specifications parse error:", e);
+      }
+    }
 
     await product.save();
 
@@ -251,8 +268,6 @@ const editProduct = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
-
-
 
 const updateStock = async (req, res) => {
   try {

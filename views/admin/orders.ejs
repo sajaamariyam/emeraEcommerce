@@ -23,49 +23,36 @@
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
-      <!-- Total Orders -->
       <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
         <p class="text-xs text-gray-500 uppercase font-bold mb-1">Total Orders</p>
         <p class="text-3xl font-bold text-gray-800"><%= totalOrders %></p>
         <div class="h-1 w-10 bg-teal-500 mt-3"></div>
       </div>
-
-      <!-- Pending Orders -->
       <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
         <p class="text-xs text-gray-500 uppercase font-bold mb-1">Pending</p>
         <p class="text-3xl font-bold text-yellow-600"><%= pendingOrders %></p>
         <div class="h-1 w-10 bg-yellow-500 mt-3"></div>
       </div>
-
-      <!-- Shipped Orders -->
       <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
         <p class="text-xs text-gray-500 uppercase font-bold mb-1">Shipped</p>
         <p class="text-3xl font-bold text-blue-600"><%= shippedOrders %></p>
         <div class="h-1 w-10 bg-blue-500 mt-3"></div>
       </div>
-
-      <!-- Out for Delivery -->
       <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
         <p class="text-xs text-gray-500 uppercase font-bold mb-1">Out for Delivery</p>
         <p class="text-3xl font-bold text-purple-600"><%= outForDelivery %></p>
         <div class="h-1 w-10 bg-purple-500 mt-3"></div>
       </div>
-
-      <!-- Delivered Orders -->
       <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
         <p class="text-xs text-gray-500 uppercase font-bold mb-1">Delivered</p>
         <p class="text-3xl font-bold text-green-600"><%= deliveredOrders %></p>
         <div class="h-1 w-10 bg-green-500 mt-3"></div>
       </div>
-
-      <!-- Cancelled Orders -->
       <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
         <p class="text-xs text-gray-500 uppercase font-bold mb-1">Cancelled</p>
         <p class="text-3xl font-bold text-red-600"><%= cancelledOrders %></p>
         <div class="h-1 w-10 bg-red-500 mt-3"></div>
       </div>
-
-      <!-- Return Requested -->
       <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
         <p class="text-xs text-gray-500 uppercase font-bold mb-1">Return Requested</p>
         <p class="text-3xl font-bold text-orange-600"><%= returnRequestedOrders %></p>
@@ -76,8 +63,6 @@
     <!-- Filters and Search -->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
       <form id="filterForm" method="GET" action="/admin/orders" class="space-y-4">
-
-        <!-- SEARCH ROW (FULL WIDTH) -->
         <div class="flex gap-2 w-full">
           <input
             type="text"
@@ -86,28 +71,12 @@
             placeholder="Search by Order ID, Customer, Email..."
             class="w-full border px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-black"
           />
-
-          <button
-            type="submit"
-            class="bg-black text-white px-6 rounded-lg"
-          >
-            Search
-          </button>
-
+          <button type="submit" class="bg-black text-white px-6 rounded-lg">Search</button>
           <% if (search || status !== 'all' || sortBy !== 'date-desc') { %>
-            <a
-              href="/admin/orders"
-              class="bg-gray-300 px-5 py-2 rounded-lg text-black flex items-center"
-            >
-              Clear
-            </a>
+            <a href="/admin/orders" class="bg-gray-300 px-5 py-2 rounded-lg text-black flex items-center">Clear</a>
           <% } %>
         </div>
-
-        <!-- FILTER ROW -->
         <div class="flex flex-col md:flex-row gap-4">
-
-          <!-- STATUS -->
           <select
             name="status"
             onchange="this.form.submit()"
@@ -123,8 +92,6 @@
             <option value="return-requested" <%= status === 'return-requested' ? 'selected' : '' %>>Return Requested</option>
             <option value="returned" <%= status === 'returned' ? 'selected' : '' %>>Returned</option>
           </select>
-
-          <!-- SORT BY -->
           <select
             name="sortBy"
             onchange="this.form.submit()"
@@ -135,16 +102,13 @@
             <option value="amount-desc" <%= sortBy === 'amount-desc' ? 'selected' : '' %>>Amount: High to Low</option>
             <option value="amount-asc" <%= sortBy === 'amount-asc' ? 'selected' : '' %>>Amount: Low to High</option>
           </select>
-
         </div>
-
       </form>
     </div>
 
     <!-- Orders Table -->
     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
       <% if (orders.length === 0) { %>
-        <!-- Empty State -->
         <div class="text-center py-16">
           <svg class="mx-auto w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -153,7 +117,6 @@
           <p class="text-gray-500">Try adjusting your filters or search terms</p>
         </div>
       <% } else { %>
-        <!-- Table -->
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
@@ -170,15 +133,12 @@
             <tbody class="divide-y divide-gray-200">
               <% orders.forEach(order => { %>
                 <tr class="hover:bg-gray-50 transition-colors">
-                  <!-- Order ID -->
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex flex-col">
                       <span class="text-sm font-bold text-gray-900">#<%= order.orderId %></span>
                       <span class="text-xs text-gray-400"><%= order.orderedItems ? order.orderedItems.length : 0 %> item(s)</span>
                     </div>
                   </td>
-
-                  <!-- Customer -->
                   <td class="px-6 py-4">
                     <div class="flex items-center">
                       <div class="flex-shrink-0 h-10 w-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 font-semibold">
@@ -190,91 +150,49 @@
                       </div>
                     </div>
                   </td>
-
-                  <!-- Date -->
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">
                       <%= new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
                     </div>
                   </td>
-
-                  <!-- Amount -->
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class="text-sm font-bold text-gray-900">₹<%= order.finalAmount.toLocaleString() %></span>
                   </td>
-
-                  <!-- Payment -->
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex flex-col">
                       <span class="text-sm text-gray-900"><%= order.paymentMethod %></span>
                       <% 
                         let paymentStatusClass = '';
                         switch(order.paymentStatus) {
-                          case 'Paid':
-                            paymentStatusClass = 'text-green-600';
-                            break;
-                          case 'Pending':
-                            paymentStatusClass = 'text-yellow-600';
-                            break;
-                          case 'Refunded':
-                            paymentStatusClass = 'text-blue-600';
-                            break;
-                          default:
-                            paymentStatusClass = 'text-gray-600';
+                          case 'Paid': paymentStatusClass = 'text-green-600'; break;
+                          case 'Pending': paymentStatusClass = 'text-yellow-600'; break;
+                          case 'Refunded': paymentStatusClass = 'text-blue-600'; break;
+                          default: paymentStatusClass = 'text-gray-600';
                         }
                       %>
                       <span class="text-xs font-medium <%= paymentStatusClass %>"><%= order.paymentStatus || 'Pending' %></span>
                     </div>
                   </td>
-
-                  <!-- Status -->
                   <td class="px-6 py-4 whitespace-nowrap">
                     <% 
                       let statusClass = '';
                       let statusText = order.status;
                       switch(order.status) {
-                        case 'pending':
-                          statusClass = 'bg-yellow-50 text-yellow-700 border border-yellow-100';
-                          statusText = 'Pending';
-                          break;
-                        case 'processing':
-                          statusClass = 'bg-indigo-50 text-indigo-700 border border-indigo-100';
-                          statusText = 'Processing';
-                          break;
-                        case 'shipped':
-                          statusClass = 'bg-blue-50 text-blue-700 border border-blue-100';
-                          statusText = 'Shipped';
-                          break;
-                        case 'out-for-delivery':
-                          statusClass = 'bg-purple-50 text-purple-700 border border-purple-100';
-                          statusText = 'Out for Delivery';
-                          break;
-                        case 'delivered':
-                          statusClass = 'bg-green-50 text-green-700 border border-green-100';
-                          statusText = 'Delivered';
-                          break;
-                        case 'cancelled':
-                          statusClass = 'bg-red-50 text-red-700 border border-red-100';
-                          statusText = 'Cancelled';
-                          break;
-                        case 'return-requested':
-                          statusClass = 'bg-orange-50 text-orange-700 border border-orange-100';
-                          statusText = 'Return Requested';
-                          break;
-                        case 'returned':
-                          statusClass = 'bg-gray-50 text-gray-700 border border-gray-100';
-                          statusText = 'Returned';
-                          break;
-                        default:
-                          statusClass = 'bg-gray-50 text-gray-700 border border-gray-100';
+                        case 'pending': statusClass = 'bg-yellow-50 text-yellow-700 border border-yellow-100'; statusText = 'Pending'; break;
+                        case 'processing': statusClass = 'bg-indigo-50 text-indigo-700 border border-indigo-100'; statusText = 'Processing'; break;
+                        case 'shipped': statusClass = 'bg-blue-50 text-blue-700 border border-blue-100'; statusText = 'Shipped'; break;
+                        case 'out-for-delivery': statusClass = 'bg-purple-50 text-purple-700 border border-purple-100'; statusText = 'Out for Delivery'; break;
+                        case 'delivered': statusClass = 'bg-green-50 text-green-700 border border-green-100'; statusText = 'Delivered'; break;
+                        case 'cancelled': statusClass = 'bg-red-50 text-red-700 border border-red-100'; statusText = 'Cancelled'; break;
+                        case 'return-requested': statusClass = 'bg-orange-50 text-orange-700 border border-orange-100'; statusText = 'Return Requested'; break;
+                        case 'returned': statusClass = 'bg-gray-50 text-gray-700 border border-gray-100'; statusText = 'Returned'; break;
+                        default: statusClass = 'bg-gray-50 text-gray-700 border border-gray-100';
                       }
                     %>
                     <span class="px-3 py-1 <%= statusClass %> text-[10px] font-bold uppercase rounded-full">
                       <%= statusText %>
                     </span>
                   </td>
-
-                  <!-- Actions -->
                   <td class="px-6 py-4 whitespace-nowrap text-right">
                     <div class="flex justify-end gap-3">
                       <button 
@@ -318,18 +236,13 @@
 <!-- Order Details Modal -->
 <div id="orderDetailsModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
   <div class="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl">
-    <!-- Modal Header -->
     <div class="flex justify-between items-center px-6 py-4 border-b sticky top-0 bg-white z-10">
       <div>
         <h2 class="text-xl font-bold text-gray-900">Order Details</h2>
         <p class="text-sm text-gray-500 mt-1">Order ID: <span id="modalOrderId"></span></p>
       </div>
-      <button onclick="closeOrderDetailsModal()" class="text-gray-400 hover:text-gray-900 text-2xl">
-        &times;
-      </button>
+      <button onclick="closeOrderDetailsModal()" class="text-gray-400 hover:text-gray-900 text-2xl">&times;</button>
     </div>
-
-    <!-- Modal Content -->
     <div id="orderDetailsContent" class="p-6">
       <div class="flex items-center justify-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
@@ -345,10 +258,8 @@
       <h2 class="text-xl font-bold text-gray-900">Update Order Status</h2>
       <p class="text-sm text-gray-500 mt-1">Select the new status for this order</p>
     </div>
-    
     <div>
       <input type="hidden" id="updateOrderId">
-      
       <label class="block text-sm font-medium text-gray-700 mb-2">New Status</label>
       <select id="newStatus" class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
         <option value="pending">Pending</option>
@@ -360,18 +271,11 @@
         <option value="return-requested">Return Requested</option>
         <option value="returned">Returned</option>
       </select>
-
       <div class="flex gap-3 mt-6">
-        <button 
-          onclick="updateOrderStatus()"
-          class="flex-1 bg-teal-700 text-white px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition"
-        >
+        <button onclick="updateOrderStatus()" class="flex-1 bg-teal-700 text-white px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition">
           Update Status
         </button>
-        <button 
-          onclick="closeUpdateModal()"
-          class="flex-1 border border-gray-300 px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-50 transition"
-        >
+        <button onclick="closeUpdateModal()" class="flex-1 border border-gray-300 px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-50 transition">
           Cancel
         </button>
       </div>
@@ -389,7 +293,6 @@
       <h3 id="notificationTitle" class="text-xl font-bold text-gray-900 mb-2"></h3>
       <p id="notificationMessage" class="text-sm text-gray-600"></p>
     </div>
-
     <button onclick="closeNotificationModal()" class="w-full bg-teal-700 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition">
       OK
     </button>
@@ -397,23 +300,23 @@
 </div>
 
 <script>
-// Notification Modal Functions
+// ─── Notification Modal ───────────────────────────────────────────────────────
 function showNotificationModal(title, message, isSuccess = true) {
-  const modal = document.getElementById("notificationModal");
-  const icon = document.getElementById("notificationIcon");
-  const iconElement = document.getElementById("notificationIconElement");
-  
-  document.getElementById("notificationTitle").textContent = title;
+  const modal        = document.getElementById("notificationModal");
+  const icon         = document.getElementById("notificationIcon");
+  const iconElement  = document.getElementById("notificationIconElement");
+
+  document.getElementById("notificationTitle").textContent   = title;
   document.getElementById("notificationMessage").textContent = message;
-  
+
   if (isSuccess) {
-    icon.className = "w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4";
+    icon.className        = "w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4";
     iconElement.className = "fas fa-check-circle text-green-600 text-2xl";
   } else {
-    icon.className = "w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4";
+    icon.className        = "w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4";
     iconElement.className = "fas fa-times-circle text-red-600 text-2xl";
   }
-  
+
   modal.classList.remove("hidden");
   modal.classList.add("flex");
 }
@@ -424,68 +327,169 @@ function closeNotificationModal() {
   modal.classList.remove("flex");
 }
 
-// View Order Details
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatStatus(status) {
+  const map = {
+    'pending'          : 'Pending',
+    'processing'       : 'Processing',
+    'shipped'          : 'Shipped',
+    'out-for-delivery' : 'Out for Delivery',
+    'delivered'        : 'Delivered',
+    'cancelled'        : 'Cancelled',
+    'return-requested' : 'Return Requested',
+    'returned'         : 'Returned'
+  };
+  return map[status] || status;
+}
+
+/**
+ * Safely build a shipping-address HTML block from the address object.
+ *
+ * Handles three possible shapes coming back from the API:
+ *   1. null / undefined  → "Address not available"
+ *   2. A plain string (unpopulated ObjectId) → "Address not available"
+ *   3. A populated object with fields like name / address / city / state /
+ *      pincode / landMark / altPhone / phone
+ */
+function renderAddress(addr) {
+  // Case 1 & 2: nothing usable
+  if (!addr || typeof addr === 'string') {
+    return '<p class="text-gray-500 italic">Address not available. Make sure .populate("address") is called in the controller.</p>';
+  }
+
+  // Case 3: populated object — collect lines that actually have content
+  const lines = [];
+
+  if (addr.name)      lines.push(`<p class="font-semibold text-gray-900">${addr.name}</p>`);
+  if (addr.address)   lines.push(`<p>${addr.address}</p>`);
+
+  // City, State, Pincode on one line
+  const cityLine = [addr.city, addr.state].filter(Boolean).join(', ');
+  const pinLine  = addr.pincode ? ` &ndash; ${addr.pincode}` : '';
+  if (cityLine || pinLine) lines.push(`<p>${cityLine}${pinLine}</p>`);
+
+  if (addr.landMark)  lines.push(`<p><span class="font-medium">Landmark:</span> ${addr.landMark}</p>`);
+  if (addr.phone)     lines.push(`<p><span class="font-medium">Phone:</span> ${addr.phone}</p>`);
+  if (addr.altPhone)  lines.push(`<p><span class="font-medium">Alt Phone:</span> ${addr.altPhone}</p>`);
+
+  if (lines.length === 0) {
+    return '<p class="text-gray-500 italic">Address details not available</p>';
+  }
+
+  return `<div class="space-y-1 text-sm text-gray-900">${lines.join('')}</div>`;
+}
+
+// ─── View Order Details ───────────────────────────────────────────────────────
 async function viewOrderDetails(orderId) {
-  const modal = document.getElementById('orderDetailsModal');
-  const content = document.getElementById('orderDetailsContent');
-  const modalOrderId = document.getElementById('modalOrderId');
-  
+  const modal         = document.getElementById('orderDetailsModal');
+  const content       = document.getElementById('orderDetailsContent');
+  const modalOrderId  = document.getElementById('modalOrderId');
+
   modal.classList.remove('hidden');
   modal.classList.add('flex');
+
   content.innerHTML = `
     <div class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-    </div>
-  `;
+    </div>`;
 
   try {
     const response = await fetch(`/admin/orders/${orderId}`);
+
+    if (!response.ok) throw new Error('Failed to load order details');
+
     const order = await response.json();
 
-    if (!response.ok) {
-      throw new Error('Failed to load order details');
-    }
-
-    // Debug: Log the order data to see the structure
+    // ── Debug (remove in production) ──────────────────────────────────────
     console.log('Order data:', order);
-    console.log('Address:', order.address);
-    console.log('Sample item:', order.orderedItems?.[0]);
+    console.log('Address field:', order.address);
+    // ──────────────────────────────────────────────────────────────────────
 
     modalOrderId.textContent = `#${order.orderId}`;
-    
+
+    // Build item rows
+    const itemsHtml = (order.orderedItems || []).map(item => {
+      // Resolve product image
+      let imageUrl = '/images/placeholder.jpg';
+      const imgs   = item.productId?.productImage;
+      if (Array.isArray(imgs) && imgs.length > 0) {
+        imageUrl = (typeof imgs[0] === 'object' && imgs[0].url) ? imgs[0].url : imgs[0];
+      } else if (typeof imgs === 'string' && imgs) {
+        imageUrl = imgs;
+      }
+
+      const unitPrice  = item.price    || 0;
+      const qty        = item.quantity || 0;
+      const totalPrice = unitPrice * qty;
+
+      return `
+        <div class="flex items-center space-x-4 bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <img src="${imageUrl}" alt="${item.productId?.productName || 'Product'}"
+               class="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+               onerror="this.src='/images/placeholder.jpg'">
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-gray-900 truncate">${item.productId?.productName || 'Product Name'}</h4>
+            <p class="text-sm text-gray-600">Color: ${item.color || 'N/A'} &nbsp;|&nbsp; Size: ${item.size || 'N/A'}</p>
+            <p class="text-sm text-gray-600">Qty: ${qty}</p>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <p class="text-xs text-gray-500">Unit Price</p>
+            <p class="font-bold text-gray-900">₹${unitPrice.toLocaleString()}</p>
+            <p class="text-sm font-bold text-teal-600 mt-1">Total: ₹${totalPrice.toLocaleString()}</p>
+          </div>
+        </div>`;
+    }).join('') || '<p class="text-gray-500 text-center py-4">No items found</p>';
+
+    // Build discount rows
+    let discountHtml = '';
+    if (order.discount && order.discount > 0) {
+      discountHtml += `
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-600">Discount:</span>
+          <span class="text-green-600 font-medium">-₹${order.discount.toLocaleString()}</span>
+        </div>`;
+    }
+    if (order.couponApplied) {
+      discountHtml += `
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-600">Coupon (${order.couponApplied}):</span>
+          <span class="text-green-600 font-medium">-₹${(order.couponDiscount || 0).toLocaleString()}</span>
+        </div>`;
+    }
+
+    const shippingHtml = (order.shippingCost && order.shippingCost > 0)
+      ? `<div class="flex justify-between text-sm">
+           <span class="text-gray-600">Shipping:</span>
+           <span class="text-gray-900 font-medium">₹${order.shippingCost.toLocaleString()}</span>
+         </div>`
+      : `<div class="flex justify-between text-sm">
+           <span class="text-gray-600">Shipping:</span>
+           <span class="text-green-600 font-medium">Free</span>
+         </div>`;
+
     content.innerHTML = `
-      <!-- Customer Info -->
+      <!-- Customer + Address -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+        <!-- Customer Info -->
         <div class="bg-teal-50 rounded-lg p-4 border border-teal-100">
-          <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase tracking-widest">
-            Customer Information
-          </h3>
-          <div class="space-y-2">
-            <p class="text-sm"><span class="font-medium text-gray-700">Name:</span> <span class="text-gray-900">${order.userId?.name || 'N/A'}</span></p>
-            <p class="text-sm"><span class="font-medium text-gray-700">Email:</span> <span class="text-gray-900">${order.userId?.email || 'N/A'}</span></p>
-            <p class="text-sm"><span class="font-medium text-gray-700">Phone:</span> <span class="text-gray-900">${order.userId?.phone || 'N/A'}</span></p>
+          <h3 class="text-xs font-bold text-gray-700 mb-3 uppercase tracking-widest">Customer Information</h3>
+          <div class="space-y-2 text-sm">
+            <p><span class="font-medium text-gray-700">Name:</span> <span class="text-gray-900">${order.userId?.name || 'N/A'}</span></p>
+            <p><span class="font-medium text-gray-700">Email:</span> <span class="text-gray-900">${order.userId?.email || 'N/A'}</span></p>
+            <p><span class="font-medium text-gray-700">Phone:</span> <span class="text-gray-900">${order.userId?.phone || 'N/A'}</span></p>
           </div>
         </div>
 
+        <!-- Shipping Address — uses renderAddress() for safe rendering -->
         <div class="bg-green-50 rounded-lg p-4 border border-green-100">
-          <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase tracking-widest">
-            Shipping Address
-          </h3>
-          <div class="space-y-1 text-sm text-gray-900">
-            ${order.address ? `
-              ${order.address.name ? `<p class="font-medium">${order.address.name}</p>` : ''}
-              ${order.address.address ? `<p>${order.address.address}</p>` : ''}
-              ${order.address.city || order.address.state || order.address.pincode ? `
-                <p>${order.address.city || ''}${order.address.city && order.address.state ? ', ' : ''}${order.address.state || ''}${(order.address.city || order.address.state) && order.address.pincode ? ' - ' : ''}${order.address.pincode || ''}</p>
-              ` : ''}
-              ${order.address.phone ? `<p><strong>Phone:</strong> ${order.address.phone}</p>` : ''}
-              ${!order.address.name && !order.address.address && !order.address.city && !order.address.state ? '<p class="text-gray-500">Address details not available</p>' : ''}
-            ` : '<p class="text-gray-500">Address not available</p>'}
-          </div>
+          <h3 class="text-xs font-bold text-gray-700 mb-3 uppercase tracking-widest">Shipping Address</h3>
+          ${renderAddress(order.address)}
         </div>
       </div>
 
-      <!-- Order Info -->
+      <!-- Order Meta -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-gray-50 rounded-lg p-4 text-center border border-gray-200">
           <p class="text-xs text-gray-500 uppercase font-bold mb-1">Order Date</p>
@@ -505,81 +509,22 @@ async function viewOrderDetails(orderId) {
         </div>
       </div>
 
-      <!-- Order Items -->
+      <!-- Items -->
       <div class="mb-6">
-        <h3 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-widest">
-          Order Items
-        </h3>
-        <div class="space-y-3">
-          ${order.orderedItems?.map(item => {
-            // Handle different image URL formats
-            let imageUrl = '/images/placeholder.jpg';
-            if (item.productId?.productImage) {
-              if (Array.isArray(item.productId.productImage) && item.productId.productImage.length > 0) {
-                // If it's an array of objects with url property
-                if (typeof item.productId.productImage[0] === 'object' && item.productId.productImage[0].url) {
-                  imageUrl = item.productId.productImage[0].url;
-                } 
-                // If it's an array of strings
-                else if (typeof item.productId.productImage[0] === 'string') {
-                  imageUrl = item.productId.productImage[0];
-                }
-              }
-            }
-            
-            return `
-            <div class="flex items-center space-x-4 bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <img 
-                src="${imageUrl}" 
-                alt="${item.productId?.productName || 'Product'}"
-                class="w-20 h-20 object-cover rounded-lg"
-              >
-              <div class="flex-1">
-                <h4 class="font-bold text-gray-900">${item.productId?.productName || 'Product Name'}</h4>
-                <p class="text-sm text-gray-600">Color: ${item.color || 'N/A'} | Size: ${item.size || 'N/A'}</p>
-                <p class="text-sm text-gray-600">Quantity: ${item.quantity || 0}</p>
-              </div>
-              <div class="text-right">
-                <p class="text-sm text-gray-600">Unit Price</p>
-                <p class="font-bold text-gray-900">₹${(item.price || 0).toLocaleString()}</p>
-                <p class="text-sm font-bold text-teal-600 mt-1">Total: ₹${((item.price || 0) * (item.quantity || 0)).toLocaleString()}</p>
-              </div>
-            </div>
-          `}).join('') || '<p class="text-gray-500 text-center py-4">No items found</p>'}
-        </div>
+        <h3 class="text-xs font-bold text-gray-700 mb-4 uppercase tracking-widest">Order Items</h3>
+        <div class="space-y-3">${itemsHtml}</div>
       </div>
 
-      <!-- Order Summary -->
+      <!-- Summary -->
       <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
-        <h3 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-widest">Order Summary</h3>
+        <h3 class="text-xs font-bold text-gray-700 mb-4 uppercase tracking-widest">Order Summary</h3>
         <div class="space-y-2">
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">Subtotal:</span>
             <span class="text-gray-900 font-medium">₹${(order.totalPrice || 0).toLocaleString()}</span>
           </div>
-          ${order.discount && order.discount > 0 ? `
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Discount:</span>
-              <span class="text-green-600 font-medium">-₹${order.discount.toLocaleString()}</span>
-            </div>
-          ` : ''}
-          ${order.couponApplied ? `
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Coupon (${order.couponApplied}):</span>
-              <span class="text-green-600 font-medium">-₹${(order.couponDiscount || 0).toLocaleString()}</span>
-            </div>
-          ` : ''}
-          ${order.shippingCost && order.shippingCost > 0 ? `
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Shipping:</span>
-              <span class="text-gray-900 font-medium">₹${order.shippingCost.toLocaleString()}</span>
-            </div>
-          ` : `
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Shipping:</span>
-              <span class="text-green-600 font-medium">Free</span>
-            </div>
-          `}
+          ${discountHtml}
+          ${shippingHtml}
           <div class="border-t border-gray-300 pt-2 mt-2">
             <div class="flex justify-between">
               <span class="text-base font-bold text-gray-900">Total Amount:</span>
@@ -587,8 +532,8 @@ async function viewOrderDetails(orderId) {
             </div>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
+
   } catch (error) {
     console.error('Error loading order details:', error);
     content.innerHTML = `
@@ -598,8 +543,7 @@ async function viewOrderDetails(orderId) {
         </svg>
         <h3 class="text-lg font-semibold text-gray-900 mb-2">Failed to Load Order Details</h3>
         <p class="text-gray-600">Please try again later</p>
-      </div>
-    `;
+      </div>`;
   }
 }
 
@@ -609,10 +553,10 @@ function closeOrderDetailsModal() {
   modal.classList.remove('flex');
 }
 
-// Update Order Status
+// ─── Update Status Modal ──────────────────────────────────────────────────────
 function openUpdateModal(orderId, currentStatus) {
   document.getElementById('updateOrderId').value = orderId;
-  document.getElementById('newStatus').value = currentStatus;
+  document.getElementById('newStatus').value     = currentStatus;
   const modal = document.getElementById('updateStatusModal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
@@ -626,15 +570,13 @@ function closeUpdateModal() {
 
 async function updateOrderStatus() {
   const orderId = document.getElementById('updateOrderId').value;
-  const status = document.getElementById('newStatus').value;
+  const status  = document.getElementById('newStatus').value;
 
   try {
     const response = await fetch('/admin/orders/update-status', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ orderId, status })
+      method  : 'POST',
+      headers : { 'Content-Type': 'application/json' },
+      body    : JSON.stringify({ orderId, status })
     });
 
     const data = await response.json();
@@ -642,12 +584,9 @@ async function updateOrderStatus() {
     if (data.success) {
       showNotificationModal('Success!', 'Order status updated successfully', true);
       closeUpdateModal();
-      setTimeout(() => {
-        closeNotificationModal();
-        location.reload();
-      }, 1500);
+      setTimeout(() => { closeNotificationModal(); location.reload(); }, 1500);
     } else {
-      showNotificationModal('Error', 'Failed to update order status', false);
+      showNotificationModal('Error', data.message || 'Failed to update order status', false);
     }
   } catch (error) {
     console.error('Error updating status:', error);
@@ -655,22 +594,7 @@ async function updateOrderStatus() {
   }
 }
 
-// Helper function to format status
-function formatStatus(status) {
-  const statusMap = {
-    'pending': 'Pending',
-    'processing': 'Processing',
-    'shipped': 'Shipped',
-    'out-for-delivery': 'Out for Delivery',
-    'delivered': 'Delivered',
-    'cancelled': 'Cancelled',
-    'return-requested': 'Return Requested',
-    'returned': 'Returned'
-  };
-  return statusMap[status] || status;
-}
-
-// Close modals on escape key
+// ─── Keyboard shortcut ───────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeOrderDetailsModal();
