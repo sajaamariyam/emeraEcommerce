@@ -6,7 +6,7 @@ const dashboardController = require("../controllers/admin/dashboardController");
 const orderController = require("../controllers/admin/orderController");
 const productController = require("../controllers/admin/productController");
 const offerController = require("../controllers/admin/offerController");
-const salesController = require("../controllers/admin/salesController");
+// const salesController = require("../controllers/admin/salesController");
 const couponController = require("../controllers/admin/couponController");
 const upload = require("../middlewares/multer");
 const { adminAuth, noCache } = require("../middlewares/auth");
@@ -52,7 +52,7 @@ router.delete(
 
 //PRODUCT ROUTES
 router.get("/products", adminAuth, productController.loadProducts);
-router.get("/products/:id", productController.getProduct);
+router.get("/products/:id", adminAuth, productController.getProduct);
 router.post(
   "/products/add",
   adminAuth,
@@ -72,7 +72,7 @@ router.post(
   adminAuth,
   productController.unblockProduct,
 );
-router.post("/products/delete/:id", adminAuth, productController.deleteProduct);
+router.delete("/products/delete/:id", adminAuth, productController.deleteProduct);
 
 //ORDER ROUTES
 router.get("/orders", adminAuth, noCache, orderController.loadOrders);

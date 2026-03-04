@@ -1,6 +1,8 @@
 const razorpay = require("../../config/razorpay");
 const Order = require("../../models/orderSchema");
 const User = require("../../models/userSchema");
+const Product = require("../../models/productSchema");
+const Cart = require("../../models/cartSchema");
 const crypto = require("crypto");
 
 const loadPayment = async (req, res) => {
@@ -98,6 +100,13 @@ const verifyPayment = async (req, res) => {
 
     if (order.razorpayOrderId !== razorpay_order_id) {
       return res.json({ success: false });
+    }
+
+    if (order.paymentStatus === "paid") {
+    return res.json({
+      success: true,
+      redirectUrl: `/orderConfirmation/${order.orderId}`,
+    });
     }
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;

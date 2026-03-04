@@ -1,6 +1,7 @@
 const User = require("../../models/userSchema");
 const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
+const Order = require("../../models/orderSchema");
 const Offer = require("../../models/offerSchema");
 const Coupon = require("../../models/couponSchema");
 const Review = require("../../models/reviewSchema");
@@ -780,7 +781,7 @@ const loadProductDetails = async (req, res) => {
     const ratingStats = await Review.aggregate([
       {
         $match: {
-          productId: require("mongoose").Types.ObjectId(product._id),
+          productId: product._id,
           isApproved: true,
         },
       },
@@ -808,7 +809,7 @@ const loadProductDetails = async (req, res) => {
       const deliveredOrder = await Order.findOne({
         userId: userData._id,
         status: "delivered",
-        "products.productId": product._id,
+        "orderedItems.productId": product._id,
       });
 
       if (deliveredOrder) {
@@ -825,6 +826,10 @@ const loadProductDetails = async (req, res) => {
         }
       }
     }
+    console.log("DEBUG canReview:", canReview);
+    console.log("DEBUG hasOrderedProduct:", hasOrderedProduct);
+    console.log("DEBUG eligibleOrderId:", eligibleOrderId);
+    console.log("DEBUG session user:", req.session.user);
 
     res.render("user/productDetails", {
       product,

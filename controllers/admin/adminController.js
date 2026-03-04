@@ -176,7 +176,7 @@ const loadCategories = async (req, res) => {
 
 const addCategory = async (req, res) => {
   try {
-    const { name } = req.body;
+    let { name } = req.body;
 
     if (!name || !req.file) {
       return res.status(400).json({ message: "Name and image required" });
@@ -212,9 +212,9 @@ const addCategory = async (req, res) => {
 const editCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, isListed } = req.body;
+    let { name, isListed } = req.body;
 
-    name: name.trim();
+    name = name.trim();
 
     const existingCategory = await Category.findOne({
       _id: { $ne: id },

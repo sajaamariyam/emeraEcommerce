@@ -70,6 +70,11 @@ const createOffer = async (req, res) => {
 const toggleOfferStatus = async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id);
+
+    if(!offer){
+      return res.redirect("/admin/offers");
+    }
+
     offer.isActive = !offer.isActive;
     await offer.save();
 
