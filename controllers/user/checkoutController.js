@@ -155,13 +155,14 @@ const placeOrder = async (req, res) => {
       if (!variant || variant.quantity < item.quantity)
         return res.status(400).json({ message: "Out of stock" });
 
-      totalPrice += item.price * item.quantity;
+      const latestPrice = product.salePrice;
+      totalPrice += latestPrice * item.quantity;
 
       orderedItems.push({
         productId: product._id,
         color: item.color,
         quantity: item.quantity,
-        price: item.price,
+        price: latestPrice,
       });
     }
 

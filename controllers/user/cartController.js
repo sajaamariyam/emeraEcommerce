@@ -79,9 +79,9 @@ const addToCart = async (req, res) => {
       });
     }
 
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId).populate("category");
 
-    if (!product || product.isBlocked || !product.isListed) {
+    if (!product || product.isBlocked || !product.isListed || !product.category.isListed) {
       return res.status(400).json({
         success: false,
         message: "Product unavailable",
@@ -200,6 +200,14 @@ const incrementQty = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Item not found" });
+    
+    
+    if (item.productId.isBlocked || !item.productId.isListed) {
+    return res.status(400).json({
+        success: false,
+        message: "Product unavailable",
+      });
+    }
 
     if (!item.productId.variants || !item.productId.variants.length) {
       return res.status(400).json({

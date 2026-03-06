@@ -5,6 +5,7 @@ const Order = require("../../models/orderSchema");
 const Offer = require("../../models/offerSchema");
 const Coupon = require("../../models/couponSchema");
 const Review = require("../../models/reviewSchema");
+const crypto = require("crypto");
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
@@ -852,7 +853,7 @@ const loadProductDetails = async (req, res) => {
 
 const searchProducts = async (req, res) => {
   try {
-    const search = req.query.q || "";
+    const search = req.query.search || "";
     const page = parseInt(req.query.page) || 1;
     const limit = 8;
     const skip = (page - 1) * limit;
