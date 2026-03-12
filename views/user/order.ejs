@@ -144,11 +144,22 @@
                                 <% } %>
                                 
                                 <% if (status === 'delivered') { %>
-                                    <button onclick="openReturnModal('<%= order.orderId %>')"
-                                            class="px-8 py-3 border-2 border-orange-600 text-orange-600 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-orange-600 hover:text-white transition-all">
-                                        Return Order
-                                    </button>
-                                <% } %>
+
+                                <button onclick="openReturnModal('<%= order.orderId %>')"
+                                    class="px-8 py-3 border-2 border-orange-600 text-orange-600 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-orange-600 hover:text-white transition-all">
+                                    Return Order
+                                </button>
+
+                                <% order.orderedItems.forEach(item => { %>
+                                    <% if (item.productId) { %>
+                                        <a href="/products/<%= item.productId._id %>#reviews"
+                                        class="px-8 py-3 border-2 border-emera-950 text-emera-950 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all">
+                                            Write Review
+                                        </a>
+                                    <% } %>
+                                <% }) %>
+
+                            <% } %>
                             </div>
                         </div>
                     </div>

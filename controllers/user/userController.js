@@ -810,7 +810,9 @@ const loadProductDetails = async (req, res) => {
       const deliveredOrder = await Order.findOne({
         userId: userData._id,
         status: "delivered",
-        "orderedItems.productId": product._id,
+        orderedItems: {
+          $elemMatch: {productId: product._id}
+        }
       });
 
       if (deliveredOrder) {

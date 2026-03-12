@@ -1,5 +1,6 @@
 const Cart = require("../../models/cartSchema");
 const Product = require("../../models/productSchema");
+const User = require("../../models/userSchema");
 
 const loadCart = async (req, res) => {
   try {
@@ -71,6 +72,7 @@ const addToCart = async (req, res) => {
   try {
     const userId = req.session.user;
     const { productId, color, buyNow } = req.body;
+    const MAX_CART_QTY = 5;
 
     if (!userId) {
       return res.status(401).json({
@@ -136,6 +138,13 @@ const addToCart = async (req, res) => {
         });
       }
 
+      if(existingItem.quantity + 1 > MAX_CART_QTY){
+        return res.status(400).json({
+          success: false,
+          message: "Maximum quantity limit reached"
+        });
+      }
+
       existingItem.quantity += 1;
     } else {
       cart.items.push({
@@ -147,6 +156,11 @@ const addToCart = async (req, res) => {
     }
 
     await cart.save();
+
+    await User.updateOne(
+      {_id: userId},
+      {$pull: {wishlist: productId}}
+    );
 
     if (buyNow) {
       return res.json({
@@ -228,11 +242,19 @@ const incrementQty = async (req, res) => {
         message: "Selected variant not found",
       });
     }
+    const MAX_CART_QTY = 5;
 
     if (item.quantity + 1 > variant.quantity) {
       return res.status(400).json({
         success: false,
         message: "Out of stock",
+      });
+    }
+
+    if(item.quantity + 1 > MAX_CART_QTY){
+      return res.status(400).json({
+        success: false,
+        message: "Maximum quantity limit reached"
       });
     }
 

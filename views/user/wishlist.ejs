@@ -34,7 +34,7 @@
                 
                 <% wishlistItems.forEach((item, index) => { %>
                 <!-- Wishlist Item <%= index + 1 %> -->
-                <div class="bg-stone-50 p-8 border border-stone-100">
+                <div class="bg-stone-50 p-8 border border-stone-100 wishlist-item" id="wishlist-<%= item._id %>">
                     <div class="flex flex-col sm:flex-row gap-8">
                     
                         <div class="w-full sm:w-48 h-48 bg-stone-200 overflow-hidden flex-shrink-0">
@@ -206,33 +206,57 @@
   });
 
   // Add to Cart buttons
+
   document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const productId = btn.dataset.productId;
+  btn.addEventListener("click", async () => {
 
-      const res = await fetch(`/cart/add/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            productId: productId,
-        }),
-      });
+    const productId = btn.dataset.productId;
 
-      if (!res.ok) {
-        showModal('Error', 'Try again, error occurred');
-        return;
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        showModal('Success', 'Product added to cart!');
-        // Optionally remove from wishlist after adding to cart
-        // location.reload();
-      } else {
-        showModal('Error', data.message || 'Failed to add to cart');
-      }
+    const res = await fetch("/cart/add", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        productId
+      })
     });
-  });
+
+    const data = await res.json();
+
+    if (data.success) {
+
+    showModal("Success", "Product added to cart!");
+
+    // update cart badge
+    const cartBadge = document.getElementById("cart-count-badge");
+    if (cartBadge) {
+        cartBadge.textContent = data.cartCount;
+    }
+
+    // remove wishlist item from page
+    const wishlistItem = document.getElementById(`wishlist-${productId}`);
+    if (wishlistItem) {
+        wishlistItem.remove();
+    }
+
+    // update wishlist badge
+    const wishlistBadge = document.getElementById("wishlist-count-badge");
+
+    if (wishlistBadge) {
+        let count = parseInt(wishlistBadge.textContent) || 0;
+
+        if (count > 1) {
+        wishlistBadge.textContent = count - 1;
+        } else {
+        wishlistBadge.remove(); // vanish if last item
+        }
+    }
+
+    }
+    });
+    });
 
   // Remove from Wishlist buttons
   document.querySelectorAll(".remove-wishlist-btn").forEach(btn => {

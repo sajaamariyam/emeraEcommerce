@@ -169,9 +169,10 @@
           </svg>
           
           <% if (wishlistCount && wishlistCount > 0) { %>
-            <span class="absolute -top-2 -right-2 bg-white text-emera-950 text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
-              <%= wishlistCount %>
-            </span>
+          <span id="wishlist-count-badge"
+                class="absolute -top-2 -right-2 bg-white text-emera-950 text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <%= wishlistCount %>
+          </span>
           <% } %>
         </a>
 

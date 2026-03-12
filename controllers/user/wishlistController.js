@@ -141,7 +141,8 @@ const addAllToCart = async (req, res) => {
 
       if (totalStock > 0) {
         const exists = cart.items.find(
-          (item) => item.productId.toString() === product._id.toString(),
+          (item) => item.productId.toString() === product._id.toString() &&
+          item.color === (product.variants[0]?.color || "Default")
         );
 
         if (!exists) {
@@ -160,7 +161,7 @@ const addAllToCart = async (req, res) => {
 
     return res.json({
       success: true,
-      cartCout: cart.items.reduce((sum, i) => sum + i.quantity, 0),
+      cartCount: cart.items.reduce((sum, i) => sum + i.quantity, 0),
       message: `${addedCount} items added to cart`,
     });
   } catch (error) {
