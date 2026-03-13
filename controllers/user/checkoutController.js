@@ -3,6 +3,7 @@ const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
 const User = require("../../models/userSchema");
 const Coupon = require("../../models/couponSchema");
+const Offer = require("../../models/offerSchema");
 
 const loadCheckout = async (req, res) => {
   try {
@@ -15,7 +16,9 @@ const loadCheckout = async (req, res) => {
     }
 
     const user = await User.findById(userId);
-    const addresses = user?.addresses || [];
+    const addresses = (user?.addresses || []).sort(
+      (a, b) => Number(b.isDefault) - Number(a.isDefault),
+    );
 
     let subtotal = 0;
     const cartItems = [];
@@ -25,7 +28,7 @@ const loadCheckout = async (req, res) => {
         continue;
       }
 
-      const itemTotal = item.price * item.quantity;
+      const itemTotal = item.productId.salePrice * item.quantity;
       subtotal += itemTotal;
 
       cartItems.push({
@@ -98,7 +101,7 @@ const applyCoupon = async (req, res) => {
     let subtotal = 0;
     for (const item of cart.items) {
       if (!item.productId || item.productId.isBlocked) continue;
-      subtotal += item.price * item.quantity;
+      subtotal += item.productId.salePrice * item.quantity;
     }
 
     const tax = Math.round(subtotal * 0.18);
@@ -155,7 +158,34 @@ const placeOrder = async (req, res) => {
       if (!variant || variant.quantity < item.quantity)
         return res.status(400).json({ message: "Out of stock" });
 
-      const latestPrice = product.salePrice;
+      const productOffer = await Offer.findOne({
+        offerType: "product",
+        productId: product._id,
+        isActive: true,
+      });
+
+      const categoryOffer = await Offer.findOne({
+        offerType: "category",
+        categoryId: product.category,
+        isActive: true,
+      });
+
+      let discount = 0;
+
+      if (productOffer && categoryOffer) {
+        discount = Math.max(
+          productOffer.discountPercentage,
+          categoryOffer.discountPercentage,
+        );
+      } else if (productOffer) {
+        discount = productOffer.discountPercentage;
+      } else if (categoryOffer) {
+        discount = categoryOffer.discountPercentage;
+      }
+
+      const latestPrice =
+        product.salePrice - (product.salePrice * discount) / 100;
+
       totalPrice += latestPrice * item.quantity;
 
       orderedItems.push({
@@ -209,10 +239,10 @@ const placeOrder = async (req, res) => {
       status: "pending",
       paymentStatus: "pending",
       shippingAddress: {
-        name: selectedAddress.fullName,
+        fullName: selectedAddress.fullName,
         phone: selectedAddress.phone || phone,
         email,
-        address: selectedAddress.street,
+        street: selectedAddress.street,
         city: selectedAddress.city,
         state: selectedAddress.state,
         pincode: selectedAddress.zipCode,
@@ -224,19 +254,32 @@ const placeOrder = async (req, res) => {
 
     if (appliedCoupon) {
       appliedCoupon.isUsed = true;
+      appliedCoupon.usedOrderId = newOrder._id;
       await appliedCoupon.save();
     }
 
-    if (finalPaymentMethod === "COD") {
-      for (const item of cart.items) {
-        await Product.updateOne(
-          { _id: item.productId._id, "variants.color": item.color },
-          { $inc: { "variants.$.quantity": -item.quantity } },
-        );
+    for (const item of cart.items) {
+      const updated = await Product.updateOne(
+        {
+          _id: item.productId._id,
+          "variants.color": item.color,
+          "variants.quantity": { $gte: item.quantity },
+        },
+        {
+          $inc: { "variants.$.quantity": -item.quantity },
+        },
+      );
+
+      if (updated.modifiedCount === 0) {
+        return res
+          .status(400)
+          .json({ message: "Stock changed. Please refresh cart" });
       }
+    }
 
-      await Cart.deleteOne({ userId });
+    await Cart.deleteOne({ userId });
 
+    if (finalPaymentMethod === "COD") {
       return res.json({
         success: true,
         redirectUrl: `/orderConfirmation/${newOrder.orderId}`,

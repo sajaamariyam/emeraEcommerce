@@ -821,6 +821,7 @@ const loadProductDetails = async (req, res) => {
         const existingReview = await Review.findOne({
           productId: product._id,
           userId: userData._id,
+          orderId: deliveredOrder._id
         });
 
         if (!existingReview) {
@@ -1050,14 +1051,14 @@ const updateProfileAfterOtp = async (req, res) => {
 
 const getAddresses = async (req, res) => {
   try {
-    const user = req.user;
+    const user = await User.findById(req.user._id).lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     const sortedAddresses = (user.addresses || []).sort((a, b) => {
-      return b.isDefault - a.isDefault;
+      return Number(b.isDefault) - Number(a.isDefault);
     });
 
     res.json(sortedAddresses);
@@ -1102,16 +1103,16 @@ const addAddress = async (req, res) => {
         .json({ message: "All required fields must be filled" });
     }
 
-    if (isDefault) {
-      user.addresses.forEach((a) => (a.isDefault = false));
-    }
-
     if (!/^\d{6}$/.test(pincode)) {
       return res.status(400).json({ message: "Invalid pincode" });
     }
 
     if (!/^\d{10}$/.test(finalPhone)) {
       return res.status(400).json({ message: "Invalid phone number" });
+    }
+
+    if (isDefault) {
+      user.addresses.forEach((a) => (a.isDefault = false));
     }
 
     const newAddress = {
@@ -1194,7 +1195,7 @@ const updateAddress = async (req, res) => {
     address.state = state;
     address.zipCode = pincode;
     address.country = "India";
-    address.phone = phone;
+    address.phone = phone || address.phone;
     address.isDefault = !!isDefault;
 
     await user.save();
@@ -1211,10 +1212,6 @@ const deleteAddress = async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
-    }
-
-    if (!Array.isArray(user.addresses)) {
-      user.addresses = [];
     }
 
     user.addresses = user.addresses.filter(

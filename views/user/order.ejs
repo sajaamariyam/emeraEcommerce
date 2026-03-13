@@ -108,9 +108,19 @@
                                                 </div>
                                             <% } %>
                                         </div>
-                                        <div class="text-right">
-                                            <p class="text-sm font-bold text-gray-900">₹<%= (item.price * item.quantity).toLocaleString('en-IN') %></p>
-                                        </div>
+                                        <div class="text-right space-y-2">
+                                        <p class="text-sm font-bold text-gray-900">
+                                            ₹<%= (item.price * item.quantity).toLocaleString('en-IN') %>
+                                        </p>
+
+                                        <% if (status === 'delivered' && item.productId) { %>
+                                            <button
+                                            onclick="openReviewModal('<%= item.productId._id %>', '<%= order.orderId %>')"
+                                            class="inline-block px-4 py-2 border border-emera-950 text-emera-950 text-[8px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all">
+                                            Write Review
+                                            </button>
+                                        <% } %>
+                                    </div>
                                     </div>
                                 <% }) %>
                                 
@@ -135,7 +145,7 @@
                                     Download Invoice
                                 </button>
                                 
-                                <!-- ✅ Lowercase status checks -->
+                                
                                 <% if (status === 'pending' || status === 'processing') { %>
                                     <button onclick="openCancelModal('<%= order.orderId %>', 'order')"
                                             class="px-8 py-3 border-2 border-red-600 text-red-600 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-red-600 hover:text-white transition-all">
@@ -149,15 +159,6 @@
                                     class="px-8 py-3 border-2 border-orange-600 text-orange-600 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-orange-600 hover:text-white transition-all">
                                     Return Order
                                 </button>
-
-                                <% order.orderedItems.forEach(item => { %>
-                                    <% if (item.productId) { %>
-                                        <a href="/products/<%= item.productId._id %>#reviews"
-                                        class="px-8 py-3 border-2 border-emera-950 text-emera-950 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all">
-                                            Write Review
-                                        </a>
-                                    <% } %>
-                                <% }) %>
 
                             <% } %>
                             </div>
@@ -289,11 +290,63 @@
         </div>
     </div>
 
+    <!-- Review Modal -->
+<div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white max-w-xl w-full p-8 animate-modal">
+
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-serif text-gray-900">Write Review</h2>
+      <button onclick="closeReviewModal()" class="text-2xl">×</button>
+    </div>
+
+    <form id="reviewForm" class="space-y-6">
+
+      <input type="hidden" id="reviewProductId">
+      <input type="hidden" id="reviewOrderId">
+
+      <!-- Rating -->
+      <div>
+        <label class="block text-sm font-semibold mb-2">Rating</label>
+        <div class="flex gap-2">
+          <span class="star cursor-pointer text-3xl" onclick="setRating(1)">★</span>
+          <span class="star cursor-pointer text-3xl" onclick="setRating(2)">★</span>
+          <span class="star cursor-pointer text-3xl" onclick="setRating(3)">★</span>
+          <span class="star cursor-pointer text-3xl" onclick="setRating(4)">★</span>
+          <span class="star cursor-pointer text-3xl" onclick="setRating(5)">★</span>
+        </div>
+        <input type="hidden" id="reviewRating">
+      </div>
+
+      <div>
+        <input
+        id="reviewTitle"
+        placeholder="Review title"
+        class="w-full border px-4 py-3">
+      </div>
+
+      <div>
+        <textarea
+        id="reviewComment"
+        rows="4"
+        placeholder="Write your review..."
+        class="w-full border px-4 py-3"></textarea>
+      </div>
+
+      <button
+      type="submit"
+      class="w-full bg-emera-950 text-white py-3 uppercase text-xs tracking-widest">
+      Submit Review
+      </button>
+
+    </form>
+  </div>
+</div>
+
     <script>
         let currentOrderId = '';
         let cancelType = 'order';
         let currentProductId = '';
-        let currentProductColor = '';  // ✅ track color for cancel-product
+        let currentProductColor = '';  
 
         // ── Search / filter ───────────────────────────────────────────────
         const searchInput = document.getElementById('searchOrders');
@@ -304,11 +357,11 @@
         
         function filterOrders() {
             const searchTerm = searchInput.value.toLowerCase();
-            const selectedStatus = statusFilter.value.toLowerCase(); // ✅ lowercase comparison
+            const selectedStatus = statusFilter.value.toLowerCase(); 
 
             document.querySelectorAll('.order-card').forEach(card => {
                 const orderId = card.dataset.orderId.toLowerCase();
-                const status = card.dataset.status.toLowerCase(); // ✅ already lowercase from EJS
+                const status = card.dataset.status.toLowerCase(); 
                 const productNames = Array.from(card.querySelectorAll('.order-item h4'))
                     .map(h => h.textContent.toLowerCase())
                     .join(' ');
@@ -346,7 +399,7 @@
             currentOrderId = orderId;
             cancelType = type;
             currentProductId = productId;
-            currentProductColor = color;   // ✅ store color
+            currentProductColor = color;   
             document.getElementById('cancelModal').classList.remove('hidden');
             document.getElementById('cancelModal').classList.add('flex');
         }
@@ -361,7 +414,7 @@
                 ? `/orders/${currentOrderId}/cancel-product`
                 : `/orders/${currentOrderId}/cancel`;
             
-            // ✅ sends color along with productId (controller reads both)
+            
             const body = cancelType === 'product'
                 ? { reason, productId: currentProductId, color: currentProductColor }
                 : { reason };
@@ -430,6 +483,57 @@
                 }
             });
         });
+
+    
+    let reviewRating = 0;
+
+function openReviewModal(productId, orderId){
+  document.getElementById("reviewProductId").value = productId;
+  document.getElementById("reviewOrderId").value = orderId;
+
+  document.getElementById("reviewModal").classList.remove("hidden");
+  document.getElementById("reviewModal").classList.add("flex");
+}
+
+function closeReviewModal(){
+  document.getElementById("reviewModal").classList.add("hidden");
+}
+
+function setRating(r){
+  reviewRating = r;
+  document.getElementById("reviewRating").value = r;
+
+  document.querySelectorAll(".star").forEach((s,i)=>{
+    s.style.color = i < r ? "#fbbf24" : "#ccc";
+  });
+}
+
+document.getElementById("reviewForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+
+  const data = {
+    productId: document.getElementById("reviewProductId").value,
+    orderId: document.getElementById("reviewOrderId").value,
+    rating: reviewRating,
+    title: document.getElementById("reviewTitle").value,
+    comment: document.getElementById("reviewComment").value
+  };
+
+  const res = await fetch("/reviews/submit",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(data)
+  });
+
+  const result = await res.json();
+
+  if(result.success){
+    location.reload();
+  }else{
+    alert(result.message);
+  }
+});
+
     </script>
 
     <style>
