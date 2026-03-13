@@ -200,7 +200,7 @@ const walletPayment = async (req, res) => {
     await Cart.deleteOne({ userId: order.userId });
 
     order.status = "pending";
-    order.paymentMethod = "ONLINE";
+    order.paymentMethod = "WALLET";
     order.paymentStatus = "paid";
     order.paidAt = new Date();
 

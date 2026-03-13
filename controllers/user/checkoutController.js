@@ -3,7 +3,7 @@ const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
 const User = require("../../models/userSchema");
 const Coupon = require("../../models/couponSchema");
-const Offer = require("../../models/offerSchema");
+const getBestOffer = require("../../helpers/offerHelper");
 
 const loadCheckout = async (req, res) => {
   try {
@@ -28,14 +28,16 @@ const loadCheckout = async (req, res) => {
         continue;
       }
 
-      const itemTotal = item.productId.salePrice * item.quantity;
+      const offer = await getBestOffer(item.productId);
+
+      const itemTotal = offer.finalPrice * item.quantity;
       subtotal += itemTotal;
 
       cartItems.push({
         product: item.productId,
         color: item.color,
         quantity: item.quantity,
-        price: item.price,
+        price: offer.finalPrice,
       });
     }
 
@@ -99,9 +101,13 @@ const applyCoupon = async (req, res) => {
     }
 
     let subtotal = 0;
+
     for (const item of cart.items) {
       if (!item.productId || item.productId.isBlocked) continue;
-      subtotal += item.productId.salePrice * item.quantity;
+
+      const offer = await getBestOffer(item.productId);
+
+      subtotal += offer.finalPrice * item.quantity;
     }
 
     const tax = Math.round(subtotal * 0.18);
@@ -127,6 +133,36 @@ const applyCoupon = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to apply coupon" });
   }
 };
+
+const removeCoupon = async (req,res)=>{
+  try{
+
+    const userId = req.session.user;
+
+    const cart = await Cart.findOne({userId}).populate("items.productId");
+
+    let subtotal = 0;
+
+    for(const item of cart.items){
+
+      const offer = await getBestOffer(item.productId);
+      subtotal += offer.finalPrice * item.quantity;
+
+    }
+
+    const tax = Math.round(subtotal * 0.18);
+    const total = subtotal + tax;
+
+    res.json({
+      success:true,
+      discountAmount:0,
+      newTotal:total
+    });
+
+  }catch(error){
+    res.status(500).json({success:false})
+  }
+}
 
 const placeOrder = async (req, res) => {
   try {
@@ -158,33 +194,9 @@ const placeOrder = async (req, res) => {
       if (!variant || variant.quantity < item.quantity)
         return res.status(400).json({ message: "Out of stock" });
 
-      const productOffer = await Offer.findOne({
-        offerType: "product",
-        productId: product._id,
-        isActive: true,
-      });
+      const offer = await getBestOffer(product);
 
-      const categoryOffer = await Offer.findOne({
-        offerType: "category",
-        categoryId: product.category,
-        isActive: true,
-      });
-
-      let discount = 0;
-
-      if (productOffer && categoryOffer) {
-        discount = Math.max(
-          productOffer.discountPercentage,
-          categoryOffer.discountPercentage,
-        );
-      } else if (productOffer) {
-        discount = productOffer.discountPercentage;
-      } else if (categoryOffer) {
-        discount = categoryOffer.discountPercentage;
-      }
-
-      const latestPrice =
-        product.salePrice - (product.salePrice * discount) / 100;
+      const latestPrice = offer.finalPrice;
 
       totalPrice += latestPrice * item.quantity;
 
@@ -299,5 +311,6 @@ const placeOrder = async (req, res) => {
 module.exports = {
   loadCheckout,
   applyCoupon,
+  removeCoupon,
   placeOrder,
 };

@@ -2,11 +2,10 @@ const User = require("../../models/userSchema");
 const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 const Order = require("../../models/orderSchema");
-const Offer = require("../../models/offerSchema");
 const Coupon = require("../../models/couponSchema");
 const Review = require("../../models/reviewSchema");
+const getBestOffer = require("../../helpers/offerHelper");
 const crypto = require("crypto");
-const env = require("dotenv").config();
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
 
@@ -646,49 +645,19 @@ const loadProducts = async (req, res) => {
       .populate("category")
       .sort(sortOption);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     const updatedProducts = [];
 
     for (let product of products) {
-      const productOffer = await Offer.findOne({
-        offerType: "product",
-        productId: product._id,
-        isActive: true,
-        startDate: { $lte: today },
-        endDate: { $gte: today },
-      });
+      const offer = await getBestOffer(product);
 
-      const categoryOffer = await Offer.findOne({
-        offerType: "category",
-        categoryId: product.category._id,
-        isActive: true,
-        startDate: { $lte: today },
-        endDate: { $gte: today },
-      });
-
-      let discount = 0;
-
-      if (productOffer && categoryOffer) {
-        discount = Math.max(
-          productOffer.discountPercentage,
-          categoryOffer.discountPercentage,
-        );
-      } else if (productOffer) {
-        discount = productOffer.discountPercentage;
-      } else if (categoryOffer) {
-        discount = categoryOffer.discountPercentage;
-      }
-
-      const finalPrice =
-        product.salePrice - (product.salePrice * discount) / 100;
+      const finalPrice = offer.finalPrice;
+      const discount = offer.discount;
 
       if (finalPrice <= maxPrice) {
         updatedProducts.push({
           ...product._doc,
-          discount,
           finalPrice,
+          discount,
         });
       }
     }
@@ -728,39 +697,10 @@ const loadProductDetails = async (req, res) => {
       return res.redirect("/products");
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const offer = await getBestOffer(product);
 
-    const productOffer = await Offer.findOne({
-      offerType: "product",
-      productId: product._id,
-      isActive: true,
-      startDate: { $lte: today },
-      endDate: { $gte: today },
-    });
-
-    const categoryOffer = await Offer.findOne({
-      offerType: "category",
-      categoryId: product.category._id,
-      isActive: true,
-      startDate: { $lte: today },
-      endDate: { $gte: today },
-    });
-
-    let discount = 0;
-
-    if (productOffer && categoryOffer) {
-      discount = Math.max(
-        productOffer.discountPercentage,
-        categoryOffer.discountPercentage,
-      );
-    } else if (productOffer) {
-      discount = productOffer.discountPercentage;
-    } else if (categoryOffer) {
-      discount = categoryOffer.discountPercentage;
-    }
-
-    const finalPrice = product.salePrice - (product.salePrice * discount) / 100;
+    const discount = offer.discount;
+    const finalPrice = offer.finalPrice;
 
     const relatedProducts = await Product.find({
       category: product.category._id,
@@ -811,8 +751,8 @@ const loadProductDetails = async (req, res) => {
         userId: userData._id,
         status: "delivered",
         orderedItems: {
-          $elemMatch: {productId: product._id}
-        }
+          $elemMatch: { productId: product._id },
+        },
       });
 
       if (deliveredOrder) {
@@ -821,7 +761,7 @@ const loadProductDetails = async (req, res) => {
         const existingReview = await Review.findOne({
           productId: product._id,
           userId: userData._id,
-          orderId: deliveredOrder._id
+          orderId: deliveredOrder._id,
         });
 
         if (!existingReview) {

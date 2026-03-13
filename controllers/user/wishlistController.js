@@ -114,6 +114,13 @@ const addAllToCart = async (req, res) => {
   try {
     const userId = req.session.user;
 
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Login required",
+      });
+    }
+
     let cart = await Cart.findOne({ userId });
 
     if (!cart) {
@@ -121,12 +128,6 @@ const addAllToCart = async (req, res) => {
         userId,
         items: [],
       });
-    }
-
-    if (!userId) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Login required" });
     }
 
     const user = await User.findById(userId).populate("wishlist");
@@ -141,8 +142,9 @@ const addAllToCart = async (req, res) => {
 
       if (totalStock > 0) {
         const exists = cart.items.find(
-          (item) => item.productId.toString() === product._id.toString() &&
-          item.color === (product.variants[0]?.color || "Default")
+          (item) =>
+            item.productId.toString() === product._id.toString() &&
+            item.color === (product.variants[0]?.color || "Default"),
         );
 
         if (!exists) {
@@ -152,12 +154,18 @@ const addAllToCart = async (req, res) => {
             quantity: 1,
             price: product.salePrice,
           });
+
           addedCount++;
+
+          user.wishlist = user.wishlist.filter(
+            (id) => id.toString() !== product._id.toString(),
+          );
         }
       }
     }
 
     await cart.save();
+    await user.save();
 
     return res.json({
       success: true,
@@ -176,4 +184,3 @@ module.exports = {
   removeFromWishlist,
   addAllToCart,
 };
-

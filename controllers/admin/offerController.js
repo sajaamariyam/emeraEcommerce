@@ -48,6 +48,12 @@ const createOffer = async (req, res) => {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
+    if (start >= end) {
+      return res.status(400).json({
+        message: "End date must be after start date",
+      });
+    }
+
     const newOffer = new Offer({
       offerType,
       productId: offerType === "product" ? productId : null,
@@ -57,6 +63,19 @@ const createOffer = async (req, res) => {
       endDate: end,
       isActive: true,
     });
+
+    const existingOffer = await Offer.findOne({
+      offerType,
+      productId: offerType === "product" ? productId : null,
+      categoryId: offerType === "category" ? categoryId : null,
+      isActive: true,
+    });
+
+    if (existingOffer) {
+      return res.status(400).json({
+        message: "Offer already exists for this product/category",
+      });
+    }
 
     await newOffer.save();
 
@@ -71,7 +90,7 @@ const toggleOfferStatus = async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id);
 
-    if(!offer){
+    if (!offer) {
       return res.redirect("/admin/offers");
     }
 
