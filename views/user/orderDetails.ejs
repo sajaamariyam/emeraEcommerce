@@ -215,6 +215,13 @@
                             <p class="text-xs uppercase tracking-wider text-gray-400 mt-1">
                                 Qty: <%= item.quantity %>
                             </p>
+
+                            <% if (lowerStatus === 'delivered' && item.productId) { %>
+                            <a href="/products/<%= item.productId._id %>?review=true&orderId=<%= order._id %>"
+                            class="mt-3 inline-block text-xs uppercase tracking-wider text-emera-700 hover:text-emera-900 font-bold">
+                            Write Review
+                            </a>
+                            <% } %>
                             
                             <% if (item.color) { %>
                                 <p class="text-xs uppercase tracking-wider text-gray-400 mt-1">
