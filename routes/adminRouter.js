@@ -83,12 +83,12 @@ router.post(
   upload.none(),
   orderController.updateOrderStatus,
 );
-router.patch(
+router.post(
   "/orders/:id/approve-return",
   adminAuth,
   orderController.approveReturn,
 );
-router.patch(
+router.post(
   "/orders/:id/reject-return",
   adminAuth,
   orderController.rejectReturn,

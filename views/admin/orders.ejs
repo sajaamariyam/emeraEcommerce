@@ -2,7 +2,7 @@
 
 <div class="ml-52 h-screen overflow-y-auto bg-gray-50">
 
-  <!-- Top bar -->
+  <%# Top bar %>
   <div class="bg-white border-b sticky top-0 z-10">
     <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
       <h1 class="text-xl font-semibold text-teal-700">Order Management</h1>
@@ -21,7 +21,7 @@
       <p class="text-gray-600 mt-1">Track shipments, update statuses, and manage order details.</p>
     </div>
 
-    <!-- Stats Cards -->
+    <%# Stats Cards %>
     <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
       <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
         <p class="text-xs text-gray-500 uppercase font-bold mb-1">Total Orders</p>
@@ -60,7 +60,7 @@
       </div>
     </div>
 
-    <!-- Filters and Search -->
+    <%# Filters and Search %>
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
       <form id="filterForm" method="GET" action="/admin/orders" class="space-y-4">
         <div class="flex gap-2 w-full">
@@ -106,7 +106,7 @@
       </form>
     </div>
 
-    <!-- Orders Table -->
+    <%# Orders Table %>
     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
       <% if (orders.length === 0) { %>
         <div class="text-center py-16">
@@ -133,12 +133,16 @@
             <tbody class="divide-y divide-gray-200">
               <% orders.forEach(order => { %>
                 <tr class="hover:bg-gray-50 transition-colors">
+
+                  <%# Order ID %>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex flex-col">
                       <span class="text-sm font-bold text-gray-900">#<%= order.orderId %></span>
                       <span class="text-xs text-gray-400"><%= order.orderedItems ? order.orderedItems.length : 0 %> item(s)</span>
                     </div>
                   </td>
+
+                  <%# Customer %>
                   <td class="px-6 py-4">
                     <div class="flex items-center">
                       <div class="flex-shrink-0 h-10 w-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 font-semibold">
@@ -150,90 +154,124 @@
                       </div>
                     </div>
                   </td>
+
+                  <%# Date %>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">
                       <%= new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
                     </div>
                   </td>
+
+                  <%# Amount %>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class="text-sm font-bold text-gray-900">₹<%= order.finalAmount.toLocaleString() %></span>
                   </td>
+
+                  <%# Payment %>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex flex-col">
                       <span class="text-sm text-gray-900"><%= order.paymentMethod %></span>
-                      <% 
+                      <%
                         let paymentStatusClass = '';
                         switch(order.paymentStatus) {
-                          case 'Paid': paymentStatusClass = 'text-green-600'; break;
-                          case 'Pending': paymentStatusClass = 'text-yellow-600'; break;
-                          case 'Refunded': paymentStatusClass = 'text-blue-600'; break;
+                          case 'paid': paymentStatusClass = 'text-green-600'; break;
+                          case 'pending': paymentStatusClass = 'text-yellow-600'; break;
+                          case 'refunded': paymentStatusClass = 'text-blue-600'; break;
                           default: paymentStatusClass = 'text-gray-600';
                         }
                       %>
                       <span class="text-xs font-medium <%= paymentStatusClass %>"><%= order.paymentStatus || 'Pending' %></span>
                     </div>
                   </td>
+
+                  <%# Status Badge %>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <% 
+                    <%
                       let statusClass = '';
                       let statusText = order.status;
                       switch(order.status) {
-                        case 'pending': statusClass = 'bg-yellow-50 text-yellow-700 border border-yellow-100'; statusText = 'Pending'; break;
-                        case 'processing': statusClass = 'bg-indigo-50 text-indigo-700 border border-indigo-100'; statusText = 'Processing'; break;
-                        case 'shipped': statusClass = 'bg-blue-50 text-blue-700 border border-blue-100'; statusText = 'Shipped'; break;
-                        case 'out-for-delivery': statusClass = 'bg-purple-50 text-purple-700 border border-purple-100'; statusText = 'Out for Delivery'; break;
-                        case 'delivered': statusClass = 'bg-green-50 text-green-700 border border-green-100'; statusText = 'Delivered'; break;
-                        case 'cancelled': statusClass = 'bg-red-50 text-red-700 border border-red-100'; statusText = 'Cancelled'; break;
-                        case 'return-requested': statusClass = 'bg-orange-50 text-orange-700 border border-orange-100'; statusText = 'Return Requested'; break;
-                        case 'returned': statusClass = 'bg-gray-50 text-gray-700 border border-gray-100'; statusText = 'Returned'; break;
-                        default: statusClass = 'bg-gray-50 text-gray-700 border border-gray-100';
+                        case 'pending':          statusClass = 'bg-yellow-50 text-yellow-700 border border-yellow-100';  statusText = 'Pending';           break;
+                        case 'processing':       statusClass = 'bg-indigo-50 text-indigo-700 border border-indigo-100';  statusText = 'Processing';        break;
+                        case 'shipped':          statusClass = 'bg-blue-50 text-blue-700 border border-blue-100';        statusText = 'Shipped';           break;
+                        case 'out-for-delivery': statusClass = 'bg-purple-50 text-purple-700 border border-purple-100'; statusText = 'Out for Delivery';  break;
+                        case 'delivered':        statusClass = 'bg-green-50 text-green-700 border border-green-100';    statusText = 'Delivered';         break;
+                        case 'cancelled':        statusClass = 'bg-red-50 text-red-700 border border-red-100';          statusText = 'Cancelled';         break;
+                        case 'return-requested': statusClass = 'bg-orange-50 text-orange-700 border border-orange-100'; statusText = 'Return Requested';  break;
+                        case 'returned':         statusClass = 'bg-gray-50 text-gray-700 border border-gray-100';       statusText = 'Returned';          break;
+                        default:                 statusClass = 'bg-gray-50 text-gray-700 border border-gray-100';
                       }
                     %>
                     <span class="px-3 py-1 <%= statusClass %> text-[10px] font-bold uppercase rounded-full">
                       <%= statusText %>
                     </span>
                   </td>
+
+                  <%# Actions %>
                   <td class="px-6 py-4 whitespace-nowrap text-right">
                     <div class="flex justify-end gap-3">
-                      <button 
+
+                      <%# View button — always visible %>
+                      <button
                         onclick="viewOrderDetails('<%= order._id %>')"
                         class="text-teal-600 hover:text-teal-800 text-sm font-bold"
                       >
                         View
                       </button>
-                      <% if (order.status !== 'delivered' && order.status !== 'cancelled' && order.status !== 'returned') { %>
-                        <button 
+
+                      <%# Return-requested: show Approve / Reject buttons %>
+                      <% if (order.status === 'return-requested') { %>
+                        <button
+                          onclick="handleReturn('<%= order._id %>', 'approve')"
+                          class="text-green-600 hover:text-green-800 text-sm font-bold"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onclick="handleReturn('<%= order._id %>', 'reject')"
+                          class="text-red-500 hover:text-red-700 text-sm font-bold"
+                        >
+                          Reject
+                        </button>
+
+                      <%# Normal flow: show Update button (hide for terminal statuses) %>
+                      <% } else if (order.status !== 'delivered' && order.status !== 'cancelled' && order.status !== 'returned') { %>
+                        <button
                           onclick="openUpdateModal('<%= order._id %>', '<%= order.status %>')"
                           class="text-gray-500 hover:text-gray-700 text-sm font-bold"
                         >
                           Update
                         </button>
                       <% } %>
+
                     </div>
                   </td>
+
                 </tr>
               <% }) %>
             </tbody>
           </table>
         </div>
 
-        <!-- Pagination -->
+        <%# Pagination %>
         <% if (totalPages > 1) { %>
           <div class="px-6 py-6 bg-gray-50 border-t border-gray-200 flex justify-center gap-2">
             <% for(let i = 1; i <= totalPages; i++) { %>
-              <a href="?page=<%= i %>&search=<%= search || '' %>&status=<%= status || 'all' %>&sortBy=<%= sortBy || 'date-desc' %>" 
-                 class="w-10 h-10 flex items-center justify-center text-sm font-bold border rounded transition-all <%= currentPage === i ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-400 hover:bg-gray-100' %>">
+              <a
+                href="?page=<%= i %>&search=<%= search || '' %>&status=<%= status || 'all' %>&sortBy=<%= sortBy || 'date-desc' %>"
+                class="w-10 h-10 flex items-center justify-center text-sm font-bold border rounded transition-all <%= currentPage === i ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-400 hover:bg-gray-100' %>"
+              >
                 <%= i %>
               </a>
             <% } %>
           </div>
         <% } %>
+
       <% } %>
     </div>
   </div>
 </div>
 
-<!-- Order Details Modal -->
+<%# ── Order Details Modal ─────────────────────────────────────────────────── %>
 <div id="orderDetailsModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
   <div class="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl">
     <div class="flex justify-between items-center px-6 py-4 border-b sticky top-0 bg-white z-10">
@@ -251,7 +289,7 @@
   </div>
 </div>
 
-<!-- Update Status Modal -->
+<%# ── Update Status Modal ────────────────────────────────────────────────── %>
 <div id="updateStatusModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
   <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8">
     <div class="mb-6">
@@ -269,13 +307,19 @@
         <option value="delivered">Delivered</option>
         <option value="cancelled">Cancelled</option>
         <option value="return-requested">Return Requested</option>
-        <option value="returned">Returned</option>
+        <%# "returned" is intentionally excluded — handled via Approve button only %>
       </select>
       <div class="flex gap-3 mt-6">
-        <button onclick="updateOrderStatus()" class="flex-1 bg-teal-700 text-white px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition">
+        <button
+          onclick="updateOrderStatus()"
+          class="flex-1 bg-teal-700 text-white px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition"
+        >
           Update Status
         </button>
-        <button onclick="closeUpdateModal()" class="flex-1 border border-gray-300 px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-50 transition">
+        <button
+          onclick="closeUpdateModal()"
+          class="flex-1 border border-gray-300 px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-50 transition"
+        >
           Cancel
         </button>
       </div>
@@ -283,7 +327,7 @@
   </div>
 </div>
 
-<!-- Notification Modal -->
+<%# ── Notification Modal ─────────────────────────────────────────────────── %>
 <div id="notificationModal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
   <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8">
     <div class="text-center mb-6">
@@ -293,42 +337,45 @@
       <h3 id="notificationTitle" class="text-xl font-bold text-gray-900 mb-2"></h3>
       <p id="notificationMessage" class="text-sm text-gray-600"></p>
     </div>
-    <button onclick="closeNotificationModal()" class="w-full bg-teal-700 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition">
+    <button
+      onclick="closeNotificationModal()"
+      class="w-full bg-teal-700 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition"
+    >
       OK
     </button>
   </div>
 </div>
 
 <script>
-// ─── Notification Modal ───────────────────────────────────────────────────────
-function showNotificationModal(title, message, isSuccess = true) {
-  const modal        = document.getElementById("notificationModal");
-  const icon         = document.getElementById("notificationIcon");
-  const iconElement  = document.getElementById("notificationIconElement");
 
-  document.getElementById("notificationTitle").textContent   = title;
-  document.getElementById("notificationMessage").textContent = message;
+// ── Notification Modal ────────────────────────────────────────────────────────
+function showNotificationModal(title, message, isSuccess = true) {
+  const modal       = document.getElementById('notificationModal');
+  const icon        = document.getElementById('notificationIcon');
+  const iconElement = document.getElementById('notificationIconElement');
+
+  document.getElementById('notificationTitle').textContent   = title;
+  document.getElementById('notificationMessage').textContent = message;
 
   if (isSuccess) {
-    icon.className        = "w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4";
-    iconElement.className = "fas fa-check-circle text-green-600 text-2xl";
+    icon.className        = 'w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4';
+    iconElement.className = 'fas fa-check-circle text-green-600 text-2xl';
   } else {
-    icon.className        = "w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4";
-    iconElement.className = "fas fa-times-circle text-red-600 text-2xl";
+    icon.className        = 'w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4';
+    iconElement.className = 'fas fa-times-circle text-red-600 text-2xl';
   }
 
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
 }
 
 function closeNotificationModal() {
-  const modal = document.getElementById("notificationModal");
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
+  const modal = document.getElementById('notificationModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function formatStatus(status) {
   const map = {
     'pending'          : 'Pending',
@@ -343,35 +390,22 @@ function formatStatus(status) {
   return map[status] || status;
 }
 
-/**
- * Safely build a shipping-address HTML block from the address object.
- *
- * Handles three possible shapes coming back from the API:
- *   1. null / undefined  → "Address not available"
- *   2. A plain string (unpopulated ObjectId) → "Address not available"
- *   3. A populated object with fields like name / address / city / state /
- *      pincode / landMark / altPhone / phone
- */
 function renderAddress(addr) {
-  // Case 1 & 2: nothing usable
   if (!addr || typeof addr === 'string') {
-    return '<p class="text-gray-500 italic">Address not available. Make sure .populate("address") is called in the controller.</p>';
+    return '<p class="text-gray-500 italic">Address not available.</p>';
   }
 
-  // Case 3: populated object — collect lines that actually have content
   const lines = [];
+  if (addr.name)     lines.push(`<p class="font-semibold text-gray-900">${addr.name}</p>`);
+  if (addr.address)  lines.push(`<p>${addr.address}</p>`);
 
-  if (addr.name)      lines.push(`<p class="font-semibold text-gray-900">${addr.name}</p>`);
-  if (addr.address)   lines.push(`<p>${addr.address}</p>`);
-
-  // City, State, Pincode on one line
   const cityLine = [addr.city, addr.state].filter(Boolean).join(', ');
   const pinLine  = addr.pincode ? ` &ndash; ${addr.pincode}` : '';
   if (cityLine || pinLine) lines.push(`<p>${cityLine}${pinLine}</p>`);
 
-  if (addr.landMark)  lines.push(`<p><span class="font-medium">Landmark:</span> ${addr.landMark}</p>`);
-  if (addr.phone)     lines.push(`<p><span class="font-medium">Phone:</span> ${addr.phone}</p>`);
-  if (addr.altPhone)  lines.push(`<p><span class="font-medium">Alt Phone:</span> ${addr.altPhone}</p>`);
+  if (addr.landMark) lines.push(`<p><span class="font-medium">Landmark:</span> ${addr.landMark}</p>`);
+  if (addr.phone)    lines.push(`<p><span class="font-medium">Phone:</span> ${addr.phone}</p>`);
+  if (addr.altPhone) lines.push(`<p><span class="font-medium">Alt Phone:</span> ${addr.altPhone}</p>`);
 
   if (lines.length === 0) {
     return '<p class="text-gray-500 italic">Address details not available</p>';
@@ -380,11 +414,11 @@ function renderAddress(addr) {
   return `<div class="space-y-1 text-sm text-gray-900">${lines.join('')}</div>`;
 }
 
-// ─── View Order Details ───────────────────────────────────────────────────────
+// ── View Order Details ────────────────────────────────────────────────────────
 async function viewOrderDetails(orderId) {
-  const modal         = document.getElementById('orderDetailsModal');
-  const content       = document.getElementById('orderDetailsContent');
-  const modalOrderId  = document.getElementById('modalOrderId');
+  const modal        = document.getElementById('orderDetailsModal');
+  const content      = document.getElementById('orderDetailsContent');
+  const modalOrderId = document.getElementById('modalOrderId');
 
   modal.classList.remove('hidden');
   modal.classList.add('flex');
@@ -396,21 +430,13 @@ async function viewOrderDetails(orderId) {
 
   try {
     const response = await fetch(`/admin/orders/${orderId}`);
-
     if (!response.ok) throw new Error('Failed to load order details');
 
     const order = await response.json();
-
-    // ── Debug (remove in production) ──────────────────────────────────────
-    console.log('Order data:', order);
-    console.log('Address field:', order.address);
-    // ──────────────────────────────────────────────────────────────────────
-
     modalOrderId.textContent = `#${order.orderId}`;
 
     // Build item rows
     const itemsHtml = (order.orderedItems || []).map(item => {
-      // Resolve product image
       let imageUrl = '/images/placeholder.jpg';
       const imgs   = item.productId?.productImage;
       if (Array.isArray(imgs) && imgs.length > 0) {
@@ -469,10 +495,7 @@ async function viewOrderDetails(orderId) {
          </div>`;
 
     content.innerHTML = `
-      <!-- Customer + Address -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-
-        <!-- Customer Info -->
         <div class="bg-teal-50 rounded-lg p-4 border border-teal-100">
           <h3 class="text-xs font-bold text-gray-700 mb-3 uppercase tracking-widest">Customer Information</h3>
           <div class="space-y-2 text-sm">
@@ -481,15 +504,12 @@ async function viewOrderDetails(orderId) {
             <p><span class="font-medium text-gray-700">Phone:</span> <span class="text-gray-900">${order.userId?.phone || 'N/A'}</span></p>
           </div>
         </div>
-
-        <!-- Shipping Address — uses renderAddress() for safe rendering -->
         <div class="bg-green-50 rounded-lg p-4 border border-green-100">
           <h3 class="text-xs font-bold text-gray-700 mb-3 uppercase tracking-widest">Shipping Address</h3>
           ${renderAddress(order.shippingAddress)}
         </div>
       </div>
 
-      <!-- Order Meta -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-gray-50 rounded-lg p-4 text-center border border-gray-200">
           <p class="text-xs text-gray-500 uppercase font-bold mb-1">Order Date</p>
@@ -509,13 +529,11 @@ async function viewOrderDetails(orderId) {
         </div>
       </div>
 
-      <!-- Items -->
       <div class="mb-6">
         <h3 class="text-xs font-bold text-gray-700 mb-4 uppercase tracking-widest">Order Items</h3>
         <div class="space-y-3">${itemsHtml}</div>
       </div>
 
-      <!-- Summary -->
       <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
         <h3 class="text-xs font-bold text-gray-700 mb-4 uppercase tracking-widest">Order Summary</h3>
         <div class="space-y-2">
@@ -553,7 +571,7 @@ function closeOrderDetailsModal() {
   modal.classList.remove('flex');
 }
 
-// ─── Update Status Modal ──────────────────────────────────────────────────────
+// ── Update Status Modal ───────────────────────────────────────────────────────
 function openUpdateModal(orderId, currentStatus) {
   document.getElementById('updateOrderId').value = orderId;
   document.getElementById('newStatus').value     = currentStatus;
@@ -594,7 +612,38 @@ async function updateOrderStatus() {
   }
 }
 
-// ─── Keyboard shortcut ───────────────────────────────────────────────────────
+// ── Handle Return (Approve / Reject) ─────────────────────────────────────────
+async function handleReturn(orderId, action) {
+  const isApprove = action === 'approve';
+  const endpoint  = isApprove
+    ? `/admin/orders/${orderId}/approve-return`
+    : `/admin/orders/${orderId}/reject-return`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method  : 'POST',
+      headers : { 'Content-Type': 'application/json' }
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      showNotificationModal(
+        'Success!',
+        isApprove ? 'Return approved and refund processed' : 'Return request rejected',
+        true
+      );
+      setTimeout(() => { closeNotificationModal(); location.reload(); }, 1500);
+    } else {
+      showNotificationModal('Error', data.message || 'Action failed', false);
+    }
+  } catch (error) {
+    console.error('Return action error:', error);
+    showNotificationModal('Error', 'An error occurred. Please try again.', false);
+  }
+}
+
+// ── Keyboard shortcut ─────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeOrderDetailsModal();

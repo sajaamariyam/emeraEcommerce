@@ -27,10 +27,16 @@ router.get("/otp", userController.loadOtp);
 router.post("/verify-otp", userController.verifyOtp);
 router.post("/resend-otp", userController.resendOtp);
 
-router.get(
-  "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] }),
-);
+router.get("/auth/google", (req, res, next) => {
+  req.session.save((err) => {
+    if (err) return next(err);
+    passport.authenticate("google", { scope: ["profile", "email"] })(
+      req,
+      res,
+      next,
+    );
+  });
+});
 
 router.get(
   "/auth/google/callback",
@@ -41,7 +47,14 @@ router.get(
     req.session.user = req.user._id;
     const redirectTo = req.session.redirectTo || "/";
     delete req.session.redirectTo;
-    res.redirect(redirectTo);
+
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error after Google auth:", err);
+        return res.redirect("/");
+      }
+      res.redirect(redirectTo);
+    });
   },
 );
 
@@ -112,14 +125,26 @@ router.post(
 );
 
 //CART ROUTES
-router.get("/cart", requireLogin, noCache, cartController.loadCart);
-router.post("/cart/add", requireLogin, cartController.addToCart);
+router.get(
+  "/cart",
+  saveRedirect,
+  requireLogin,
+  noCache,
+  cartController.loadCart,
+);
+router.post("/cart/add", saveRedirect, requireLogin, cartController.addToCart);
 router.put("/cart/increment/:productId", userAuth, cartController.incrementQty);
 router.put("/cart/decrement/:productId", userAuth, cartController.decrementQty);
 router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
 
 //CHECKOUT ROUTES
-router.get("/checkout", requireLogin, noCache, checkoutController.loadCheckout);
+router.get(
+  "/checkout",
+  saveRedirect,
+  requireLogin,
+  noCache,
+  checkoutController.loadCheckout,
+);
 router.post("/checkout/apply-coupon", userAuth, checkoutController.applyCoupon);
 router.post("/checkout", userAuth, checkoutController.placeOrder);
 
@@ -147,9 +172,15 @@ router.get(
 );
 
 //WISHLIST
-router.get("/wishlist", requireLogin, wishlistController.getWishlist);
+router.get(
+  "/wishlist",
+  saveRedirect,
+  requireLogin,
+  wishlistController.getWishlist,
+);
 router.post(
   "/wishlist/add/:productId",
+  saveRedirect,
   requireLogin,
   wishlistController.addToWishlist,
 );

@@ -4,8 +4,9 @@ const userAuth = async (req, res, next) => {
   try {
     if (!req.session.user) {
       req.session.redirectTo = req.originalUrl;
-      req.session.message = "Please login to continue";
-      return res.redirect("/login");
+      return req.session.save(() => {
+        res.redirect("/login");
+      });
     }
 
     const user = await User.findById(req.session.user);
@@ -30,7 +31,6 @@ const saveRedirect = (req, res, next) => {
   if (
     !req.session.user &&
     req.method === "GET" &&
-    !req.session.redirectTo &&
     !req.originalUrl.startsWith("/login") &&
     !req.originalUrl.startsWith("/signup") &&
     !req.originalUrl.startsWith("/auth")
@@ -45,8 +45,9 @@ const saveRedirect = (req, res, next) => {
 const requireLogin = (req, res, next) => {
   if (!req.session.user) {
     req.session.redirectTo = req.originalUrl;
-    console.log("saved redirect:", req.session.redirectTo);
-    return res.redirect("/login");
+    return req.session.save(() => {
+       res.redirect("/login");
+    });
   }
   next();
 };

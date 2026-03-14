@@ -251,10 +251,10 @@ const placeOrder = async (req, res) => {
       status: "pending",
       paymentStatus: "pending",
       shippingAddress: {
-        fullName: selectedAddress.fullName,
+        name: selectedAddress.fullName,
         phone: selectedAddress.phone || phone,
         email,
-        street: selectedAddress.street,
+        address: selectedAddress.street,
         city: selectedAddress.city,
         state: selectedAddress.state,
         pincode: selectedAddress.zipCode,
