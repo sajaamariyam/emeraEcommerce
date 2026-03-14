@@ -1,55 +1,121 @@
 # Emera E-Commerce Platform
 
-A full-featured e-commerce web application built using **Node.js, Express, MongoDB, and EJS**.
+A full-stack E-commerce web application built using Node.js, Express, MongoDB, and EJS.  
+The platform allows users to browse products, manage carts, place orders, and make online payments.
+
+---
+
+## Tech Stack
+
+Backend  
+- Node.js  
+- Express.js  
+
+Frontend  
+- EJS  
+- TailwindCSS  
+- JavaScript  
+
+Database  
+- MongoDB  
+- Mongoose  
+
+Authentication  
+- Express Session  
+- Bcrypt  
+
+Payment  
+- Razorpay
+
+---
 
 ## Features
 
-### User Features
-- User Authentication (Signup / Login / OTP Verification)
+### User
+- User registration with OTP verification
+- Secure login system
 - Product browsing and search
-- Wishlist management
-- Add to Cart
-- Checkout and Order Placement
-- Online Payment using Razorpay
+- Cart and wishlist
+- Checkout system
+- Coupon application
+- Razorpay payment integration
 - Wallet payment
-- Order cancellation and return
+- Order tracking
+- Cancel order or specific items
+- Return order after delivery
 - Product reviews
-- Referral system with coupons
 
-### Admin Features
+### Admin
+- Admin dashboard
 - Product management
 - Category management
-- Offer management (Product & Category offers)
+- Offer management
+- Coupon management
 - Order management
 - User management
-- Return and refund approval
+- Sales reports with PDF & Excel export
 
 ---
 
-# Tech Stack
+## Project Structure
 
-Backend
-- Node.js
-- Express.js
-
-Frontend
-- EJS
-- TailwindCSS
-
-Database
-- MongoDB
-- Mongoose
-
-Authentication
-- Express Session
-- Bcrypt
-
-Payment Gateway
-- Razorpay
-
-Other Tools
-- Nodemailer (OTP Email Verification)
+```
+controllers/
+models/
+routes/
+views/
+helpers/
+middlewares/
+config/
+public/
+```
 
 ---
 
-# Project Structure
+## Environment Variables
+
+Create a `.env` file:
+
+```
+MONGO_URI=your_mongodb_uri
+SESSION_SECRET=your_secret
+RAZORPAY_KEY_ID=your_key
+RAZORPAY_KEY_SECRET=your_secret
+NODEMAILER_EMAIL=your_email
+NODEMAILER_PASSWORD=your_password
+```
+
+---
+
+## Installation
+
+Clone the repository
+
+```
+git clone https://github.com/sajaamariyam/emeraEcommerce.git
+```
+
+Go to project folder
+
+```
+cd emeraEcommerce
+```
+
+Install dependencies
+
+```
+npm install
+```
+
+Start server
+
+```
+npm start
+```
+
+---
+
+## Author
+
+Saja Mariyam  
+Full Stack Developer
