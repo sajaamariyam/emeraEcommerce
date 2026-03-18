@@ -127,6 +127,17 @@ const unblockUser = async (req, res) => {
   }
 };
 
+const escapeRegex = (text) => {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+const extractFileData = (file) => {
+  return {
+    url: file.path,
+    public_id: file.filename,
+  };
+};
+
 const loadCategories = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -139,14 +150,11 @@ const loadCategories = async (req, res) => {
     let filter = {};
 
     if (search) {
-      filter.name = { $regex: search, $options: "i" };
+      filter.name = { $regex: escapeRegex(search), $options: "i" };
     }
 
-    if (status === "listed") {
-      filter.isListed = true;
-    } else if (status === "unlisted") {
-      filter.isListed = false;
-    }
+    if (status === "listed") filter.isListed = true;
+    if (status === "unlisted") filter.isListed = false;
 
     const totalCategories = await Category.countDocuments(filter);
 
@@ -178,34 +186,40 @@ const addCategory = async (req, res) => {
   try {
     let { name } = req.body;
 
-    if (!name || !req.file) {
-      return res.status(400).json({ message: "Name and image required" });
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Category name required" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Category image required" });
     }
 
     name = name.trim();
 
     const existingCategory = await Category.findOne({
-      name: {$regex: `^${name}$`, $options: "i"}
-    })
+      name: { $regex: `^${escapeRegex(name)}$`, $options: "i" },
+    });
 
-    if(existingCategory){
-      return res.status(406).json({message: "Category already exists"});
+    if (existingCategory) {
+      return res.status(409).json({ message: "Category already exists" });
     }
 
     const newCategory = new Category({
       name,
-      image: {
-        url: req.file.path,
-        public_id: req.file.public_id,
-      },
+      image: extractFileData(req.file),
     });
 
     await newCategory.save();
 
-    res.status(201).json({ message: "Category added successfully" });
+    res.status(201).json({
+      success: true,
+      message: "Category added successfully",
+    });
   } catch (error) {
     console.error("Add category error:", error);
-    res.status(500).json({ message: "Failed to add category" });
+    res.status(500).json({
+      message: error.message || "Failed to add category",
+    });
   }
 };
 
@@ -214,40 +228,49 @@ const editCategory = async (req, res) => {
     const { id } = req.params;
     let { name, isListed } = req.body;
 
+    if (!id) {
+      return res.status(400).json({ message: "Invalid category id" });
+    }
+
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Category name required" });
+    }
+
     name = name.trim();
 
     const existingCategory = await Category.findOne({
       _id: { $ne: id },
-      name: { $regex: `^${name}$`, $options: "i" }
+      name: { $regex: `^${escapeRegex(name)}$`, $options: "i" },
     });
 
     if (existingCategory) {
-      return res
-        .status(409)
-        .json({ message: "Category name already exists" });
+      return res.status(409).json({ message: "Category name already exists" });
     }
 
-    const updateData = {
-      name,
-      isListed: isListed === "true",
-    };
+    const category = await Category.findById(id);
+
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    category.name = name;
+    category.isListed = isListed === "true";
 
     if (req.file) {
-      updateData.image = {
-        url: req.file.path,
-        public_id: req.file.public_id,
-      };
+      category.image = extractFileData(req.file);
     }
 
-    await Category.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    await category.save();
 
-    res.status(200).json({ message: "Category updated" });
+    res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+    });
   } catch (error) {
     console.error("Edit category error:", error);
-    res.status(500).json({ message: "Failed to update category" });
+    res.status(500).json({
+      message: error.message || "Failed to update category",
+    });
   }
 };
 
@@ -256,20 +279,24 @@ const toggleCategoryStatus = async (req, res) => {
     const { id } = req.params;
 
     const category = await Category.findById(id);
+
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    await Category.findByIdAndUpdate(
-      id,
-      { $set: { isListed: !category.isListed } },
-      { runValidators: false },
-    );
+    category.isListed = !category.isListed;
 
-    res.status(200).json({ message: "Category status updated" });
+    await category.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Category status updated",
+    });
   } catch (error) {
     console.error("Toggle status error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      message: error.message || "Internal server error",
+    });
   }
 };
 
@@ -277,16 +304,25 @@ const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await Category.findByIdAndUpdate(
-      id,
-      { $set: { isListed: false } },
-      { runValidators: false },
-    );
+    const category = await Category.findById(id);
 
-    res.status(200).json({ message: "Category soft deleted" });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    category.isListed = false;
+
+    await category.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Category deleted successfully",
+    });
   } catch (error) {
-    console.error("Soft delete category error:", error);
-    res.status(500).json({ message: "Soft delete failed" });
+    console.error("Delete category error:", error);
+    res.status(500).json({
+      message: error.message || "Delete failed",
+    });
   }
 };
 

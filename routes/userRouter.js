@@ -15,6 +15,7 @@ const checkoutController = require("../controllers/user/checkoutController");
 const orderController = require("../controllers/user/orderController");
 const wishlistController = require("../controllers/user/wishlistController");
 const reviewController = require("../controllers/user/reviewController");
+const walletController = require("../controllers/user/walletController");
 
 //AUTHENTICATION ROUTES
 router.get("/login", noCache, userController.loadLogin);
@@ -208,5 +209,10 @@ router.post(
   userAuth,
   reviewController.markHelpful,
 );
+
+//WALLET
+router.get('/wallet', userAuth, walletController.getWallet);
+router.post('/wallet/add', userAuth, walletController.addMoneyInit);
+router.post('/wallet/verify', userAuth, walletController.verifyAndCreditWallet);
 
 module.exports = router;

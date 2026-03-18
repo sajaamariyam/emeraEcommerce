@@ -17,6 +17,9 @@ router.get("/adminLogin", adminController.loadLogin);
 router.post("/adminLogin", adminController.login);
 router.get("/logout", adminController.logout);
 
+router.use(adminAuth);
+router.use(noCache);
+
 //DASHBOARD ROUTES
 router.get("/adminDashboard", adminAuth, dashboardController.loadDashboard);
 

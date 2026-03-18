@@ -6,7 +6,7 @@ const categoryStorage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: "emera/categories",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "avif"],
   },
 });
 
@@ -16,7 +16,7 @@ const productStorage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: "emera/products",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "avif"],
   },
 });
 
@@ -26,7 +26,7 @@ const profileStorage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: "emera/profiles",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "avif"],
   },
 });
 

@@ -46,7 +46,7 @@ const requireLogin = (req, res, next) => {
   if (!req.session.user) {
     req.session.redirectTo = req.originalUrl;
     return req.session.save(() => {
-       res.redirect("/login");
+      res.redirect("/login");
     });
   }
   next();
@@ -68,8 +68,17 @@ const adminAuth = async (req, res, next) => {
     const admin = await User.findById(req.session.admin);
 
     if (!admin || !admin.isAdmin) {
-      req.session.destroy();
-      return res.redirect("/admin/adminLogin");
+      return req.session.destroy((err) => {
+        res.clearCookie("connect.sid");
+        return res.redirect("/admin/adminLogin");
+      });
+    }
+
+    if (admin.isBlocked) {
+      return req.session.destroy((err) => {
+        res.clearCookie("connect.sid");
+        return res.redirect("/admin/adminLogin");
+      });
     }
 
     res.locals.admin = admin;
