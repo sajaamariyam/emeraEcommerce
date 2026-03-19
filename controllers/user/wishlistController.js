@@ -29,11 +29,17 @@ const getWishlist = async (req, res) => {
       }
     });
 
+    const cart = await Cart.findOne({userId: req.session.user});
+    const cartProductIds = cart 
+    ? cart.items.map( i => i.productId.toString())
+    : [];
+
     res.render("user/wishlist", {
       user,
       wishlistItems,
       inStockCount,
       totalValue,
+      cartProductIds,
       showAnnouncement: false,
     });
   } catch (error) {

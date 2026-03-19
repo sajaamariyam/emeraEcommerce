@@ -32,7 +32,6 @@
                 
                 <div>
                     <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Filter by Status</label>
-                    <!-- ✅ Values lowercased to match DB storage -->
                     <select id="statusFilter" class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors bg-white">
                         <option value="">All Orders</option>
                         <option value="pending">Pending</option>
@@ -51,7 +50,6 @@
             <% if (orders && orders.length > 0) { %>
                 <% orders.forEach(order => { %>
                     <%
-                      // ✅ Normalize status to lowercase for all comparisons
                       const status = (order.status || '').toLowerCase();
                     %>
                     <div class="bg-stone-50 border border-stone-100 order-card" 
@@ -68,7 +66,6 @@
                                     </p>
                                 </div>
                                 <div class="text-right">
-                                    <!-- ✅ Status badge using lowercase status -->
                                     <div class="inline-block px-6 py-2 rounded-full text-[9px] uppercase tracking-[0.3em] font-bold
                                         <% if (status === 'delivered') { %>bg-green-100 text-green-700
                                         <% } else if (status === 'pending') { %>bg-yellow-100 text-yellow-700
@@ -88,18 +85,31 @@
                         <div class="p-8">
                             <div class="space-y-6">
                                 <% order.orderedItems.slice(0, 2).forEach(item => { %>
-                                    <div class="flex gap-6 items-center order-item <%= item.productId ? '' : 'opacity-50' %>"
+                                    <%
+                                      const itemStatus = (item.itemStatus || 'active').toLowerCase();
+                                      const isCancelled = itemStatus === 'cancelled';
+                                      const isReturned = itemStatus === 'returned';
+                                      const isReturnRequested = itemStatus === 'return-requested';
+                                      const isActive = itemStatus === 'active';
+                                    %>
+                                    <div class="flex gap-6 items-start order-item <%= isCancelled || isReturned ? 'opacity-50' : '' %>"
                                          data-product-id="<%= item.productId?._id %>"
                                          data-color="<%= item.color || '' %>">
-                                        <div class="w-20 h-20 bg-stone-200 flex-shrink-0 overflow-hidden">
+
+                                        <!-- FIX: image is now a link to product details -->
+                                        <a href="/product/<%= item.productId?._id %>" 
+                                           class="w-20 h-20 bg-stone-200 flex-shrink-0 overflow-hidden block hover:opacity-80 transition-opacity">
                                             <img src="<%= item.productId?.productImage?.[0]?.url || '/images/placeholder.png' %>" 
                                                  alt="<%= item.productId?.name || 'Product unavailable' %>" 
                                                  class="w-full h-full object-cover">
-                                        </div>
-                                        <div class="flex-1">
-                                            <h4 class="text-sm font-semibold text-gray-900">
+                                        </a>
+
+                                        <div class="flex-1 min-w-0">
+                                            <!-- FIX: product name is also a link -->
+                                            <a href="/product/<%= item.productId?._id %>" 
+                                               class="text-sm font-semibold text-gray-900 hover:underline">
                                                 <%= item.productId ? item.productId.name : 'Product no longer available' %>
-                                            </h4>
+                                            </a>
                                             <p class="text-[9px] uppercase tracking-widest text-gray-400 mt-1">Qty: <%= item.quantity %></p>
                                             <% if (item.color) { %>
                                                 <div class="flex items-center gap-2 mt-1">
@@ -107,20 +117,49 @@
                                                     <p class="text-[9px] uppercase tracking-widest text-gray-400"><%= item.color %></p>
                                                 </div>
                                             <% } %>
-                                        </div>
-                                        <div class="text-right space-y-2">
-                                        <p class="text-sm font-bold text-gray-900">
-                                            ₹<%= (item.price * item.quantity).toLocaleString('en-IN') %>
-                                        </p>
 
-                                        <% if (status === 'delivered' && item.productId) { %>
-                                            <button
-                                            onclick="openReviewModal('<%= item.productId._id %>', '<%= order.orderId %>')"
-                                            class="inline-block px-4 py-2 border border-emera-950 text-emera-950 text-[8px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all">
-                                            Write Review
-                                            </button>
-                                        <% } %>
-                                    </div>
+                                            <!-- Per-item status badge -->
+                                            <% if (isCancelled) { %>
+                                                <span class="inline-block mt-2 px-3 py-1 bg-red-100 text-red-600 text-[8px] uppercase tracking-widest font-bold rounded-full">Cancelled</span>
+                                            <% } else if (isReturned) { %>
+                                                <span class="inline-block mt-2 px-3 py-1 bg-gray-100 text-gray-500 text-[8px] uppercase tracking-widest font-bold rounded-full">Returned</span>
+                                            <% } else if (isReturnRequested) { %>
+                                                <span class="inline-block mt-2 px-3 py-1 bg-orange-100 text-orange-600 text-[8px] uppercase tracking-widest font-bold rounded-full">Return Requested</span>
+                                            <% } %>
+
+                                            <!-- Per-item action buttons -->
+                                            <div class="flex flex-wrap gap-2 mt-3">
+                                                <!-- Cancel item button: only on active items, pending/processing orders -->
+                                                <% if (isActive && (status === 'pending' || status === 'processing')) { %>
+                                                    <button onclick="openCancelModal('<%= order.orderId %>', 'product', '<%= item.productId?._id %>', '<%= item.color || '' %>')"
+                                                            class="px-4 py-1 border border-red-400 text-red-500 text-[8px] uppercase tracking-widest font-bold hover:bg-red-500 hover:text-white transition-all">
+                                                        Cancel Item
+                                                    </button>
+                                                <% } %>
+
+                                                <!-- Return item button: only on active items, delivered orders -->
+                                                <% if (isActive && status === 'delivered') { %>
+                                                    <button onclick="openReturnProductModal('<%= order.orderId %>', '<%= item.productId?._id %>', '<%= item.color || '' %>')"
+                                                            class="px-4 py-1 border border-orange-400 text-orange-500 text-[8px] uppercase tracking-widest font-bold hover:bg-orange-500 hover:text-white transition-all">
+                                                        Return Item
+                                                    </button>
+                                                <% } %>
+
+                                                <!-- Write review: only on active delivered items -->
+                                                <% if (status === 'delivered' && isActive && item.productId) { %>
+                                                    <button onclick="openReviewModal('<%= item.productId._id %>', '<%= order.orderId %>')"
+                                                            class="px-4 py-1 border border-emera-950 text-emera-950 text-[8px] uppercase tracking-widest font-bold hover:bg-emera-950 hover:text-white transition-all">
+                                                        Write Review
+                                                    </button>
+                                                <% } %>
+                                            </div>
+                                        </div>
+
+                                        <div class="text-right flex-shrink-0">
+                                            <p class="text-sm font-bold <%= isCancelled || isReturned ? 'line-through text-gray-400' : 'text-gray-900' %>">
+                                                ₹<%= (item.price * item.quantity).toLocaleString('en-IN') %>
+                                            </p>
+                                        </div>
                                     </div>
                                 <% }) %>
                                 
@@ -140,12 +179,14 @@
                                     View Details
                                 </a>
                                 
-                                <button onclick="downloadInvoice('<%= order.orderId %>')"
-                                        class="px-8 py-3 border-2 border-emera-950 text-emera-950 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all">
+                                <!-- FIX: invoice now opens in new tab so PDF streams correctly -->
+                                <a href="/orders/<%= order.orderId %>/invoice" 
+                                   target="_blank"
+                                   class="px-8 py-3 border-2 border-emera-950 text-emera-950 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all">
                                     Download Invoice
-                                </button>
+                                </a>
                                 
-                                
+                                <!-- Cancel whole order -->
                                 <% if (status === 'pending' || status === 'processing') { %>
                                     <button onclick="openCancelModal('<%= order.orderId %>', 'order')"
                                             class="px-8 py-3 border-2 border-red-600 text-red-600 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-red-600 hover:text-white transition-all">
@@ -153,14 +194,13 @@
                                     </button>
                                 <% } %>
                                 
+                                <!-- Return whole order -->
                                 <% if (status === 'delivered') { %>
-
-                                <button onclick="openReturnModal('<%= order.orderId %>')"
-                                    class="px-8 py-3 border-2 border-orange-600 text-orange-600 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-orange-600 hover:text-white transition-all">
-                                    Return Order
-                                </button>
-
-                            <% } %>
+                                    <button onclick="openReturnModal('<%= order.orderId %>')"
+                                        class="px-8 py-3 border-2 border-orange-600 text-orange-600 text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-orange-600 hover:text-white transition-all">
+                                        Return Order
+                                    </button>
+                                <% } %>
                             </div>
                         </div>
                     </div>
@@ -210,11 +250,11 @@
         
     </main>
 
-    <!-- Cancel Order Modal -->
+    <!-- Cancel Modal (order or item) -->
     <div id="cancelModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white max-w-2xl w-full p-10 animate-modal">
-            <h2 class="text-3xl font-serif text-gray-900 mb-6">Cancel Order</h2>
-            <p class="text-sm text-gray-600 mb-6">Are you sure you want to cancel this order? This action cannot be undone.</p>
+            <h2 class="text-3xl font-serif text-gray-900 mb-6" id="cancelModalTitle">Cancel Order</h2>
+            <p class="text-sm text-gray-600 mb-6" id="cancelModalDesc">Are you sure you want to cancel? This action cannot be undone.</p>
             <div class="mb-8">
                 <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Reason for Cancellation (Optional)</label>
                 <textarea id="cancelReason" rows="4" placeholder="Tell us why you're cancelling..."
@@ -233,7 +273,7 @@
         </div>
     </div>
 
-    <!-- Return Order Modal -->
+    <!-- Return Whole Order Modal -->
     <div id="returnModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white max-w-2xl w-full p-10 animate-modal">
             <h2 class="text-3xl font-serif text-gray-900 mb-6">Return Order</h2>
@@ -241,7 +281,7 @@
             <div class="mb-8">
                 <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Reason for Return *</label>
                 <textarea id="returnReason" rows="4" placeholder="Please describe the reason for return..."
-                    class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors resize-none" required></textarea>
+                    class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors resize-none"></textarea>
             </div>
             <div class="flex gap-4">
                 <button onclick="confirmReturn()" 
@@ -249,6 +289,29 @@
                     Submit Return Request
                 </button>
                 <button onclick="closeReturnModal()" 
+                        class="flex-1 py-4 border-2 border-stone-300 text-gray-900 text-[10px] uppercase tracking-[0.4em] font-bold hover:border-stone-900 transition-all">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Single Item Modal -->
+    <div id="returnProductModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white max-w-2xl w-full p-10 animate-modal">
+            <h2 class="text-3xl font-serif text-gray-900 mb-6">Return Item</h2>
+            <p class="text-sm text-gray-600 mb-6">Please provide a reason for returning this item.</p>
+            <div class="mb-8">
+                <label class="block text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">Reason for Return *</label>
+                <textarea id="returnProductReason" rows="4" placeholder="Please describe the reason for return..."
+                    class="w-full border border-stone-300 px-6 py-4 text-sm focus:border-emera-950 transition-colors resize-none"></textarea>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="confirmReturnProduct()" 
+                        class="flex-1 py-4 bg-orange-600 text-white text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-orange-700 transition-all">
+                    Submit Return Request
+                </button>
+                <button onclick="closeReturnProductModal()" 
                         class="flex-1 py-4 border-2 border-stone-300 text-gray-900 text-[10px] uppercase tracking-[0.4em] font-bold hover:border-stone-900 transition-all">
                     Cancel
                 </button>
@@ -291,84 +354,61 @@
     </div>
 
     <!-- Review Modal -->
-<div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-  <div class="bg-white max-w-xl w-full p-8 animate-modal">
-
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-serif text-gray-900">Write Review</h2>
-      <button onclick="closeReviewModal()" class="text-2xl">×</button>
-    </div>
-
-    <form id="reviewForm" class="space-y-6">
-
-      <input type="hidden" id="reviewProductId">
-      <input type="hidden" id="reviewOrderId">
-
-      <!-- Rating -->
-      <div>
-        <label class="block text-sm font-semibold mb-2">Rating</label>
-        <div class="flex gap-2">
-          <span class="star cursor-pointer text-3xl" onclick="setRating(1)">★</span>
-          <span class="star cursor-pointer text-3xl" onclick="setRating(2)">★</span>
-          <span class="star cursor-pointer text-3xl" onclick="setRating(3)">★</span>
-          <span class="star cursor-pointer text-3xl" onclick="setRating(4)">★</span>
-          <span class="star cursor-pointer text-3xl" onclick="setRating(5)">★</span>
+    <div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white max-w-xl w-full p-8 animate-modal">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-serif text-gray-900">Write Review</h2>
+                <button onclick="closeReviewModal()" class="text-2xl text-gray-400 hover:text-black">×</button>
+            </div>
+            <form id="reviewForm" class="space-y-6">
+                <input type="hidden" id="reviewProductId">
+                <input type="hidden" id="reviewOrderId">
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Rating</label>
+                    <div class="flex gap-2">
+                        <span class="star cursor-pointer text-3xl" onclick="setRating(1)">★</span>
+                        <span class="star cursor-pointer text-3xl" onclick="setRating(2)">★</span>
+                        <span class="star cursor-pointer text-3xl" onclick="setRating(3)">★</span>
+                        <span class="star cursor-pointer text-3xl" onclick="setRating(4)">★</span>
+                        <span class="star cursor-pointer text-3xl" onclick="setRating(5)">★</span>
+                    </div>
+                    <input type="hidden" id="reviewRating">
+                </div>
+                <div>
+                    <input id="reviewTitle" placeholder="Review title" class="w-full border px-4 py-3">
+                </div>
+                <div>
+                    <textarea id="reviewComment" rows="4" placeholder="Write your review..." class="w-full border px-4 py-3"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-emera-950 text-white py-3 uppercase text-xs tracking-widest">
+                    Submit Review
+                </button>
+            </form>
         </div>
-        <input type="hidden" id="reviewRating">
-      </div>
-
-      <div>
-        <input
-        id="reviewTitle"
-        placeholder="Review title"
-        class="w-full border px-4 py-3">
-      </div>
-
-      <div>
-        <textarea
-        id="reviewComment"
-        rows="4"
-        placeholder="Write your review..."
-        class="w-full border px-4 py-3"></textarea>
-      </div>
-
-      <button
-      type="submit"
-      class="w-full bg-emera-950 text-white py-3 uppercase text-xs tracking-widest">
-      Submit Review
-      </button>
-
-    </form>
-  </div>
-</div>
+    </div>
 
     <script>
         let currentOrderId = '';
         let cancelType = 'order';
         let currentProductId = '';
-        let currentProductColor = '';  
+        let currentProductColor = '';
+        let returnProductId = '';
+        let returnProductColor = '';
 
         // ── Search / filter ───────────────────────────────────────────────
-        const searchInput = document.getElementById('searchOrders');
-        const statusFilter = document.getElementById('statusFilter');
-        
-        searchInput.addEventListener('input', filterOrders);
-        statusFilter.addEventListener('change', filterOrders);
-        
-        function filterOrders() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const selectedStatus = statusFilter.value.toLowerCase(); 
+        document.getElementById('searchOrders').addEventListener('input', filterOrders);
+        document.getElementById('statusFilter').addEventListener('change', filterOrders);
 
+        function filterOrders() {
+            const searchTerm = document.getElementById('searchOrders').value.toLowerCase();
+            const selectedStatus = document.getElementById('statusFilter').value.toLowerCase();
             document.querySelectorAll('.order-card').forEach(card => {
                 const orderId = card.dataset.orderId.toLowerCase();
-                const status = card.dataset.status.toLowerCase(); 
-                const productNames = Array.from(card.querySelectorAll('.order-item h4'))
-                    .map(h => h.textContent.toLowerCase())
-                    .join(' ');
-                
+                const cardStatus = card.dataset.status.toLowerCase();
+                const productNames = Array.from(card.querySelectorAll('.order-item a'))
+                    .map(a => a.textContent.toLowerCase()).join(' ');
                 const matchesSearch = orderId.includes(searchTerm) || productNames.includes(searchTerm);
-                const matchesStatus = !selectedStatus || status === selectedStatus;
-                
+                const matchesStatus = !selectedStatus || cardStatus === selectedStatus;
                 card.style.display = matchesSearch && matchesStatus ? 'block' : 'none';
             });
         }
@@ -376,8 +416,9 @@
         // ── Modal helpers ─────────────────────────────────────────────────
         function showSuccessModal(message) {
             document.getElementById('successMessage').textContent = message;
-            document.getElementById('successModal').classList.remove('hidden');
+            document.getElementById('successModal').classList.replace('hidden', 'flex') || 
             document.getElementById('successModal').classList.add('flex');
+            document.getElementById('successModal').classList.remove('hidden');
         }
         function closeSuccessModal() {
             document.getElementById('successModal').classList.add('hidden');
@@ -399,7 +440,11 @@
             currentOrderId = orderId;
             cancelType = type;
             currentProductId = productId;
-            currentProductColor = color;   
+            currentProductColor = color;
+            document.getElementById('cancelModalTitle').textContent = type === 'product' ? 'Cancel Item' : 'Cancel Order';
+            document.getElementById('cancelModalDesc').textContent = type === 'product' 
+                ? 'Are you sure you want to cancel this item? It will remain visible in your order.'
+                : 'Are you sure you want to cancel this order? This action cannot be undone.';
             document.getElementById('cancelModal').classList.remove('hidden');
             document.getElementById('cancelModal').classList.add('flex');
         }
@@ -410,15 +455,13 @@
         }
         function confirmCancel() {
             const reason = document.getElementById('cancelReason').value;
-            const url = cancelType === 'product' 
+            const url = cancelType === 'product'
                 ? `/orders/${currentOrderId}/cancel-product`
                 : `/orders/${currentOrderId}/cancel`;
-            
-            
             const body = cancelType === 'product'
                 ? { reason, productId: currentProductId, color: currentProductColor }
                 : { reason };
-            
+
             fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -430,13 +473,10 @@
                 if (data.success) showSuccessModal(data.message || 'Cancellation successful');
                 else showErrorModal(data.message || 'Cancellation failed');
             })
-            .catch(() => {
-                closeCancelModal();
-                showErrorModal('An error occurred. Please try again.');
-            });
+            .catch(() => { closeCancelModal(); showErrorModal('An error occurred. Please try again.'); });
         }
 
-        // ── Return modal ──────────────────────────────────────────────────
+        // ── Return whole order modal ───────────────────────────────────────
         function openReturnModal(orderId) {
             currentOrderId = orderId;
             document.getElementById('returnModal').classList.remove('hidden');
@@ -450,7 +490,7 @@
         function confirmReturn() {
             const reason = document.getElementById('returnReason').value.trim();
             if (!reason) { showErrorModal('Please provide a reason for return'); return; }
-            
+
             fetch(`/orders/${currentOrderId}/return`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -462,20 +502,43 @@
                 if (data.success) showSuccessModal(data.message || 'Return request submitted');
                 else showErrorModal(data.message || 'Return request failed');
             })
-            .catch(() => {
-                closeReturnModal();
-                showErrorModal('An error occurred. Please try again.');
-            });
+            .catch(() => { closeReturnModal(); showErrorModal('An error occurred. Please try again.'); });
         }
 
-        function downloadInvoice(orderId) {
-            window.location.href = `/orders/${orderId}/invoice`;
+        // ── Return single item modal ──────────────────────────────────────
+        function openReturnProductModal(orderId, productId, color) {
+            currentOrderId = orderId;
+            returnProductId = productId;
+            returnProductColor = color;
+            document.getElementById('returnProductModal').classList.remove('hidden');
+            document.getElementById('returnProductModal').classList.add('flex');
+        }
+        function closeReturnProductModal() {
+            document.getElementById('returnProductModal').classList.add('hidden');
+            document.getElementById('returnProductModal').classList.remove('flex');
+            document.getElementById('returnProductReason').value = '';
+        }
+        function confirmReturnProduct() {
+            const reason = document.getElementById('returnProductReason').value.trim();
+            if (!reason) { showErrorModal('Please provide a reason for return'); return; }
+
+            fetch(`/orders/${currentOrderId}/return-product`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId: returnProductId, color: returnProductColor, reason })
+            })
+            .then(r => r.json())
+            .then(data => {
+                closeReturnProductModal();
+                if (data.success) showSuccessModal(data.message || 'Return request submitted');
+                else showErrorModal(data.message || 'Return request failed');
+            })
+            .catch(() => { closeReturnProductModal(); showErrorModal('An error occurred. Please try again.'); });
         }
 
-        // Close modals on backdrop click
-        ['cancelModal','returnModal','successModal','errorModal'].forEach(id => {
-            const el = document.getElementById(id);
-            el.addEventListener('click', function(e) {
+        // ── Backdrop click to close ───────────────────────────────────────
+        ['cancelModal','returnModal','returnProductModal','successModal','errorModal'].forEach(id => {
+            document.getElementById(id).addEventListener('click', function(e) {
                 if (e.target === this) {
                     this.classList.add('hidden');
                     this.classList.remove('flex');
@@ -484,56 +547,44 @@
             });
         });
 
-    
-    let reviewRating = 0;
+        // ── Review modal ──────────────────────────────────────────────────
+        let reviewRating = 0;
 
-function openReviewModal(productId, orderId){
-  document.getElementById("reviewProductId").value = productId;
-  document.getElementById("reviewOrderId").value = orderId;
-
-  document.getElementById("reviewModal").classList.remove("hidden");
-  document.getElementById("reviewModal").classList.add("flex");
-}
-
-function closeReviewModal(){
-  document.getElementById("reviewModal").classList.add("hidden");
-}
-
-function setRating(r){
-  reviewRating = r;
-  document.getElementById("reviewRating").value = r;
-
-  document.querySelectorAll(".star").forEach((s,i)=>{
-    s.style.color = i < r ? "#fbbf24" : "#ccc";
-  });
-}
-
-document.getElementById("reviewForm").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-
-  const data = {
-    productId: document.getElementById("reviewProductId").value,
-    orderId: document.getElementById("reviewOrderId").value,
-    rating: reviewRating,
-    title: document.getElementById("reviewTitle").value,
-    comment: document.getElementById("reviewComment").value
-  };
-
-  const res = await fetch("/reviews/submit",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(data)
-  });
-
-  const result = await res.json();
-
-  if(result.success){
-    location.reload();
-  }else{
-    alert(result.message);
-  }
-});
-
+        function openReviewModal(productId, orderId) {
+            document.getElementById('reviewProductId').value = productId;
+            document.getElementById('reviewOrderId').value = orderId;
+            document.getElementById('reviewModal').classList.remove('hidden');
+            document.getElementById('reviewModal').classList.add('flex');
+        }
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.add('hidden');
+            document.getElementById('reviewModal').classList.remove('flex');
+        }
+        function setRating(r) {
+            reviewRating = r;
+            document.getElementById('reviewRating').value = r;
+            document.querySelectorAll('.star').forEach((s, i) => {
+                s.style.color = i < r ? '#fbbf24' : '#ccc';
+            });
+        }
+        document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                productId: document.getElementById('reviewProductId').value,
+                orderId: document.getElementById('reviewOrderId').value,
+                rating: reviewRating,
+                title: document.getElementById('reviewTitle').value,
+                comment: document.getElementById('reviewComment').value
+            };
+            const res = await fetch('/reviews/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.success) location.reload();
+            else alert(result.message);
+        });
     </script>
 
     <style>

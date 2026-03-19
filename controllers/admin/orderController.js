@@ -166,7 +166,7 @@ const updateOrderStatus = async (req, res) => {
 
       if (order.paymentMethod !== "COD" && order.paymentStatus !== "refunded") {
         const user = await User.findById(order.userId);
-        user.wallet += order.finalAmount;
+        user.wallet = (user.wallet || 0) + order.finalAmount;
         user.walletTransactions.push({
           type: "credit",
           amount: order.finalAmount,
@@ -245,9 +245,9 @@ const approveReturn = async (req, res) => {
       );
     }
 
-    if (order.paymentStatus !== "refunded") {
+    if (order.paymentMethod !== "COD" && order.paymentStatus !== "refunded") {
       const user = await User.findById(order.userId);
-      user.wallet += order.finalAmount;
+      user.wallet = (user.wallet || 0) + order.finalAmount;
       user.walletTransactions.push({
         type: "credit",
         amount: order.finalAmount,

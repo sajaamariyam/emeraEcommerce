@@ -83,7 +83,6 @@ const applyCoupon = async (req, res) => {
 
     const coupon = await Coupon.findOne({
       code: couponCode.trim().toUpperCase(),
-      userId,
       isUsed: false,
       expiryDate: { $gte: new Date() },
     });
@@ -113,6 +112,17 @@ const applyCoupon = async (req, res) => {
     const tax = Math.round(subtotal * 0.18);
     const grossTotal = subtotal + tax;
 
+    if (
+      coupon.minPurchaseAmount &&
+      coupon.minPurchaseAmount > 0 &&
+      grossTotal < coupon.minPurchaseAmount
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `Minimum purchase of ₹${coupon.minPurchaseAmount} required for this coupon`,
+      });
+    }
+
     if (coupon.discountAmount > grossTotal) {
       return res.status(400).json({
         success: false,
@@ -134,35 +144,31 @@ const applyCoupon = async (req, res) => {
   }
 };
 
-const removeCoupon = async (req,res)=>{
-  try{
-
+const removeCoupon = async (req, res) => {
+  try {
     const userId = req.session.user;
 
-    const cart = await Cart.findOne({userId}).populate("items.productId");
+    const cart = await Cart.findOne({ userId }).populate("items.productId");
 
     let subtotal = 0;
 
-    for(const item of cart.items){
-
+    for (const item of cart.items) {
       const offer = await getBestOffer(item.productId);
       subtotal += offer.finalPrice * item.quantity;
-
     }
 
     const tax = Math.round(subtotal * 0.18);
     const total = subtotal + tax;
 
     res.json({
-      success:true,
-      discountAmount:0,
-      newTotal:total
+      success: true,
+      discountAmount: 0,
+      newTotal: total,
     });
-
-  }catch(error){
-    res.status(500).json({success:false})
+  } catch (error) {
+    res.status(500).json({ success: false });
   }
-}
+};
 
 const placeOrder = async (req, res) => {
   try {
@@ -217,7 +223,6 @@ const placeOrder = async (req, res) => {
     if (couponCode && couponCode.trim() !== "") {
       const coupon = await Coupon.findOne({
         code: couponCode.trim().toUpperCase(),
-        userId,
         isUsed: false,
         expiryDate: { $gte: new Date() },
       });
@@ -236,9 +241,11 @@ const placeOrder = async (req, res) => {
     const finalAmount = Math.max(0, grossAmount - discount);
 
     const finalPaymentMethod =
-      paymentMethod === "razorpay" || paymentMethod === "wallet"
+      paymentMethod === "razorpay"
         ? "ONLINE"
-        : "COD";
+        : paymentMethod === "wallet"
+          ? "WALLET"
+          : "COD";
 
     const newOrder = new Order({
       orderId: `Emera-${Date.now()}`,

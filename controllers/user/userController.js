@@ -23,7 +23,8 @@ const loadSignup = async (req, res) => {
       return res.redirect("/");
     }
     const refToken = req.query.ref || null;
-
+    console.log("SIGNUP REF TOKEN:", refToken);
+    console.log("FULL QUERY:", req.query);
     return res.render("user/signup", { refToken });
   } catch (error) {
     console.log("Home page not loading", error);
@@ -111,13 +112,17 @@ const signup = async (req, res) => {
     } = req.body;
 
     if (password !== cPassword) {
-      return res.render("user/signup", { message: "Password do not match" });
+      return res.render("user/signup", {
+        message: "Password do not match",
+        refToken: null,
+      });
     }
 
     const findUser = await User.findOne({ email });
     if (findUser) {
       return res.render("user/signup", {
         message: "User with this email already exists",
+        refToken: null,
       });
     }
 
@@ -167,6 +172,9 @@ const verifyOtp = async (req, res) => {
 
     const sessionUser = req.session.userData;
 
+    console.log("SESSION REFERRAL TOKEN:", sessionUser.referralToken);
+    console.log("SESSION REFERRAL CODE:", sessionUser.referralCode);
+
     if (!sessionUser) {
       return res.status(400).json({
         success: false,
@@ -209,9 +217,14 @@ const verifyOtp = async (req, res) => {
 
     await newUser.save();
 
-    if (sessionUser.referralToken) {
+    const referralIdentifier =
+      sessionUser.referralToken || sessionUser.referralCode;
+    if (referralIdentifier) {
       const referrer = await User.findOne({
-        referralToken: sessionUser.referralToken,
+        $or: [
+          { referralToken: referralIdentifier },
+          { referralCode: referralIdentifier },
+        ],
       });
 
       if (
@@ -221,18 +234,13 @@ const verifyOtp = async (req, res) => {
           (id) => id.toString() === newUser._id.toString(),
         )
       ) {
-        const couponCode =
-          "COUP" + Math.random().toString(36).substring(2, 8).toUpperCase();
-
-        const newCoupon = new Coupon({
-          code: couponCode,
-          userId: referrer._id,
-          discountAmount: 200,
-          expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        referrer.wallet = (referrer.wallet || 0) + 200;
+        referrer.walletTransactions.push({
+          type: "credit",
+          amount: 200,
+          description: `Referral bonus — ${newUser.name} signed up using your link`,
+          date: new Date(),
         });
-
-        await newCoupon.save();
-
         referrer.redeemedUsers.push(newUser._id);
         await referrer.save();
       }
@@ -606,7 +614,6 @@ const loadProducts = async (req, res) => {
     let query = {
       isBlocked: false,
       isListed: true,
-      "variants.quantity": { $gt: 0 },
     };
 
     if (search) {
@@ -650,6 +657,8 @@ const loadProducts = async (req, res) => {
     for (let product of products) {
       const offer = await getBestOffer(product);
 
+      console.log("PRODUCT:", product.name, "DISCOUNT:", offer.discount, "FINAL:", offer.finalPrice);
+
       const finalPrice = offer.finalPrice;
       const discount = offer.discount;
 
@@ -658,6 +667,7 @@ const loadProducts = async (req, res) => {
           ...product._doc,
           finalPrice,
           discount,
+          quantity: product.variants.reduce( (sum, v) => sum + v.quantity, 0),
         });
       }
     }
@@ -668,7 +678,13 @@ const loadProducts = async (req, res) => {
 
     const categories = await Category.find({ isListed: true });
 
+    let userData = null;
+    if (req.session.user) {
+      userData = await User.findById(req.session.user);
+    }
+
     res.render("user/products", {
+      user: userData,
       products: paginatedProducts,
       categories,
       currentPage: page,
@@ -680,8 +696,8 @@ const loadProducts = async (req, res) => {
       showAnnouncement: false,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).render("pageNotFound");
+    console.log("LOAD PRODUCTS ERROR", error);
+    res.status(500).redirect("/pageNotFound");
   }
 };
 
@@ -796,7 +812,10 @@ const loadProductDetails = async (req, res) => {
 
 const searchProducts = async (req, res) => {
   try {
-    const search = req.query.search || "";
+    const search = req.query.q || "";
+
+    console.log("SEARCH QUERY:", search)
+
     const page = parseInt(req.query.page) || 1;
     const limit = 8;
     const skip = (page - 1) * limit;
@@ -809,7 +828,7 @@ const searchProducts = async (req, res) => {
     };
 
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      query.name = { $regex: `^${search}`, $options: "i" };
     }
 
     const totalProducts = await Product.countDocuments(query);
@@ -826,8 +845,14 @@ const searchProducts = async (req, res) => {
 
     const totalPages = Math.ceil(totalProducts / limit);
 
+    let userData = null;
+    if (req.session.user) {
+      userData = await User.findById(req.session.user);
+    }
+
     res.render("user/products", {
       ...productsPageDefaults,
+      user: userData,
       products,
       categories,
       search,
@@ -844,17 +869,21 @@ const searchProducts = async (req, res) => {
 const loadProfile = async (req, res) => {
   try {
     const userData = await User.findById(req.session.user);
-
-    if (!userData) {
-      return res.redirect("/login");
-    }
+    if (!userData) return res.redirect("/login");
 
     userData.addresses = userData.addresses.sort(
       (a, b) => b.isDefault - a.isDefault,
     );
 
+    if (!userData.referralCode) {
+      userData.referralCode =
+        "REF" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      await userData.save();
+    }
+
     res.render("user/profile", {
       user: userData,
+      baseUrl: process.env.BASE_URL || "http://localhost:3000",
       showAnnouncement: false,
     });
   } catch (error) {

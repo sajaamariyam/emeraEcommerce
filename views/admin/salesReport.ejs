@@ -92,6 +92,35 @@
             </form>
         </div>
 
+        <script>
+            const fromInput = document.querySelector('input[name="from"]');
+            const toInput   = document.querySelector('input[name="to"]');
+            const applyBtn  = document.querySelector('button[value="custom"]');
+            const today     = new Date().toISOString().split('T')[0];
+
+            fromInput.setAttribute('max', today);
+            toInput.setAttribute('max', today);
+
+            fromInput.addEventListener('change', function() {
+                toInput.setAttribute('min', this.value);
+                if (toInput.value && toInput.value < this.value) toInput.value = this.value;
+            });
+            toInput.addEventListener('change', function() {
+                fromInput.setAttribute('max', this.value);
+            });
+            applyBtn.addEventListener('click', function(e) {
+                if (!fromInput.value || !toInput.value) {
+                    e.preventDefault();
+                    alert('Please select both From and To dates.');
+                    return;
+                }
+                if (fromInput.value > toInput.value) {
+                    e.preventDefault();
+                    alert('From date cannot be after To date.');
+                }
+            });
+        </script>     
+
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">

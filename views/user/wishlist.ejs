@@ -78,12 +78,16 @@
                             
                             <div class="flex items-center justify-between mt-8">
                                 <% if (item.stock > 0) { %>
-                                <button
-                                    class="add-to-cart-btn border border-emera-950 px-8 py-3 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500"
-                                    data-product-id="<%= item._id %>"
-                                >
+                                <% if (cartProductIds.includes(item._id.toString())) { %>
+                                <button disabled class="border border-stone-300 px-8 py-3 text-[10px] uppercase tracking-[0.4em] font-bold text-stone-400 cursor-not-allowed">
+                                    Already in Cart
+                                </button>
+                            <% } else { %>
+                                <button class="add-to-cart-btn border border-emera-950 px-8 py-3 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500"
+                                    data-product-id="<%= item._id %>">
                                     Add to Cart
                                 </button>
+                            <% } %>
                                 <% } else { %>
                                 <button
                                     class="border border-stone-300 px-8 py-3 text-[10px] uppercase tracking-[0.4em] font-bold text-gray-400 cursor-not-allowed"

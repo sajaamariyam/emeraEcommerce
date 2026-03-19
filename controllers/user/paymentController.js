@@ -90,23 +90,23 @@ const verifyPayment = async (req, res) => {
       orderId,
     } = req.body;
 
+    console.log("VERIFY PAYMNET BODY", req.body);
+
     const order = await Order.findOne({ orderId }).populate(
       "orderedItems.productId",
     );
+
+    console.log("ORDER FOUND:", order ? order.orderId : "NOT FOUND");
 
     if (!order) {
       return res.json({ success: false });
     }
 
-    if (order.razorpayOrderId !== razorpay_order_id) {
-      return res.json({ success: false });
-    }
-
     if (order.paymentStatus === "paid") {
-    return res.json({
-      success: true,
-      redirectUrl: `/orderConfirmation/${order.orderId}`,
-    });
+      return res.json({
+        success: true,
+        redirectUrl: `/orderConfirmation/${order.orderId}`,
+      });
     }
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
@@ -115,6 +115,10 @@ const verifyPayment = async (req, res) => {
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(body)
       .digest("hex");
+
+    console.log("EXPECTED SIG:", expectedSignature);
+    console.log("RECEIVED SIG:", razorpay_signature);
+    console.log("SIG MATCH:", expectedSignature === razorpay_signature);
 
     if (expectedSignature === razorpay_signature) {
       for (const item of order.orderedItems) {
@@ -157,12 +161,17 @@ const verifyPayment = async (req, res) => {
 
 const walletPayment = async (req, res) => {
   try {
+    console.log("WALLET PAYMENT HIT, orderId:", req.params.orderId);
     const { orderId } = req.params;
 
     const order = await Order.findOne({ orderId }).populate(
       "orderedItems.productId",
     );
     const user = await User.findById(order.userId);
+
+    console.log("USER WALLET:", user.wallet);
+    console.log("ORDER FINAL AMOUNT:", order.finalAmount);
+    console.log("ORDER PAYMENT STATUS:", order.paymentStatus);
 
     if (!order || !user) {
       return res.json({ success: false, message: "Invalid order" });
@@ -189,23 +198,27 @@ const walletPayment = async (req, res) => {
     });
 
     await user.save();
+    console.log("USER SAVED");
 
-    for (const item of order.orderedItems) {
-      await Product.updateOne(
-        { _id: item.productId._id, "variants.color": item.color },
-        { $inc: { "variants.$.quantity": -item.quantity } },
-      );
-    }
+    console.log("PRODUCTS UPDATED");
 
     await Cart.deleteOne({ userId: order.userId });
+    console.log("CART DELETED");
 
     order.status = "pending";
     order.paymentMethod = "WALLET";
     order.paymentStatus = "paid";
     order.paidAt = new Date();
+    console.log("SAVING ORDER...");
 
     await order.save();
 
+    console.log("ORDER SAVED");
+
+    console.log(
+      "SENDING SUCCESS RESPONSE:",
+      `/orderConfirmation/${order.orderId}`,
+    );
     res.json({
       success: true,
       redirectUrl: `/orderConfirmation/${order.orderId}`,
@@ -229,7 +242,7 @@ const paymentFailed = async (req, res) => {
       return res.redirect("/pageNotFound");
     }
 
-    res.render("user/payment-failed", {
+    res.render("user/paymentFailed", {
       order,
       showAnnouncement: false,
     });

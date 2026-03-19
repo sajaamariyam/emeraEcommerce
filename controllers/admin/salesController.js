@@ -262,65 +262,94 @@ const downloadSalesExcel = async (req, res) => {
       createdAt: { $gte: startDate, $lte: endDate },
     }).sort({ createdAt: -1 });
 
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Sales Report");
+    const summaryResult = await Order.aggregate([
+      { $match: { status: "delivered", createdAt: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, totalOrders: { $sum: 1 }, totalSales: { $sum: "$finalAmount" }, totalDiscount: { $sum: "$discount" } } },
+    ]);
+    const stats = summaryResult[0] || { totalOrders: 0, totalSales: 0, totalDiscount: 0 };
 
+    const workbook = new ExcelJS.Workbook();
+    const sheet    = workbook.addWorksheet("Sales Report");
+
+    // Title row
+    sheet.mergeCells('A1:E1');
+    sheet.getCell('A1').value     = 'EMERA — Sales Report';
+    sheet.getCell('A1').font      = { bold: true, size: 14, color: { argb: 'FF0F6B5A' } };
+    sheet.getCell('A1').alignment = { horizontal: 'center' };
+    sheet.getRow(1).height = 28;
+
+    // Period row
+    const filterLabel = req.query.filter ? req.query.filter.charAt(0).toUpperCase() + req.query.filter.slice(1) : 'Last 30 Days';
+    sheet.mergeCells('A2:E2');
+    sheet.getCell('A2').value     = `Period: ${filterLabel}  |  Generated: ${new Date().toLocaleDateString('en-IN')}`;
+    sheet.getCell('A2').font      = { italic: true, color: { argb: 'FF888888' }, size: 9 };
+    sheet.getCell('A2').alignment = { horizontal: 'center' };
+
+    // Summary row
+    sheet.mergeCells('A3:E3');
+    sheet.getCell('A3').value     = `Total Orders: ${stats.totalOrders}   |   Total Revenue: ₹${stats.totalSales.toLocaleString('en-IN')}   |   Total Discount: ₹${stats.totalDiscount.toLocaleString('en-IN')}`;
+    sheet.getCell('A3').font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+    sheet.getCell('A3').fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F6B5A' } };
+    sheet.getCell('A3').alignment = { horizontal: 'center' };
+    sheet.getRow(3).height = 22;
+
+    // Empty row
+    sheet.addRow([]);
+
+    // Header row
     sheet.columns = [
-      { header: "Order ID", key: "orderId", width: 26 },
-      { header: "Date", key: "date", width: 16 },
-      { header: "Payment", key: "payment", width: 14 },
-      { header: "Discount (₹)", key: "discount", width: 16 },
-      { header: "Final Amount (₹)", key: "amount", width: 20 },
+      { key: 'orderId',  width: 26 },
+      { key: 'date',     width: 16 },
+      { key: 'payment',  width: 14 },
+      { key: 'discount', width: 16 },
+      { key: 'amount',   width: 20 },
     ];
 
-    sheet.getRow(1).height = 22;
-    sheet.getRow(1).eachCell((cell) => {
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FF0F6B5A" },
-      };
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
-      cell.alignment = { vertical: "middle", horizontal: "center" };
-      cell.border = {
-        bottom: { style: "medium", color: { argb: "FF0A5244" } },
-      };
+    const headerRow = sheet.addRow(['Order ID', 'Date', 'Payment', 'Discount (₹)', 'Final Amount (₹)']);
+    headerRow.height = 22;
+    headerRow.eachCell((cell) => {
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F6B5A' } };
+      cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border    = { bottom: { style: 'medium', color: { argb: 'FF0A5244' } } };
     });
 
+    // Data rows
     orders.forEach((order, i) => {
       const row = sheet.addRow({
-        orderId: order.orderId,
-        date: new Date(order.createdAt).toLocaleDateString("en-IN"),
-        payment: (order.paymentMethod || "—").toUpperCase(),
+        orderId:  order.orderId,
+        date:     new Date(order.createdAt).toLocaleDateString('en-IN'),
+        payment:  (order.paymentMethod || '—').toUpperCase(),
         discount: order.discount || 0,
-        amount: order.finalAmount,
+        amount:   order.finalAmount,
       });
-
       row.height = 18;
-
       if (i % 2 === 0) {
         row.eachCell((cell) => {
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFF0FDF9" },
-          };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0FDF9' } };
         });
       }
-
-      row.getCell("discount").alignment = { horizontal: "right" };
-      row.getCell("amount").alignment = { horizontal: "right" };
+      row.getCell('discount').alignment = { horizontal: 'right' };
+      row.getCell('amount').alignment   = { horizontal: 'right' };
     });
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=sales-report-${Date.now()}.xlsx`,
-    );
+    // Totals row
+    const totalsRow = sheet.addRow({
+      orderId:  'TOTAL',
+      date:     '',
+      payment:  '',
+      discount: stats.totalDiscount,
+      amount:   stats.totalSales,
+    });
+    totalsRow.height = 20;
+    totalsRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FF0F6B5A' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6FFF9' } };
+      cell.border = { top: { style: 'medium', color: { argb: 'FF0F6B5A' } } };
+    });
 
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=sales-report-${Date.now()}.xlsx`);
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {

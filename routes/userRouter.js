@@ -16,12 +16,21 @@ const orderController = require("../controllers/user/orderController");
 const wishlistController = require("../controllers/user/wishlistController");
 const reviewController = require("../controllers/user/reviewController");
 const walletController = require("../controllers/user/walletController");
+const paymentController = require("../controllers/user/paymentController");
 
 //AUTHENTICATION ROUTES
 router.get("/login", noCache, userController.loadLogin);
 router.post("/login", userController.login);
 
-router.get("/signup", noCache, userController.loadSignup);
+router.get(
+  "/signup",
+  noCache,
+  (req, res, next) => {
+    console.log("SIGNUP QUERY:", req.query);
+    next();
+  },
+  userController.loadSignup,
+);
 router.post("/signup", userController.signup);
 
 router.get("/otp", userController.loadOtp);
@@ -171,6 +180,11 @@ router.get(
   userAuth,
   orderController.downloadInvoice,
 );
+router.post(
+  "/orders/:orderId/return-product",
+  userAuth,
+  orderController.returnProduct,
+);
 
 //WISHLIST
 router.get(
@@ -211,8 +225,27 @@ router.post(
 );
 
 //WALLET
-router.get('/wallet', userAuth, walletController.getWallet);
-router.post('/wallet/add', userAuth, walletController.addMoneyInit);
-router.post('/wallet/verify', userAuth, walletController.verifyAndCreditWallet);
+router.get("/wallet", userAuth, walletController.getWallet);
+router.post("/wallet/add", userAuth, walletController.addMoneyInit);
+router.post("/wallet/verify", userAuth, walletController.verifyAndCreditWallet);
+
+//PAYMENT
+router.post(
+  "/payment/wallet/:orderId",
+  userAuth,
+  paymentController.walletPayment,
+);
+router.get(
+  "/payment/create-order/:orderId",
+  userAuth,
+  paymentController.createRazorpayOrder,
+);
+router.post("/payment/verify", userAuth, paymentController.verifyPayment);
+router.get(
+  "/payment-failed/:orderId",
+  userAuth,
+  paymentController.paymentFailed,
+);
+router.get("/payment/:orderId", userAuth, paymentController.loadPayment);
 
 module.exports = router;

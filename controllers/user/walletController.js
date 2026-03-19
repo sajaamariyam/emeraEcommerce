@@ -4,7 +4,7 @@ const User = require("../../models/userSchema");
 
 const getWallet = async (req, res) => {
   try {
-    const user = await User.findById(req.session.user._id).select(
+    const user = await User.findById(req.session.user).select(
       "wallet walletTransactions",
     );
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -29,13 +29,13 @@ const addMoneyInit = async (req, res) => {
         .json({ message: "Invalid amount. Must be between ₹1 and ₹50,000." });
     }
 
-    const user = await User.findById(req.session.user._id);
+    const user = await User.findById(req.session.user);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const rzpOrder = await razorpay.orders.create({
       amount: Math.round(parsed * 100),
       currency: "INR",
-      receipt: `wallet_${user._id}_${Date.now()}`,
+      receipt: `w_${user._id.toString().slice(-8)}_${Date.now().toString().slice(-8)}`,
       notes: { userId: user._id.toString(), type: "wallet_topup" },
     });
 
@@ -79,7 +79,7 @@ const verifyAndCreditWallet = async (req, res) => {
     const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
     const amountInRupees = rzpOrder.amount / 100;
 
-    const user = await User.findById(req.session.user._id);
+    const user = await User.findById(req.session.user);
     if (!user)
       return res
         .status(404)

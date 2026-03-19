@@ -21,7 +21,7 @@
         <div class="flex items-center justify-between mb-8">
             <div>
                 <h2 class="text-2xl font-bold text-gray-800">Coupons</h2>
-                <p class="text-gray-600 mt-1">Create and manage discount coupons for users.</p>
+                <p class="text-gray-600 mt-1">Create and manage discount coupons.</p>
             </div>
             <button onclick="openCreateModal()" class="bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium shadow-md">
                 <i class="fas fa-plus"></i> Create Coupon
@@ -73,9 +73,7 @@
             <form method="GET" action="/admin/coupons" class="flex gap-3">
                 <input type="text" name="search" value="<%= search %>" placeholder="Search coupon code..."
                     class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                <button type="submit" class="bg-teal-700 text-white px-5 py-2 rounded-lg font-medium hover:bg-teal-800 transition text-sm">
-                    Search
-                </button>
+                <button type="submit" class="bg-teal-700 text-white px-5 py-2 rounded-lg font-medium hover:bg-teal-800 transition text-sm">Search</button>
                 <% if (search) { %>
                     <a href="/admin/coupons" class="border border-gray-300 text-gray-600 px-5 py-2 rounded-lg font-medium hover:bg-gray-50 transition text-sm">Clear</a>
                 <% } %>
@@ -88,8 +86,8 @@
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Code</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Assigned To</th>
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Discount</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Min. Purchase</th>
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Expiry</th>
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
@@ -123,16 +121,15 @@
                                 <span class="font-mono font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded text-sm tracking-widest"><%= coupon.code %></span>
                             </td>
                             <td class="px-6 py-4">
-                                <% if (coupon.userId) { %>
-                                    <p class="font-semibold text-gray-800 text-sm"><%= coupon.userId.name %></p>
-                                    <p class="text-xs text-gray-400"><%= coupon.userId.email %></p>
-                                <% } else { %>
-                                    <span class="text-gray-400 italic text-sm">Deleted User</span>
-                                <% } %>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="text-lg font-bold text-teal-700">₹<%= coupon.discountAmount.toLocaleString('en-IN') %></span>
+                                <span class="text-lg font-bold text-teal-700">&#8377;<%= coupon.discountAmount.toLocaleString('en-IN') %></span>
                                 <p class="text-xs text-gray-400 font-medium">Flat Off</p>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <% if (coupon.minPurchaseAmount && coupon.minPurchaseAmount > 0) { %>
+                                    &#8377;<%= coupon.minPurchaseAmount.toLocaleString('en-IN') %>
+                                <% } else { %>
+                                    <span class="text-gray-400 italic">No minimum</span>
+                                <% } %>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">
                                 <%= new Date(coupon.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
@@ -142,9 +139,7 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <button onclick="confirmDeleteCoupon('<%= coupon._id %>')"
-                                    class="text-red-600 hover:text-red-800 text-sm font-bold transition">
-                                    Delete
-                                </button>
+                                    class="text-red-600 hover:text-red-800 text-sm font-bold transition">Delete</button>
                             </td>
                         </tr>
                     <% }) %>
@@ -179,33 +174,37 @@
         </div>
         <div class="p-6 space-y-5">
 
+            <!-- Coupon Code -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Coupon Code *</label>
                 <input type="text" id="couponCode" placeholder="e.g. SAVE200"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase"
                     oninput="this.value = this.value.toUpperCase()">
-                <p class="text-xs text-gray-400 mt-1">4–20 alphanumeric characters, no spaces</p>
+                <p class="text-xs text-gray-400 mt-1">4-20 alphanumeric characters, no spaces</p>
             </div>
 
+            <!-- Discount Amount -->
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Assign to User *</label>
-                <select id="couponUserId" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                    <option value="">-- Select User --</option>
-                    <% users.forEach(u => { %>
-                        <option value="<%= u._id %>"><%= u.name %> (<%= u.email %>)</option>
-                    <% }) %>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Discount Amount (₹) *</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Discount Amount (&#8377;) *</label>
                 <div class="relative">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">&#8377;</span>
                     <input type="number" id="discountAmount" min="1" placeholder="e.g. 200"
                         class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
                 </div>
             </div>
 
+            <!-- Minimum Purchase Amount -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Minimum Purchase Amount (&#8377;)</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">&#8377;</span>
+                    <input type="number" id="minPurchaseAmount" min="0" placeholder="e.g. 500 (optional)"
+                        class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Minimum order value required to apply this coupon</p>
+            </div>
+
+            <!-- Expiry Date -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Expiry Date *</label>
                 <input type="date" id="expiryDate"
@@ -252,43 +251,66 @@
 </div>
 
 <script>
-    // ── Create Modal ──────────────────────────────────────────────────────
     function openCreateModal() {
         document.getElementById('createCouponModal').classList.remove('hidden');
     }
+
     function closeCreateModal() {
         document.getElementById('createCouponModal').classList.add('hidden');
         document.getElementById('couponError').classList.add('hidden');
-        document.getElementById('couponCode').value = '';
-        document.getElementById('couponUserId').value = '';
-        document.getElementById('discountAmount').value = '';
-        document.getElementById('expiryDate').value = '';
+        document.getElementById('couponCode').value        = '';
+        document.getElementById('discountAmount').value    = '';
+        document.getElementById('minPurchaseAmount').value = '';
+        document.getElementById('expiryDate').value        = '';
     }
 
     async function submitCreateCoupon() {
-        const code           = document.getElementById('couponCode').value.trim();
-        const userId         = document.getElementById('couponUserId').value;
-        const discountAmount = document.getElementById('discountAmount').value;
-        const expiryDate     = document.getElementById('expiryDate').value;
-        const errorBox       = document.getElementById('couponError');
-        const btn            = document.getElementById('createCouponBtn');
+        const code              = document.getElementById('couponCode').value.trim();
+        const discountAmount    = document.getElementById('discountAmount').value;
+        const minPurchaseAmount = document.getElementById('minPurchaseAmount').value;
+        const expiryDate        = document.getElementById('expiryDate').value;
+        const errorBox          = document.getElementById('couponError');
+        const btn               = document.getElementById('createCouponBtn');
 
         errorBox.classList.add('hidden');
 
-        if (!code || !userId || !discountAmount || !expiryDate) {
-            errorBox.textContent = 'All fields are required.';
+        if (!code || !discountAmount || !expiryDate) {
+            errorBox.textContent = 'Coupon code, discount amount and expiry date are required.';
             errorBox.classList.remove('hidden');
             return;
         }
 
-        btn.disabled = true;
+        if (!/^[A-Z0-9]{4,20}$/.test(code)) {
+            errorBox.textContent = 'Coupon code must be 4-20 alphanumeric characters with no spaces.';
+            errorBox.classList.remove('hidden');
+            return;
+        }
+
+        if (parseFloat(discountAmount) <= 0) {
+            errorBox.textContent = 'Discount amount must be greater than 0.';
+            errorBox.classList.remove('hidden');
+            return;
+        }
+
+        if (minPurchaseAmount && parseFloat(minPurchaseAmount) < 0) {
+            errorBox.textContent = 'Minimum purchase amount cannot be negative.';
+            errorBox.classList.remove('hidden');
+            return;
+        }
+
+        btn.disabled    = true;
         btn.textContent = 'Creating...';
 
         try {
             const res = await fetch('/admin/coupons', {
-                method: 'POST',
+                method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code, userId, discountAmount, expiryDate }),
+                body: JSON.stringify({
+                    code,
+                    discountAmount,
+                    minPurchaseAmount: minPurchaseAmount || 0,
+                    expiryDate
+                }),
             });
             const data = await res.json();
 
@@ -298,22 +320,21 @@
                 errorBox.textContent = data.message || 'Failed to create coupon.';
                 errorBox.classList.remove('hidden');
             }
-        } catch {
+        } catch (e) {
             errorBox.textContent = 'Connection error. Please try again.';
             errorBox.classList.remove('hidden');
         } finally {
-            btn.disabled = false;
+            btn.disabled    = false;
             btn.textContent = 'Create Coupon';
         }
     }
 
-    // ── Delete Modal ──────────────────────────────────────────────────────
     function confirmDeleteCoupon(id) {
         const modal = document.getElementById('deleteCouponModal');
         modal.classList.remove('hidden');
         document.getElementById('confirmDeleteBtn').onclick = async () => {
             try {
-                const res  = await fetch(`/admin/coupons/${id}`, { method: 'DELETE' });
+                const res  = await fetch('/admin/coupons/' + id, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) location.reload();
                 else alert(data.message || 'Failed to delete coupon.');

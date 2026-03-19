@@ -83,7 +83,12 @@ const addToCart = async (req, res) => {
 
     const product = await Product.findById(productId).populate("category");
 
-    if (!product || product.isBlocked || !product.isListed || !product.category.isListed) {
+    if (
+      !product ||
+      product.isBlocked ||
+      !product.isListed ||
+      !product.category.isListed
+    ) {
       return res.status(400).json({
         success: false,
         message: "Product unavailable",
@@ -93,9 +98,7 @@ const addToCart = async (req, res) => {
     let selectedColor = color;
 
     if (!selectedColor) {
-      const firstAvailable = product.variants.find(
-        (v) => v.quantity > 0
-      );
+      const firstAvailable = product.variants.find((v) => v.quantity > 0);
 
       if (!firstAvailable) {
         return res.status(400).json({
@@ -107,9 +110,7 @@ const addToCart = async (req, res) => {
       selectedColor = firstAvailable.color;
     }
 
-    const variant = product.variants.find(
-      (v) => v.color === selectedColor
-    );
+    const variant = product.variants.find((v) => v.color === selectedColor);
 
     if (!variant || variant.quantity <= 0) {
       return res.status(400).json({
@@ -125,9 +126,7 @@ const addToCart = async (req, res) => {
     }
 
     const existingItem = cart.items.find(
-      (i) =>
-        i.productId.toString() === productId &&
-        i.color === selectedColor
+      (i) => i.productId.toString() === productId && i.color === selectedColor,
     );
 
     if (existingItem) {
@@ -138,10 +137,10 @@ const addToCart = async (req, res) => {
         });
       }
 
-      if(existingItem.quantity + 1 > MAX_CART_QTY){
+      if (existingItem.quantity + 1 > MAX_CART_QTY) {
         return res.status(400).json({
           success: false,
-          message: "Maximum quantity limit reached"
+          message: "Maximum quantity limit reached",
         });
       }
 
@@ -157,10 +156,7 @@ const addToCart = async (req, res) => {
 
     await cart.save();
 
-    await User.updateOne(
-      {_id: userId},
-      {$pull: {wishlist: productId}}
-    );
+    await User.updateOne({ _id: userId }, { $pull: { wishlist: productId } });
 
     if (buyNow) {
       return res.json({
@@ -169,16 +165,12 @@ const addToCart = async (req, res) => {
       });
     }
 
-    const cartCount = cart.items.reduce(
-      (sum, item) => sum + item.quantity,
-      0
-    );
+    const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
     return res.json({
       success: true,
       cartCount,
     });
-
   } catch (error) {
     console.error("ADD TO CART ERROR:", error);
     res.status(500).json({
@@ -187,7 +179,6 @@ const addToCart = async (req, res) => {
     });
   }
 };
-
 
 const incrementQty = async (req, res) => {
   try {
@@ -214,10 +205,9 @@ const incrementQty = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Item not found" });
-    
-    
+
     if (item.productId.isBlocked || !item.productId.isListed) {
-    return res.status(400).json({
+      return res.status(400).json({
         success: false,
         message: "Product unavailable",
       });
@@ -251,17 +241,32 @@ const incrementQty = async (req, res) => {
       });
     }
 
-    if(item.quantity + 1 > MAX_CART_QTY){
+    if (item.quantity + 1 > MAX_CART_QTY) {
       return res.status(400).json({
         success: false,
-        message: "Maximum quantity limit reached"
+        message: "Maximum quantity limit reached",
       });
     }
 
     item.quantity += 1;
     await cart.save();
 
-    res.json({ success: true });
+    const updatedCart = await Cart.findOne({ userId });
+    let subtotal = 0;
+    updatedCart.items.forEach((i) => {
+      subtotal += i.price * i.quantity;
+    });
+    const tax = Math.round(subtotal * 0.18);
+    const total = subtotal + tax;
+
+    res.json({
+      success: true,
+      quantity: item.quantity,
+      itemTotal: item.price * item.quantity,
+      subtotal,
+      tax,
+      total,
+    });
   } catch (error) {
     console.log("INCREMENT ERROR:", error);
     res.status(500).json({ success: false });
@@ -294,7 +299,27 @@ const decrementQty = async (req, res) => {
     }
 
     await cart.save();
-    res.json({ success: true });
+
+    const updatedCart = await Cart.findOne({ userId });
+    let subtotal = 0;
+    updatedCart.items.forEach((i) => {
+      subtotal += i.price * i.quantity;
+    });
+    const tax = Math.round(subtotal * 0.18);
+    const total = subtotal + tax;
+    const cartEmpty = updatedCart.items.length === 0;
+
+    const updatedItem = updatedCart.items.find(
+      (i) => i.productId.toString() === productId,
+    );
+    res.json({
+      success: true,
+      quantity: updatedItem ? updatedItem.quantity : 0,
+      subtotal,
+      tax,
+      total,
+      cartEmpty,
+    });
   } catch (error) {
     console.error("DECREMENT ERROR: ", error);
     res.status(500).json({ success: false });
@@ -319,7 +344,17 @@ const removeItem = async (req, res) => {
       });
     }
 
-    res.json({ success: true });
+    const updatedCart = await Cart.findOne({ userId });
+    let subtotal = 0;
+    if (updatedCart)
+      updatedCart.items.forEach((i) => {
+        subtotal += i.price * i.quantity;
+      });
+    const tax = Math.round(subtotal * 0.18);
+    const total = subtotal + tax;
+    const cartEmpty = !updatedCart || updatedCart.items.length === 0;
+
+    res.json({ success: true, subtotal, tax, total, cartEmpty });
   } catch (error) {
     console.error("REMOVE ERROR: ", error);
     res.status(500).json({ success: false });

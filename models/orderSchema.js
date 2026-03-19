@@ -23,11 +23,27 @@ const orderSchema = new mongoose.Schema(
         color: String,
         quantity: Number,
         price: Number,
+
+        itemStatus: {
+          type: String,
+          enum: ["active", "cancelled", "return-requested", "returned"],
+          default: "active",
+        },
+        cancelReason: { type: String },
+        cancelledAt: { type: Date },
+
+        returnReason: { type: String },
+        returnRequestedAt: { type: Date },
+        returnApprovedAt: { type: Date },
+        returnStatus: {
+          type: String,
+          enum: ["none", "requested", "approved", "rejected"],
+          default: "none",
+        },
       },
     ],
 
     finalAmount: Number,
-
     totalPrice: Number,
 
     discount: {
@@ -52,7 +68,7 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["COD", "ONLINE"],
+      enum: ["COD", "ONLINE", "WALLET"],
       default: "COD",
     },
 
@@ -62,13 +78,8 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
     },
 
-    cancelReason: {
-      type: String,
-    },
-
-    returnReason: {
-      type: String,
-    },
+    cancelReason: { type: String },
+    returnReason: { type: String },
 
     returnStatus: {
       type: String,
@@ -78,37 +89,14 @@ const orderSchema = new mongoose.Schema(
     returnProcessedAt: Date,
 
     shippingAddress: {
-      name: {
-        type: String,
-        required: true,
-      },
-      phone: {
-        type: String,
-        required: true,
-      },
-      email: {
-        type: String,
-      },
-      address: {
-        type: String,
-        required: true,
-      },
-      city: {
-        type: String,
-        required: true,
-      },
-      state: {
-        type: String,
-        required: true,
-      },
-      pincode: {
-        type: String,
-        required: true,
-      },
-      country: {
-        type: String,
-        default: "India",
-      },
+      name: { type: String, required: true },
+      phone: { type: String, required: true },
+      email: { type: String },
+      address: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      pincode: { type: String, required: true },
+      country: { type: String, default: "India" },
     },
   },
   { timestamps: true },

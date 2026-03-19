@@ -1,1268 +1,985 @@
 <%- include('../partials/user/header') %>
 
-<main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-12 lg:py-20">
-    <!-- Breadcrumbs -->
-    <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-500 mb-12 flex items-center space-x-3">
-        <a href="/" class="hover:text-emera-950 transition-colors">Home</a>
-        <span class="opacity-40">/</span>
-        <a href="/products?category=<%= product.category?._id %>" class="hover:text-emera-950 transition-colors">
-            <%= product.category?.name || 'Products' %>
-        </a>
-        <span class="opacity-40">/</span>
-        <span class="text-emera-950 font-bold"><%= product.name %></span>
-    </nav>
-
-    <div class="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
-        <!-- Left: Gallery -->
-        <div class="lg:w-3/5 flex flex-col-reverse lg:flex-row gap-6 w-full">
-            <!-- Thumbnails -->
-            <div id="thumb-container" class="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible no-scrollbar pb-4 lg:pb-0">
-                <% if (product.productImage && product.productImage.length > 0) { %>
-                    <% product.productImage.forEach((img, index) => { %>
-                        <div class="thumbnail <%= index === 0 ? 'active' : '' %> w-20 h-24 lg:w-24 lg:h-28 flex-shrink-0" onclick="changeImage(<%= index %>)">
-                            <img src="<%= img.url %>" class="w-full h-full object-cover" alt="View <%= index + 1 %>">
-                        </div>
-                    <% }) %>
-                <% } %>
-            </div>
-
-            <!-- Main Display with Fixed Zoom -->
-            <div class="flex-1 aspect-[4/5] relative overflow-hidden shadow-md cursor-zoom-in" id="main-zoom-area">
-                <img
-                    id="main-img"
-                    src="<%= product.productImage && product.productImage.length > 0 ? product.productImage[0].url : 'https://via.placeholder.com/800x1000?text=No+Image' %>"
-                    alt="<%= product.name %>"
-                    class="w-full h-full object-cover transition-transform duration-100"
-                    style="transform-origin: center center;"
-                />
-
-                <div class="absolute top-6 right-6 pointer-events-none">
-                    <% if (product.quantity > 0 && product.quantity < 5) { %>
-                    <span class="bg-white/95 text-emera-950 text-[9px] font-bold px-5 py-2.5 uppercase tracking-widest shadow-lg rounded-sm">
-                        Limited Stock
-                    </span>
-                    <% } %>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right: Product Information -->
-        <div class="lg:w-2/5 space-y-10 animate-reveal w-full">
-            <div class="space-y-6">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                    <h1 class="text-4xl lg:text-5xl font-serif text-gray-900 leading-tight">
-                        <%= product.name.split(' ').slice(0, -1).join(' ') %> <br>
-                        <span class="italic font-light"><%= product.name.split(' ').slice(-1) %></span>
-                    </h1>
-                    
-                    <div id="stock-status-pill">
-                        <% if (product.quantity === 0) { %>
-                            <div class="stock-pill stock-out">Sold Out</div>
-                        <% } else if (product.quantity < 5) { %>
-                            <div class="stock-pill stock-low">Only <%= product.quantity %> Left</div>
-                        <% } else { %>
-                            <div class="stock-pill stock-in">In Stock</div>
-                        <% } %>
-                    </div>
-                </div>
-                
-                <!-- ===== PRICE & RATING SECTION ===== -->
-                <div class="flex items-center justify-between border-b border-gray-200 pb-6">
-                    <div class="flex flex-col">
-                        <div class="flex items-center space-x-4">
-                            <% if (discount > 0) { %>
-                                <p class="text-3xl font-semibold text-gray-900">₹<%= Math.round(finalPrice).toLocaleString() %></p>
-                                <p class="text-lg text-gray-400 line-through font-light">₹<%= product.salePrice.toLocaleString() %></p>
-                                <span class="text-[10px] bg-red-600 text-white px-3 py-1.5 uppercase font-bold tracking-tight rounded-sm">
-                                    Save <%= discount %>%
-                                </span>
-                            <% } else { %>
-                                <p class="text-3xl font-semibold text-gray-900">₹<%= product.salePrice.toLocaleString() %></p>
-                                <% if (product.salePrice < product.regularPrice) { %>
-                                    <p class="text-lg text-gray-400 line-through font-light">₹<%= product.regularPrice.toLocaleString() %></p>
-                                    <span class="text-[10px] bg-red-600 text-white px-3 py-1.5 uppercase font-bold tracking-tight rounded-sm">
-                                        Save <%= Math.round((1 - product.salePrice/product.regularPrice) * 100) %>%
-                                    </span>
-                                <% } %>
-                            <% } %>
-                        </div>
-                        <span class="text-[10px] text-emera-700 font-bold uppercase tracking-[0.15em] mt-3">✓ Certified Premium Product</span>
-                    </div>
-                    
-                    <!-- ✅ REAL RATINGS DISPLAY -->
-                    <div class="text-right">
-                        <div class="flex gap-0.5 justify-end mb-2">
-                            <% 
-                            const avgRating = product.averageRating || 0;
-                            const fullStars = Math.floor(avgRating);
-                            const hasHalfStar = avgRating % 1 >= 0.5;
-                            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-                            %>
-                            
-                            <% for(let i = 0; i < fullStars; i++) { %>
-                                <span class="star filled">★</span>
-                            <% } %>
-                            
-                            <% if(hasHalfStar) { %>
-                                <span class="star half">★</span>
-                            <% } %>
-                            
-                            <% for(let i = 0; i < emptyStars; i++) { %>
-                                <span class="star empty">★</span>
-                            <% } %>
-                        </div>
-                        <p class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">
-                            <%= avgRating.toFixed(1) %> (<%= product.totalReviews || 0 %> reviews)
-                        </p>
-                    </div>
-                </div>
-                <!-- ===== END PRICE & RATING SECTION ===== -->
-            </div>
-
-            <!-- Offers Card -->
-            <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-6 rounded-lg space-y-3 shadow-sm">
-                <div class="flex items-center space-x-3 text-emera-950">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
-                    <span class="text-[11px] uppercase tracking-[0.25em] font-bold">Special Offer</span>
-                </div>
-                <p class="text-xs text-gray-700 leading-relaxed">
-                    Complimentary premium care kit <span class="font-semibold text-emera-950">included with purchases</span> over ₹50,000
-                </p>
-            </div>
-
-            <!-- Description -->
-            <div class="space-y-4">
-                <h4 class="text-[11px] uppercase tracking-widest font-bold text-gray-500">Product Description</h4>
-                <p class="text-sm text-gray-700 leading-relaxed font-light">
-                    <%= product.description %>
-                </p>
-            </div>
-
-            <!-- Variant Colors -->
-            <div class="space-y-5">
-                <label class="text-[11px] uppercase tracking-widest font-bold text-gray-500 block">
-                    Available Colors
-                </label>
-                <div class="flex gap-4">
-                    <% product.variants.forEach((variant, index) => { %>
-                        <button type="button" onclick="selectVariant(<%= index %>)" 
-                            class="variant-btn <%= index === 0 ? 'selected' : '' %> w-12 h-12 rounded-full border-4 border-white transition-all 
-                            <%= variant.quantity === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:scale-110' %>" 
-                            style="background-color: <%= variant.color %>" 
-                            title="<%= variant.color %>">
-                        </button>
-                    <% }) %>
-                </div>
-                <p id="stock-text" class="text-xs text-gray-600 font-medium"></p>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex flex-col gap-5 pt-4">
-                <% if (!user) { %>
-                    <a href="/login" 
-                        class="block text-center bg-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:bg-emera-700 transition-all duration-300">
-                        Add to Cart
-                    </a>
-                <% } else { %>
-                    <button id="add-btn" onclick="addToCart('<%= product._id %>')" 
-                        class="bg-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:bg-emera-700 transition-all duration-100">
-                        Add to Cart
-                    </button>
-                <% } %>
-                
-                <button
-                onclick="buyNow('<%= product._id %>')"
-                class="flex-1 border-2 border-emera-950 text-emera-950 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-300 rounded-sm"
-                >
-                Buy Now
-                </button>
-
-                <div class="flex gap-4">
-                    <button onclick="addToWishlist('<%= product._id %>')" class="flex-1 border-2 border-emera-950 text-emera-950 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-300 rounded-sm">
-                        Add to Wishlist
-                    </button>
-                </div>
-            </div>
-
-            <!-- Trust Badges -->
-            <div class="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
-                <div class="text-center space-y-2">
-                    <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                    <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Authentic</p>
-                </div>
-                <div class="text-center space-y-2">
-                    <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                    <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Secure Pay</p>
-                </div>
-                <div class="text-center space-y-2">
-                    <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                    <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Free Ship</p>
-                </div>
-            </div>
-
-            <!-- ✅ DYNAMIC Specifications Accordion -->
-            <div class="border-t border-gray-200 pt-8">
-                <details class="group" open>
-                    <summary class="flex justify-between items-center cursor-pointer list-none text-[11px] uppercase tracking-[0.3em] font-bold text-gray-900 py-4">
-                        <span>Product Specifications</span>
-                        <span class="group-open:rotate-45 transition-transform duration-300 text-2xl font-light text-gray-400">+</span>
-                    </summary>
-                    <div class="pt-8 grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-10 text-xs">
-                        <% 
-                        // Convert specifications Map to array
-                        const specs = product.specifications || new Map();
-                        const specEntries = specs instanceof Map ? Array.from(specs.entries()) : Object.entries(specs);
-                        
-                        if (specEntries.length > 0) { 
-                            specEntries.forEach(([key, value]) => { %>
-                                <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                                    <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]"><%= key %></p>
-                                    <p class="text-gray-600"><%= value %></p>
-                                </div>
-                            <% });
-                        } else { %>
-                            <!-- Fallback if no specs in database -->
-                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Brand</p>
-                                <p class="text-gray-600"><%= product.brand %></p>
-                            </div>
-                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Category</p>
-                                <p class="text-gray-600"><%= product.category.name %></p>
-                            </div>
-                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Materials</p>
-                                <p class="text-gray-600">Premium Quality Materials</p>
-                            </div>
-                            <div class="border-l-2 border-emera-700 pl-5 space-y-1">
-                                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Quality</p>
-                                <p class="text-gray-600">Handcrafted Excellence</p>
-                            </div>
-                        <% } %>
-                    </div>
-                </details>
-            </div>
-        </div>
-    </div>
-
-    <!-- ✅ REVIEWS & RATINGS SECTION -->
-    <section class="mt-32 border-t border-gray-200 pt-24">
-        <div class="max-w-5xl mx-auto">
-            <div class="flex justify-between items-end mb-16">
-                <div class="space-y-3">
-                    <span class="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 block">Customer Feedback</span>
-                    <h2 class="text-4xl font-serif text-gray-900">Reviews & Ratings</h2>
-                </div>
-                
-                <% if (canReview) { %>
-                    <button onclick="openReviewModal()" class="text-[10px] uppercase tracking-widest border-b-2 border-gray-900 pb-1 font-bold hover:text-emera-700 hover:border-emera-700 transition-colors">
-                        Write a Review
-                    </button>
-                <% } %>
-            </div>
-
-            <!-- Rating Summary -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-16">
-                <!-- Average Rating -->
-                <div class="bg-gray-50 rounded-lg p-8 text-center">
-                    <div class="text-6xl font-bold text-gray-900 mb-3">
-                        <%= (product.averageRating || 0).toFixed(1) %>
-                    </div>
-                    <div class="flex gap-1 justify-center mb-3">
-                        <% for(let i = 0; i < 5; i++) { %>
-                            <span class="star <%= i < Math.round(product.averageRating || 0) ? 'filled' : 'empty' %>">★</span>
-                        <% } %>
-                    </div>
-                    <p class="text-sm text-gray-600">Based on <%= product.totalReviews || 0 %> reviews</p>
-                </div>
-
-                <!-- Rating Distribution -->
-                <div class="lg:col-span-2 space-y-3">
-                    <% 
-                    const totalReviewCount = product.totalReviews || 0;
-                    for(let rating = 5; rating >= 1; rating--) { 
-                        const count = ratingDistribution[rating] || 0;
-                        const percentage = totalReviewCount > 0 ? (count / totalReviewCount * 100).toFixed(0) : 0;
-                    %>
-                        <div class="flex items-center gap-4">
-                            <span class="text-sm font-medium text-gray-700 w-12"><%= rating %> ★</span>
-                            <div class="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
-                                <div class="bg-yellow-400 h-full transition-all duration-500" style="width: <%= percentage %>%"></div>
-                            </div>
-                            <span class="text-sm text-gray-600 w-16 text-right"><%= count %> (<%= percentage %>%)</span>
-                        </div>
-                    <% } %>
-                </div>
-            </div>
-
-            <!-- Reviews List -->
-            <div class="space-y-8">
-                <% if (reviews && reviews.length > 0) { %>
-                    <% reviews.forEach(review => { %>
-                        <div class="border-b border-gray-200 pb-8">
-                            <div class="flex items-start gap-6">
-                                <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 flex-shrink-0">
-                                    <%= review.userId.name.charAt(0).toUpperCase() %>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div>
-                                            <h4 class="font-semibold text-gray-900"><%= review.userId.name %></h4>
-                                            <div class="flex gap-1 mt-1">
-                                                <% for(let i = 0; i < 5; i++) { %>
-                                                    <span class="star <%= i < review.rating ? 'filled' : 'empty' %> text-sm">★</span>
-                                                <% } %>
-                                            </div>
-                                        </div>
-                                        <% if (review.isVerifiedPurchase) { %>
-                                            <span class="text-[9px] bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-200 uppercase tracking-wide font-bold">
-                                                ✓ Verified Purchase
-                                            </span>
-                                        <% } %>
-                                    </div>
-                                    <h5 class="font-semibold text-gray-800 mb-2"><%= review.title %></h5>
-                                    <p class="text-sm text-gray-600 leading-relaxed mb-3"><%= review.comment %></p>
-                                    <div class="flex items-center gap-4 text-xs text-gray-500">
-                                        <span><%= new Date(review.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></span>
-                                        <button onclick="markHelpful('<%= review._id %>')" class="hover:text-emera-700 transition-colors">
-                                            👍 Helpful (<%= review.helpful || 0 %>)
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <% }) %>
-                <% } else { %>
-                    <div class="text-center py-16">
-                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                        </svg>
-                        <p class="text-gray-500 text-sm">No reviews yet. Be the first to review this product!</p>
-                    </div>
-                <% } %>
-            </div>
-        </div>
-    </section>
-
-    <!-- Related Products -->
-    <% if (relatedProducts && relatedProducts.length > 0) { %>
-    <section class="mt-32 border-t border-gray-200 pt-24">
-        <div class="flex justify-between items-end mb-16">
-            <div class="space-y-3">
-                <span class="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 block">You May Also Like</span>
-                <h2 class="text-4xl font-serif text-gray-900">Related Products</h2>
-            </div>
-            <a href="/products" class="text-[10px] uppercase tracking-widest border-b-2 border-gray-900 pb-1 font-bold hover:text-emera-700 hover:border-emera-700 transition-colors">Browse Collection</a>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
-            <% relatedProducts.forEach(rp => { %>
-                <a href="/products/<%= rp._id %>" class="block group space-y-5">
-                    <div class="aspect-[4/5] bg-stone-50 overflow-hidden relative rounded-sm shadow-sm">
-                        <img src="<%= rp.productImage?.[0]?.url || '/images/placeholder.png' %>" 
-                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                            alt="<%= rp.name %>">
-                    </div>
-                    <div class="space-y-2">
-                        <h3 class="text-sm font-serif group-hover:text-emera-950 transition-colors"><%= rp.name %></h3>
-                        <div class="flex justify-between items-center">
-                            <p class="text-xs font-bold tracking-wide">₹<%= rp.salePrice.toLocaleString() %></p>
-                            <span class="text-[9px] uppercase tracking-widest text-gray-500 group-hover:text-emera-950 transition-colors">View Details →</span>
-                        </div>
-                    </div>
-                </a>
-            <% }) %>
-        </div>
-    </section>
-    <% } %>
-</main>
-
-<!-- ✅ REVIEW SUBMISSION MODAL -->
-<div id="review-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 backdrop-blur-md" style="display: none;">
-    <div class="bg-white rounded-lg shadow-2xl p-8 max-w-2xl w-full mx-4 transform transition-all overflow-hidden">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-2xl font-serif text-gray-900">Write a Review</h3>
-            <button onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-900 text-3xl">×</button>
-        </div>
-
-        <form id="review-form" class="space-y-6">
-            <input type="hidden" name="productId" value="<%= product._id %>">
-            <input type="hidden" name="orderId" value="<%= eligibleOrderId %>">
-            
-            <!-- Rating -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-3">Your Rating</label>
-                <div class="flex gap-2">
-                    <% for(let i = 1; i <= 5; i++) { %>
-                        <button type="button" onclick="setRating(<%= i %>)" class="rating-star text-4xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
-                    <% } %>
-                </div>
-                <input type="hidden" name="rating" id="rating-input" required>
-            </div>
-
-            <!-- Title -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Review Title</label>
-                <input type="text" name="title" required maxlength="100" placeholder="Summarize your experience" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emera-700 outline-none">
-            </div>
-
-            <!-- Comment -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Your Review</label>
-                <textarea name="comment" required rows="5" maxlength="1000" placeholder="Share your thoughts about this product..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emera-700 outline-none resize-none"></textarea>
-            </div>
-
-            <!-- Submit Button -->
-            <div class="flex gap-4">
-                <button type="submit" class="flex-1 bg-emera-950 text-white py-4 rounded-lg font-bold uppercase text-xs tracking-widest hover:bg-emera-700 transition-all">
-                    Submit Review
-                </button>
-                <button type="button" onclick="closeReviewModal()" class="flex-1 border-2 border-gray-300 py-4 rounded-lg font-bold uppercase text-xs tracking-widest hover:bg-gray-50 transition-all">
-                    Cancel
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Success Modal -->
-<div id="success-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 backdrop-blur-md" style="display: none;">
-    <div class="bg-white rounded-lg shadow-2xl p-0 max-w-xl w-full mx-4 transform transition-all overflow-hidden relative">
-        
-        <!-- Confetti Animation -->
-        <div class="confetti-container absolute inset-0 pointer-events-none overflow-hidden">
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-        </div>
-
-        <!-- Premium Header with Animated Background -->
-        <div class="relative bg-gradient-to-br from-emera-950 via-emera-800 to-emera-950 p-10 overflow-hidden">
-            <!-- Animated Background Elements -->
-            <div class="absolute inset-0 overflow-hidden">
-                <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl animate-float-slow"></div>
-                <div class="absolute bottom-0 left-0 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl animate-float-slower"></div>
-                <div class="absolute top-1/2 left-1/2 w-64 h-64 bg-amber-300 opacity-10 rounded-full blur-2xl animate-pulse-slow"></div>
-            </div>
-
-            <!-- Shimmer Effect -->
-            <div class="absolute inset-0 shimmer-effect"></div>
-            
-            <div class="relative z-10 text-center">
-                <!-- Success Icon with Ripple Effect -->
-                <div class="relative mx-auto w-24 h-24 mb-6">
-                    <div class="absolute inset-0 rounded-full bg-white opacity-20 animate-ping-slow"></div>
-                    <div class="absolute inset-2 rounded-full bg-white opacity-30 animate-ping-slower"></div>
-                    <div class="relative flex items-center justify-center h-24 w-24 rounded-full bg-white bg-opacity-20 backdrop-blur-md animate-scale-in shadow-2xl">
-                        <div class="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-lg">
-                            <svg class="h-12 w-12 text-emera-950 animate-check-draw" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <h3 class="text-3xl font-serif text-white mb-3 tracking-wide animate-fade-in-up" style="animation-delay: 0.2s;">
-                    Successfully Added!
-                </h3>
-                <p class="text-white text-opacity-90 text-xs uppercase tracking-[0.4em] font-light animate-fade-in-up" style="animation-delay: 0.3s;">
-                    ✦ Item secured in your collection ✦
-                </p>
-            </div>
-        </div>
-
-        <!-- Product Preview Card -->
-        <div class="p-8 border-b border-gray-100 animate-fade-in-up" style="animation-delay: 0.4s;">
-            <div class="flex items-start gap-6 group">
-                <div class="relative w-28 h-32 bg-stone-100 rounded-md overflow-hidden flex-shrink-0 shadow-lg transform transition-all duration-500 group-hover:scale-105 group-hover:shadow-xl">
-                    <img id="modal-product-img" src="" alt="Product" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </div>
-                <div class="flex-1 pt-1">
-                    <h4 id="modal-product-name" class="font-serif text-gray-900 text-lg mb-3 leading-snug"></h4>
-                    <div class="space-y-3">
-                        <div class="flex items-center gap-3">
-                            <p id="modal-product-price" class="text-base font-bold text-emera-950"></p>
-                            <span class="text-xs text-gray-400">•</span>
-                            <span class="text-xs text-gray-500 uppercase tracking-wide">Premium Quality</span>
-                        </div>
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-md border border-gray-100">
-                            <div id="modal-product-color" class="w-5 h-5 rounded-full border-2 border-white shadow-md transform transition-transform duration-300 hover:scale-125"></div>
-                            <span class="text-xs text-gray-600 uppercase tracking-wider font-medium">Selected Color</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cart Summary with Gradient -->
-        <div class="px-8 py-6 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 border-b border-amber-200 animate-fade-in-up" style="animation-delay: 0.5s;">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center transform transition-all duration-300 hover:scale-110 hover:rotate-12">
-                        <svg class="w-6 h-6 text-emera-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase tracking-widest font-bold text-gray-500 mb-1">Your Cart</p>
-                        <p id="modal-cart-count" class="text-lg font-bold text-emera-950">0 items</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs uppercase tracking-wider text-gray-500 mb-1">Status</p>
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                        <span class="text-xs font-semibold text-green-700">Ready to Checkout</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Action Buttons with Enhanced Styling -->
-        <div class="p-8 space-y-4 animate-fade-in-up" style="animation-delay: 0.6s;">
-            <a href="/cart" class="block relative overflow-hidden group text-center bg-gradient-to-r from-emera-950 via-emera-800 to-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-md transition-all duration-500 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
-                <span class="relative z-10 flex items-center justify-center gap-3">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    View Cart & Checkout
-                    <svg class="w-4 h-4 transform transition-transform duration-300 group-hover:translate-x-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                    </svg>
-                </span>
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 group-hover:translate-x-full transition-all duration-1000"></div>
-            </a>
-            
-            <button onclick="closeModal()" class="relative w-full overflow-hidden group border-2 border-gray-300 text-gray-700 py-4 text-[10px] uppercase tracking-[0.3em] font-bold rounded-md transition-all duration-300 hover:border-emera-950 hover:text-white hover:bg-emera-950 transform hover:scale-[1.02]">
-                <span class="relative z-10">Continue Shopping</span>
-            </button>
-
-            <!-- Trust Badge -->
-            <div class="flex items-center justify-center gap-2 pt-4 opacity-70">
-                <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                </svg>
-                <span class="text-xs text-gray-600">Secure checkout • Free shipping over ₹50,000</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Wishlist Modal -->
-<div id="wishlist-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 backdrop-blur-md" style="display: none;">
-    <div class="bg-white rounded-lg shadow-2xl p-0 max-w-xl w-full mx-4 transform transition-all overflow-hidden relative">
-        
-        <!-- Heart Animation Container -->
-        <div class="heart-container absolute inset-0 pointer-events-none overflow-hidden">
-            <div class="floating-heart"></div>
-            <div class="floating-heart"></div>
-            <div class="floating-heart"></div>
-            <div class="floating-heart"></div>
-            <div class="floating-heart"></div>
-        </div>
-
-        <!-- Premium Header with Animated Background -->
-        <div class="relative bg-gradient-to-br from-rose-900 via-pink-800 to-rose-900 p-10 overflow-hidden">
-            <!-- Animated Background Elements -->
-            <div class="absolute inset-0 overflow-hidden">
-                <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl animate-float-slow"></div>
-                <div class="absolute bottom-0 left-0 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl animate-float-slower"></div>
-                <div class="absolute top-1/2 left-1/2 w-64 h-64 bg-rose-300 opacity-10 rounded-full blur-2xl animate-pulse-slow"></div>
-            </div>
-
-            <!-- Shimmer Effect -->
-            <div class="absolute inset-0 shimmer-effect"></div>
-            
-            <div class="relative z-10 text-center">
-                <!-- Heart Icon with Ripple Effect -->
-                <div class="relative mx-auto w-24 h-24 mb-6">
-                    <div class="absolute inset-0 rounded-full bg-white opacity-20 animate-ping-slow"></div>
-                    <div class="absolute inset-2 rounded-full bg-white opacity-30 animate-ping-slower"></div>
-                    <div class="relative flex items-center justify-center h-24 w-24 rounded-full bg-white bg-opacity-20 backdrop-blur-md animate-scale-in shadow-2xl">
-                        <div class="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-lg">
-                            <svg class="h-12 w-12 text-rose-600 animate-heart-beat" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <h3 class="text-3xl font-serif text-white mb-3 tracking-wide animate-fade-in-up" style="animation-delay: 0.2s;">
-                    Added to Wishlist!
-                </h3>
-                <p class="text-white text-opacity-90 text-xs uppercase tracking-[0.4em] font-light animate-fade-in-up" style="animation-delay: 0.3s;">
-                    ✦ Saved for later ✦
-                </p>
-            </div>
-        </div>
-
-        <!-- Product Preview Card -->
-        <div class="p-8 border-b border-gray-100 animate-fade-in-up" style="animation-delay: 0.4s;">
-            <div class="flex items-start gap-6 group">
-                <div class="relative w-28 h-32 bg-stone-100 rounded-md overflow-hidden flex-shrink-0 shadow-lg transform transition-all duration-500 group-hover:scale-105 group-hover:shadow-xl">
-                    <img id="wishlist-modal-product-img" src="" alt="Product" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <!-- Heart Badge -->
-                    <div class="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md">
-                        <svg class="w-4 h-4 text-rose-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="flex-1 pt-1">
-                    <h4 id="wishlist-modal-product-name" class="font-serif text-gray-900 text-lg mb-3 leading-snug"></h4>
-                    <div class="space-y-3">
-                        <div class="flex items-center gap-3">
-                            <p id="wishlist-modal-product-price" class="text-base font-bold text-rose-600"></p>
-                            <span class="text-xs text-gray-400">•</span>
-                            <span class="text-xs text-gray-500 uppercase tracking-wide">Premium Quality</span>
-                        </div>
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-md border border-gray-100">
-                            <div id="wishlist-modal-product-color" class="w-5 h-5 rounded-full border-2 border-white shadow-md transform transition-transform duration-300 hover:scale-125"></div>
-                            <span class="text-xs text-gray-600 uppercase tracking-wider font-medium">Selected Color</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Wishlist Summary -->
-        <div class="px-8 py-6 bg-gradient-to-br from-rose-50 via-pink-50 to-rose-50 border-b border-rose-200 animate-fade-in-up" style="animation-delay: 0.5s;">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center transform transition-all duration-300 hover:scale-110 hover:rotate-12">
-                        <svg class="w-6 h-6 text-rose-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase tracking-widest font-bold text-gray-500 mb-1">Your Wishlist</p>
-                        <p id="wishlist-modal-count" class="text-lg font-bold text-rose-600">0 items</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs uppercase tracking-wider text-gray-500 mb-1">Status</p>
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
-                        <span class="text-xs font-semibold text-rose-700">Saved</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="p-8 space-y-4 animate-fade-in-up" style="animation-delay: 0.6s;">
-            <a href="/wishlist" class="block relative overflow-hidden group text-center bg-gradient-to-r from-rose-900 via-pink-800 to-rose-900 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-md transition-all duration-500 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
-                <span class="relative z-10 flex items-center justify-center gap-3">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                    </svg>
-                    View Wishlist
-                    <svg class="w-4 h-4 transform transition-transform duration-300 group-hover:translate-x-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                    </svg>
-                </span>
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 group-hover:translate-x-full transition-all duration-1000"></div>
-            </a>
-            
-            <button onclick="closeWishlistModal()" class="relative w-full overflow-hidden group border-2 border-gray-300 text-gray-700 py-4 text-[10px] uppercase tracking-[0.3em] font-bold rounded-md transition-all duration-300 hover:border-rose-600 hover:text-white hover:bg-rose-600 transform hover:scale-[1.02]">
-                <span class="relative z-10">Continue Shopping</span>
-            </button>
-
-            <!-- Trust Badge -->
-            <div class="flex items-center justify-center gap-2 pt-4 opacity-70">
-                <svg class="w-4 h-4 text-rose-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
-                </svg>
-                <span class="text-xs text-gray-600">Save your favorites • Shop anytime</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Error Modal -->
-<div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
-    <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4 transform transition-all">
-        <div class="text-center">
-            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
-                <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </div>
-            <h3 class="text-xl font-serif text-gray-900 mb-2">Oops!</h3>
-            <p id="error-message" class="text-sm text-gray-600 mb-6">Something went wrong. Please try again.</p>
-            <button onclick="closeErrorModal()" class="w-full bg-emera-950 text-white py-3 text-[10px] uppercase tracking-[0.3em] font-bold rounded-sm hover:bg-emera-700 transition-all duration-300">
-                Close
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
-// ========== BLOCK CHECK ==========
-if (<%= !!product.isBlocked %>) location.href = "/products";
-
-// ========== CONSTANTS ==========
-const variants = <%- JSON.stringify(product.variants) %>;
-const images = <%- JSON.stringify(product.productImage || []) %>;
-let activeVariant = 0;
-
-// ========== REVIEW FUNCTIONS (NEW) ==========
-let selectedRating = 0;
-
-function setRating(rating) {
-    selectedRating = rating;
-    document.getElementById('rating-input').value = rating;
-    
-    document.querySelectorAll('.rating-star').forEach((star, index) => {
-        if (index < rating) {
-            star.classList.remove('text-gray-300');
-            star.classList.add('text-yellow-400');
-        } else {
-            star.classList.remove('text-yellow-400');
-            star.classList.add('text-gray-300');
-        }
-    });
-}
-
-function openReviewModal() {
-    <% if (!user) { %>
-        window.location.href = '/login';
-        return;
-    <% } %>
-    
-    document.getElementById('review-modal').style.display = 'flex';
-}
-
-function closeReviewModal() {
-    document.getElementById('review-modal').style.display = 'none';
-    document.getElementById('review-form').reset();
-    selectedRating = 0;
-    document.querySelectorAll('.rating-star').forEach(star => {
-        star.classList.remove('text-yellow-400');
-        star.classList.add('text-gray-300');
-    });
-}
-
-document.getElementById('review-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    if (!selectedRating) {
-        alert('Please select a rating');
-        return;
-    }
-    
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData);
-    
-    try {
-        const res = await fetch('/reviews/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await res.json();
-        
-        if (result.success) {
-            closeReviewModal();
-            location.reload(); // Reload to show new review
-        } else {
-            alert(result.message || 'Failed to submit review');
-        }
-    } catch (error) {
-        console.error('Review submission error:', error);
-        alert('Failed to submit review. Please try again.');
-    }
-});
-
-async function markHelpful(reviewId) {
-    try {
-        const res = await fetch(`/reviews/${reviewId}/helpful`, {
-            method: 'POST'
-        });
-        
-        if (res.ok) {
-            location.reload();
-        }
-    } catch (error) {
-        console.error('Mark helpful error:', error);
-    }
-}
-
-// ========== MODAL FUNCTIONS ==========
-function showSuccessModal(cartCount) {
-    const modal = document.getElementById('success-modal');
-    
-    // Populate product details
-    const productName = "<%= product.name %>";
-    const productPrice = "₹<%= Math.round(finalPrice || product.salePrice).toLocaleString() %>";
-    const productImage = images[0]?.url || "";
-    const selectedColor = variants[activeVariant]?.color || "#000000";
-    
-    document.getElementById('modal-product-name').textContent = productName;
-    document.getElementById('modal-product-price').textContent = productPrice;
-    document.getElementById('modal-product-img').src = productImage;
-    document.getElementById('modal-product-color').style.backgroundColor = selectedColor;
-    document.getElementById('modal-cart-count').textContent = cartCount + ' item' + (cartCount !== 1 ? 's' : '');
-    
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('show'), 10);
-}
-
-function closeModal() {
-    const modal = document.getElementById('success-modal');
-    modal.style.display = 'none';
-    modal.classList.remove('show');
-}
-
-function showWishlistModal(wishlistCount) {
-    const modal = document.getElementById('wishlist-modal');
-    
-    // Populate product details
-    const productName = "<%= product.name %>";
-    const productPrice = "₹<%= Math.round(finalPrice).toLocaleString() %>";
-    const productImage = images[0]?.url || "";
-    const selectedColor = variants[activeVariant]?.color || "#000000";
-    
-    document.getElementById('wishlist-modal-product-name').textContent = productName;
-    document.getElementById('wishlist-modal-product-price').textContent = productPrice;
-    document.getElementById('wishlist-modal-product-img').src = productImage;
-    document.getElementById('wishlist-modal-product-color').style.backgroundColor = selectedColor;
-    document.getElementById('wishlist-modal-count').textContent = wishlistCount + ' item' + (wishlistCount !== 1 ? 's' : '');
-    
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('show'), 10);
-}
-
-function closeWishlistModal() {
-    const modal = document.getElementById('wishlist-modal');
-    modal.style.display = 'none';
-    modal.classList.remove('show');
-}
-
-function showErrorModal(message) {
-    const modal = document.getElementById('error-modal');
-    const messageEl = document.getElementById('error-message');
-    messageEl.textContent = message || 'Something went wrong. Please try again.';
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('show'), 10);
-}
-
-function closeErrorModal() {
-    const modal = document.getElementById('error-modal');
-    modal.style.display = 'none';
-    modal.classList.remove('show');
-}
-
-// Close modals when clicking outside
-document.getElementById('success-modal')?.addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-});
-
-document.getElementById('wishlist-modal')?.addEventListener('click', function(e) {
-    if (e.target === this) closeWishlistModal();
-});
-
-document.getElementById('error-modal')?.addEventListener('click', function(e) {
-    if (e.target === this) closeErrorModal();
-});
-
-document.getElementById('review-modal')?.addEventListener('click', function(e) {
-    if (e.target === this) closeReviewModal();
-});
-
-// ========== IMAGE GALLERY ==========
-function changeImage(i) {
-  if (!images[i]) return;
-  const mainImg = document.getElementById("main-img");
-  mainImg.src = images[i].url;
-  
-  // Reset zoom when changing images
-  mainImg.style.transform = "scale(1)";
-  mainImg.style.transformOrigin = "center center";
-  const zoomArea = document.getElementById("main-zoom-area");
-  if (zoomArea) {
-    zoomArea.classList.remove("cursor-zoom-out");
-    zoomArea.classList.add("cursor-zoom-in");
-  }
-  zoomed = false;
-
-  document.querySelectorAll(".thumbnail").forEach((t, idx) =>
-    t.classList.toggle("active", idx === i)
-  );
-}
-
-// ========== VARIANT SELECTION ==========
-function selectVariant(i) {
-  if (!variants[i] || variants[i].quantity === 0) return;
-
-  activeVariant = i;
-
-  document.querySelectorAll(".variant-btn").forEach((b, idx) =>
-    b.classList.toggle("selected", idx === i)
-  );
-
-  document.getElementById("stock-text").textContent =
-    variants[i].quantity + " pieces available";
-
-  const btn = document.getElementById("add-btn");
-  if (btn) btn.disabled = false;
-}
-
-// ========== IMAGE ZOOM ==========
-const zoomArea = document.getElementById("main-zoom-area");
-const zoomImg = document.getElementById("main-img");
-let zoomed = false;
-
-if (zoomArea && zoomImg) {
-  zoomArea.addEventListener("click", () => {
-    if (window.innerWidth < 768) return;
-
-    zoomed = !zoomed;
-    zoomArea.style.cursor = zoomed ? "zoom-out" : "zoom-in";
-
-    if (!zoomed) {
-      zoomImg.style.transform = "scale(1)";
-      zoomImg.style.transformOrigin = "center center";
-    }
-  });
-
-  zoomArea.addEventListener("mousemove", (e) => {
-    if (!zoomed) return;
-
-    const rect = zoomArea.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-    zoomImg.style.transformOrigin = `${x}% ${y}%`;
-    zoomImg.style.transform = "scale(1.8)";
-  });
-
-  zoomArea.addEventListener("mouseleave", () => {
-    if (!zoomed) return;
-
-    zoomed = false;
-    zoomImg.style.transform = "scale(1)";
-    zoomImg.style.transformOrigin = "center center";
-    zoomArea.style.cursor = "zoom-in";
-  });
-}
-
-// ========== CART ACTIONS ==========
-function addToCart(productId) {
-  fetch("/cart/add", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      productId,
-      color: variants[activeVariant]?.color
-    })
-  })
-    .then(res => {
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        window.location.href = "/login";
-        return;
-      }
-      return res.json();
-    })
-    .then(data => {
-      if (!data) return;
-
-      if (data.code === "AUTH_REQUIRED") {
-        window.location.href = "/login";
-        return;
-      }
-
-      if (data.success) {
-        const cartBadge = document.getElementById("cart-count-badge");
-        if (cartBadge) {
-          cartBadge.textContent = data.cartCount;
-        }
-        showSuccessModal(data.cartCount || 1);
-      } else {
-        showErrorModal(data.message || 'Failed to add item to cart');
-      }
-    })
-    .catch(err => {
-      console.error("ADD TO CART ERROR", err);
-      showErrorModal('An error occurred. Please try again.');
-    });
-}
-
-function addToWishlist(productId) {
-  fetch(`/wishlist/add/${productId}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  })
-    .then(res => {
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        window.location.href = "/login";
-        return;
-      }
-      return res.json();
-    })
-    .then(data => {
-      if (!data) return;
-
-      if (data.code === "AUTH_REQUIRED") {
-        window.location.href = "/login";
-        return;
-      }
-
-      if (data.success) {
-        const wishlistBadge = document.getElementById("wishlist-count-badge");
-        if (wishlistBadge) {
-          wishlistBadge.textContent = data.wishlistCount;
-        }
-        showWishlistModal(data.wishlistCount || 1);
-      } else {
-        showErrorModal(data.message || 'Failed to add item to wishlist');
-      }
-    })
-    .catch(err => {
-      console.error("ADD TO WISHLIST ERROR", err);
-      showErrorModal('An error occurred. Please try again.');
-    });
-}
-
-function buyNow(productId) {
-  fetch("/cart/add", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      productId,
-      color: variants[activeVariant]?.color,
-      buyNow: true
-    })
-  })
-    .then(res => {
-      const contentType = res.headers.get("content-type");
-
-      if (!contentType || !contentType.includes("application/json")) {
-        window.location.href = "/login";
-        return;
-      }
-
-      return res.json();
-    })
-    .then(data => {
-      if (!data) return;
-
-      if (data.code === "AUTH_REQUIRED") {
-        window.location.href = `/login`;
-        return;
-      }
-
-      if (data.redirect) {
-        window.location.href = data.redirect;
-      } else if (!data.success) {
-        showErrorModal(data.message || 'Failed to process your request');
-      }
-    })
-    .catch(err => {
-      console.error("BUY NOW ERROR", err);
-      showErrorModal('An error occurred. Please try again.');
-    });
-}
-
-// ========== INITIALIZE ==========
-if (variants.length) selectVariant(0);
-</script>
+<%
+// ── Derived stock (variants take precedence over product.quantity) ──
+const totalVariantStock = product.variants && product.variants.length > 0
+  ? product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)
+  : product.quantity || 0;
+const effectiveStock = (product.variants && product.variants.length > 0)
+  ? totalVariantStock
+  : (product.quantity || 0);
+%>
+
+<!-- Luxury font layer — Cormorant for display headings only -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
 
 <style>
-/* Star Rating Styles */
-.star {
-    font-size: 1.2em;
+/* ── Luxury additions only — no color overrides ── */
+.lux-serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+.gold-accent-line {
+  width: 40px; height: 1px;
+  background: linear-gradient(90deg, transparent, #c9a96e, transparent);
+  display: inline-block;
+}
+.gold-rule-full {
+  width: 100%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,169,110,.45) 40%, rgba(201,169,110,.45) 60%, transparent);
 }
 
-.star.filled {
-    color: #fbbf24;
+/* ── Brand badge ── */
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  letter-spacing: .42em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #c9a96e;
+}
+.brand-badge::before,
+.brand-badge::after {
+  content: '';
+  width: 16px; height: 1px;
+  background: #c9a96e;
+  opacity: .7;
 }
 
+/* ── Stock pills ── */
+.stock-pill {
+  font-size: 9px;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.stock-pill::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.stock-in  { background:#f0faf4; color:#1a6b3a; border:1px solid #a8d5b8; }
+.stock-in::before  { background:#2ecc71; animation:pulse-dot 2s infinite; box-shadow:0 0 0 2px rgba(46,204,113,.25); }
+.stock-low { background:#fff8ee; color:#92510a; border:1px solid #f0c97a; }
+.stock-low::before { background:#f59e0b; }
+.stock-out { background:#fdf2f2; color:#991b1b; border:1px solid #fca5a5; }
+.stock-out::before { background:#ef4444; }
+
+@keyframes pulse-dot {
+  0%,100% { box-shadow:0 0 0 2px rgba(46,204,113,.25); }
+  50%      { box-shadow:0 0 0 5px rgba(46,204,113,.06); }
+}
+
+/* ── Thumbnail ── */
+.thumbnail {
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color .22s, transform .2s;
+  flex-shrink: 0;
+}
+.thumbnail.active { border-color: #c9a96e; }
+.thumbnail:hover:not(.active) { border-color: rgba(201,169,110,.45); transform:translateY(-2px); }
+
+/* ── Zoom ── */
+#main-zoom-area { cursor: zoom-in; }
+#main-zoom-area.zoomed { cursor: zoom-out; }
+
+/* ── Certified tag ── */
+.certified-lux {
+  font-size: 9px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #c9a96e;
+}
+
+/* ── Stars ── */
+.star { font-size: 1.2em; }
+.star.filled { color: #fbbf24; }
 .star.half {
-    background: linear-gradient(90deg, #fbbf24 50%, #d1d5db 50%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  background: linear-gradient(90deg,#fbbf24 50%,#d1d5db 50%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.star.empty { color: #d1d5db; }
+
+/* ── Spec bar ── */
+.spec-lux-bar { border-left: 2px solid #c9a96e; padding-left: 20px; }
+
+/* ── Section eyebrow ── */
+.section-eyebrow-lux {
+  font-size: 9px;
+  letter-spacing: .42em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #c9a96e;
+  display: block;
+  margin-bottom: 10px;
 }
 
-.star.empty {
-    color: #d1d5db;
+/* ── Rating bar ── */
+.rating-bar-bg  { background:#e5e7eb; height:3px; flex:1; overflow:hidden; }
+.rating-bar-fill{ background:linear-gradient(90deg,#fbbf24,#f59e0b); height:100%; transition:width .6s ease; }
+
+/* ── Review avatar ── */
+.review-avatar-lux {
+  width:44px; height:44px; border-radius:50%;
+  background:#fdf8f0;
+  border:1px solid rgba(201,169,110,.35);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px; font-weight:400;
+  color:#c9a96e;
+  flex-shrink:0;
 }
 
-/* Modal Base Animations */
-#success-modal, #wishlist-modal, #error-modal, #review-modal {
-    transition: all 0.3s ease-in-out;
+/* ── Verified badge ── */
+.verified-badge {
+  font-size:9px; letter-spacing:.15em; text-transform:uppercase; font-weight:700;
+  background:#f0fdf4; color:#166534;
+  border:1px solid #bbf7d0;
+  padding:3px 10px; border-radius:1px;
 }
 
-#success-modal.show, #wishlist-modal.show, #error-modal.show {
-    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+/* ── Rating big number ── */
+.rating-big-lux {
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:4.5rem; font-weight:300; color:#111827; line-height:1;
 }
 
-#success-modal.show > div, #wishlist-modal.show > div {
-    animation: modalSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+/* ── Related card hover ── */
+.related-img-wrap { overflow:hidden; }
+.related-img-wrap img { transition:transform .7s cubic-bezier(.25,.46,.45,.94); }
+.group:hover .related-img-wrap img { transform:scale(1.05); }
+
+/* ── Offers card ── */
+.offers-card-lux {
+  background: linear-gradient(135deg,#fffbf2 0%,#fef3c7 100%);
+  border:1px solid #fbbf24;
+  border-left:3px solid #c9a96e;
+  padding:20px 22px;
+  border-radius:4px;
 }
 
-/* Fade and Slide Animations */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+/* ── Modal overlay ── */
+.lux-modal-overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(6px);
+  display:none; align-items:center; justify-content:center;
+  z-index:50;
+}
+.lux-modal-overlay.open { display:flex; animation:fadeOverlay .3s ease; }
+@keyframes fadeOverlay { from{opacity:0}to{opacity:1} }
+
+.lux-modal-box {
+  background:#fff;
+  width:100%; max-width:520px;
+  margin:16px;
+  animation:slideUp .45s cubic-bezier(.16,1,.3,1);
+  overflow:hidden;
+  position:relative;
+  max-height:92vh;
+  overflow-y:auto;
+}
+@keyframes slideUp {
+  from{transform:translateY(40px) scale(.97);opacity:0}
+  to{transform:none;opacity:1}
 }
 
-@keyframes modalSlideUp {
-    from { transform: translateY(50px) scale(0.95); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
+/* Modal headers — using emera dark tone like original */
+.modal-header-cart {
+  background:linear-gradient(135deg,#0f0f0f 0%,#1c1a16 100%);
+  padding:36px 32px;
+  position:relative; overflow:hidden;
+  text-align:center;
+}
+.modal-header-cart::before {
+  content:'';
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(201,169,110,.04) 40px,rgba(201,169,110,.04) 80px);
+}
+.modal-gold-line {
+  position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#c9a96e,transparent);
+}
+.modal-header-wishlist {
+  background:linear-gradient(135deg,#6b1a2a 0%,#3d0f19 100%);
+  padding:36px 32px;
+  position:relative; overflow:hidden;
+  text-align:center;
+}
+.modal-header-wishlist::before {
+  content:'';
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(255,255,255,.03) 40px,rgba(255,255,255,.03) 80px);
 }
 
-@keyframes fade-in-up {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+.modal-icon-ring {
+  width:68px; height:68px; border-radius:50%;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 16px;
+  animation:scaleIn .5s cubic-bezier(.34,1.56,.64,1);
 }
+@keyframes scaleIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 
-.animate-fade-in-up {
-    animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
+/* Confetti */
+.confetti-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.c-dot{position:absolute;width:6px;height:6px;border-radius:50%;opacity:0;animation:cFall 2.5s ease-out forwards;}
+.c-dot:nth-child(1){left:10%;background:#c9a96e;animation-delay:.05s}
+.c-dot:nth-child(2){left:22%;background:#10b981;animation-delay:.15s}
+.c-dot:nth-child(3){left:35%;background:#3b82f6;animation-delay:.1s}
+.c-dot:nth-child(4){left:50%;background:#f59e0b;animation-delay:.2s}
+.c-dot:nth-child(5){left:65%;background:#ec4899;animation-delay:.08s}
+.c-dot:nth-child(6){left:78%;background:#8b5cf6;animation-delay:.22s}
+.c-dot:nth-child(7){left:90%;background:#c9a96e;animation-delay:.12s}
+@keyframes cFall{0%{top:-5%;opacity:1;transform:rotate(0)}100%{top:105%;opacity:0;transform:rotate(720deg) translateX(30px)}}
 
-@keyframes scale-in {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
-}
+/* Floating hearts */
+.heart-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.h-dot{position:absolute;bottom:-10%;opacity:0;font-size:14px;color:#f472b6;animation:hFloat 3.5s ease-out forwards;}
+.h-dot:nth-child(1){left:20%;animation-delay:.1s}
+.h-dot:nth-child(2){left:40%;animation-delay:.3s}
+.h-dot:nth-child(3){left:60%;animation-delay:.15s}
+.h-dot:nth-child(4){left:80%;animation-delay:.4s}
+@keyframes hFloat{0%{bottom:-10%;opacity:1;transform:scale(.5)}50%{opacity:.8;transform:scale(1) translateX(10px)}100%{bottom:105%;opacity:0;transform:scale(.3) translateX(-15px)}}
 
-.animate-scale-in { animation: scale-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.modal-product-row{display:flex;gap:20px;align-items:flex-start;padding:24px 28px;border-bottom:1px solid #e5e7eb;}
+.modal-product-img{width:88px;height:104px;object-fit:cover;flex-shrink:0;}
+.modal-cart-strip{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;background:linear-gradient(135deg,#fdfaf3,#fdf3dc);border-bottom:1px solid rgba(201,169,110,.25);}
+.modal-actions{padding:24px 28px;display:flex;flex-direction:column;gap:12px;}
 
-@keyframes check-draw {
-    0% { stroke-dasharray: 0, 100; opacity: 0; }
-    50% { opacity: 1; }
-    100% { stroke-dasharray: 100, 0; opacity: 1; }
-}
+/* Review */
+.rating-star-btn{font-size:32px;color:#d1d5db;cursor:pointer;transition:color .15s,transform .15s;background:none;border:none;padding:0;}
+.rating-star-btn:hover,.rating-star-btn.lit{color:#fbbf24;transform:scale(1.15);}
 
-.animate-check-draw {
-    stroke-dasharray: 100;
-    animation: check-draw 0.8s cubic-bezier(0.65, 0, 0.35, 1) 0.4s forwards;
-}
+/* Animate reveal */
+@keyframes reveal{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.animate-reveal{animation:reveal .7s cubic-bezier(.16,1,.3,1) .1s both;}
 
-@keyframes heart-beat {
-    0%, 100% { transform: scale(1); }
-    10%, 30% { transform: scale(0.9); }
-    20%, 40%, 60%, 80% { transform: scale(1.1); }
-    50%, 70% { transform: scale(1.05); }
-}
-
-.animate-heart-beat { animation: heart-beat 1.3s ease-in-out 0.4s forwards; }
-
-@keyframes ping-slow {
-    0% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.3); opacity: 0.4; }
-    100% { transform: scale(1.5); opacity: 0; }
-}
-
-@keyframes ping-slower {
-    0% { transform: scale(1); opacity: 0.6; }
-    50% { transform: scale(1.5); opacity: 0.3; }
-    100% { transform: scale(2); opacity: 0; }
-}
-
-.animate-ping-slow { animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
-.animate-ping-slower { animation: ping-slower 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
-
-@keyframes float-slow {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    25% { transform: translate(10px, -10px) rotate(5deg); }
-    50% { transform: translate(-5px, -20px) rotate(-5deg); }
-    75% { transform: translate(-10px, -10px) rotate(3deg); }
-}
-
-@keyframes float-slower {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(-15px, 10px) scale(1.05); }
-    66% { transform: translate(15px, -15px) scale(0.95); }
-}
-
-.animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
-.animate-float-slower { animation: float-slower 12s ease-in-out infinite; }
-
-@keyframes pulse-slow {
-    0%, 100% { opacity: 0.1; transform: scale(1); }
-    50% { opacity: 0.15; transform: scale(1.1); }
-}
-
-.animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
-
-@keyframes shimmer {
-    0% { background-position: -1000px 0; }
-    100% { background-position: 1000px 0; }
-}
-
-.shimmer-effect {
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
-    background-size: 1000px 100%;
-    animation: shimmer 3s infinite;
-}
-
-.confetti-container { perspective: 1000px; }
-
-.confetti {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    opacity: 0;
-    animation: confetti-fall 3s ease-out forwards;
-}
-
-.confetti:nth-child(1) { left: 10%; animation-delay: 0.1s; background: linear-gradient(135deg, #10b981, #059669); }
-.confetti:nth-child(2) { left: 20%; animation-delay: 0.2s; background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.confetti:nth-child(3) { left: 30%; animation-delay: 0.15s; background: linear-gradient(135deg, #f59e0b, #d97706); }
-.confetti:nth-child(4) { left: 40%; animation-delay: 0.25s; background: linear-gradient(135deg, #ec4899, #db2777); }
-.confetti:nth-child(5) { left: 50%; animation-delay: 0.1s; background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-.confetti:nth-child(6) { left: 60%; animation-delay: 0.3s; background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-.confetti:nth-child(7) { left: 70%; animation-delay: 0.2s; background: linear-gradient(135deg, #10b981, #059669); }
-.confetti:nth-child(8) { left: 80%; animation-delay: 0.15s; background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.confetti:nth-child(9) { left: 90%; animation-delay: 0.25s; background: linear-gradient(135deg, #ec4899, #db2777); }
-.confetti:nth-child(10) { left: 95%; animation-delay: 0.1s; background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-
-@keyframes confetti-fall {
-    0% { top: -10%; opacity: 1; transform: translateX(0) rotateZ(0deg); }
-    100% { top: 100%; opacity: 0; transform: translateX(calc(-50px + 100px * var(--random, 0))) rotateZ(calc(360deg * var(--random, 1))); }
-}
-
-.heart-container { perspective: 1000px; }
-
-.floating-heart {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    opacity: 0;
-    animation: heart-float 4s ease-out forwards;
-}
-
-.floating-heart::before { content: '♥'; font-size: 20px; color: #ec4899; }
-.floating-heart:nth-child(1) { left: 20%; animation-delay: 0.2s; }
-.floating-heart:nth-child(2) { left: 40%; animation-delay: 0.4s; }
-.floating-heart:nth-child(3) { left: 60%; animation-delay: 0.1s; }
-.floating-heart:nth-child(4) { left: 80%; animation-delay: 0.6s; }
-.floating-heart:nth-child(5) { left: 50%; animation-delay: 0.3s; }
-
-@keyframes heart-float {
-    0% { bottom: -10%; opacity: 1; transform: translateX(0) scale(0.5) rotate(0deg); }
-    50% { opacity: 0.8; transform: translateX(20px) scale(1) rotate(180deg); }
-    100% { bottom: 100%; opacity: 0; transform: translateX(-20px) scale(0.3) rotate(360deg); }
-}
-
-button, a { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-button:active, a:active { transform: scale(0.98); }
+.no-scrollbar::-webkit-scrollbar{display:none;}
+.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}
 </style>
+
+<main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-12 lg:py-20">
+
+  <!-- Breadcrumbs — original -->
+  <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-500 mb-12 flex items-center space-x-3">
+    <a href="/" class="hover:text-emera-950 transition-colors">Home</a>
+    <span class="opacity-40">/</span>
+    <a href="/products?category=<%= product.category?._id %>" class="hover:text-emera-950 transition-colors">
+      <%= product.category?.name || 'Products' %>
+    </a>
+    <span class="opacity-40">/</span>
+    <span class="text-emera-950 font-bold"><%= product.name %></span>
+  </nav>
+
+  <div class="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
+
+    <!-- LEFT: Gallery — original structure -->
+    <div class="lg:w-3/5 flex flex-col-reverse lg:flex-row gap-6 w-full">
+      <div id="thumb-container" class="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible no-scrollbar pb-4 lg:pb-0">
+        <% if (product.productImage && product.productImage.length > 0) { %>
+          <% product.productImage.forEach((img, index) => { %>
+            <div class="thumbnail <%= index === 0 ? 'active' : '' %> w-20 h-24 lg:w-24 lg:h-28 flex-shrink-0" onclick="changeImage(<%= index %>)">
+              <img src="<%= img.url %>" class="w-full h-full object-cover" alt="View <%= index + 1 %>">
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+
+      <div class="flex-1 aspect-[4/5] relative overflow-hidden shadow-md" id="main-zoom-area">
+        <img
+          id="main-img"
+          src="<%= product.productImage && product.productImage.length > 0 ? product.productImage[0].url : 'https://via.placeholder.com/800x1000?text=No+Image' %>"
+          alt="<%= product.name %>"
+          class="w-full h-full object-cover transition-transform duration-100"
+          style="transform-origin:center center;"
+        />
+        <div class="absolute top-6 right-6 pointer-events-none">
+          <% if (effectiveStock > 0 && effectiveStock < 5) { %>
+            <span class="bg-white/95 text-emera-950 text-[9px] font-bold px-5 py-2.5 uppercase tracking-widest shadow-lg rounded-sm">
+              Limited Stock
+            </span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Product Info -->
+    <div class="lg:w-2/5 space-y-8 animate-reveal w-full">
+
+      <!-- ✦ NEW: Brand + Stock pill row -->
+      <div class="flex items-center justify-between">
+        <% if (product.brand) { %>
+          <span class="brand-badge"><%= product.brand %></span>
+        <% } else { %>
+          <span></span>
+        <% } %>
+        <div id="stock-status-pill">
+          <% if (effectiveStock === 0) { %>
+            <div class="stock-pill stock-out">Sold Out</div>
+          <% } else if (effectiveStock < 5) { %>
+            <div class="stock-pill stock-low">Only <%= effectiveStock %> Left</div>
+          <% } else { %>
+            <div class="stock-pill stock-in">In Stock</div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Product name — lux serif applied, original size & color classes -->
+      <h1 class="lux-serif text-4xl lg:text-5xl text-gray-900 leading-tight font-light">
+        <%= product.name.split(' ').slice(0, -1).join(' ') %> <br>
+        <em class="font-extralight"><%= product.name.split(' ').slice(-1) %></em>
+      </h1>
+
+      <!-- Gold rule divider -->
+      <div class="gold-rule-full"></div>
+
+      <!-- Price & Rating — original classes kept -->
+      <div class="flex items-center justify-between border-b border-gray-200 pb-6">
+        <div class="flex flex-col">
+          <div class="flex items-center space-x-4 flex-wrap gap-y-2">
+            <% if (discount > 0) { %>
+              <p class="text-3xl font-semibold text-gray-900">₹<%= Math.round(finalPrice).toLocaleString() %></p>
+              <p class="text-lg text-gray-400 line-through font-light">₹<%= product.salePrice.toLocaleString() %></p>
+              <span class="text-[10px] bg-red-600 text-white px-3 py-1.5 uppercase font-bold tracking-tight rounded-sm">Save <%= discount %>%</span>
+            <% } else { %>
+              <p class="text-3xl font-semibold text-gray-900">₹<%= product.salePrice.toLocaleString() %></p>
+              <% if (product.salePrice < product.regularPrice) { %>
+                <p class="text-lg text-gray-400 line-through font-light">₹<%= product.regularPrice.toLocaleString() %></p>
+                <span class="text-[10px] bg-red-600 text-white px-3 py-1.5 uppercase font-bold tracking-tight rounded-sm">Save <%= Math.round((1 - product.salePrice/product.regularPrice)*100) %>%</span>
+              <% } %>
+            <% } %>
+          </div>
+          <span class="certified-lux mt-2">✦ Certified Premium Product</span>
+        </div>
+
+        <div class="text-right">
+          <div class="flex gap-0.5 justify-end mb-2">
+            <%
+            const avgRating   = product.averageRating || 0;
+            const fullStars   = Math.floor(avgRating);
+            const hasHalfStar = avgRating % 1 >= 0.5;
+            const emptyStars  = 5 - fullStars - (hasHalfStar ? 1 : 0);
+            %>
+            <% for(let i=0;i<fullStars;i++) { %><span class="star filled">★</span><% } %>
+            <% if(hasHalfStar) { %><span class="star half">★</span><% } %>
+            <% for(let i=0;i<emptyStars;i++) { %><span class="star empty">★</span><% } %>
+          </div>
+          <p class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">
+            <%= avgRating.toFixed(1) %> (<%= product.totalReviews||0 %> reviews)
+          </p>
+        </div>
+      </div>
+
+      <!-- Offers Card — original amber + gold-left border -->
+      <div class="offers-card-lux">
+        <div class="flex items-center space-x-3 text-emera-950 mb-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
+          <span class="text-[11px] uppercase tracking-[0.25em] font-bold">Special Offer</span>
+        </div>
+        <p class="text-xs text-gray-700 leading-relaxed">
+          Complimentary premium care kit <span class="font-semibold text-emera-950">included with purchases</span> over ₹50,000
+        </p>
+      </div>
+
+      <!-- Description — original -->
+      <div class="space-y-4">
+        <h4 class="text-[11px] uppercase tracking-widest font-bold text-gray-500">Product Description</h4>
+        <p class="text-sm text-gray-700 leading-relaxed font-light"><%= product.description %></p>
+      </div>
+
+      <!-- Variant Colors — original -->
+      <div class="space-y-5">
+        <label class="text-[11px] uppercase tracking-widest font-bold text-gray-500 block">Available Colors</label>
+        <div class="flex gap-4 flex-wrap">
+          <% product.variants.forEach((variant, index) => { %>
+            <button type="button" onclick="selectVariant(<%= index %>)"
+              class="variant-btn <%= index === 0 ? 'selected' : '' %> w-12 h-12 rounded-full border-4 border-white transition-all
+              <%= variant.quantity === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:scale-110' %>"
+              style="background-color:<%= variant.color %>"
+              title="<%= variant.color %>"
+              <%= variant.quantity === 0 ? 'disabled' : '' %>>
+            </button>
+          <% }) %>
+        </div>
+        <p id="stock-text" class="text-xs text-gray-600 font-medium"></p>
+      </div>
+
+      <!-- Actions — original emera buttons -->
+      <div class="flex flex-col gap-5 pt-4">
+        <% if (!user) { %>
+          <a href="/login" class="block text-center bg-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:bg-emera-700 transition-all duration-300">
+            Add to Cart
+          </a>
+        <% } else { %>
+          <button id="add-btn" onclick="addToCart('<%= product._id %>')"
+            class="bg-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:bg-emera-700 transition-all duration-100">
+            Add to Cart
+          </button>
+        <% } %>
+        <button onclick="buyNow('<%= product._id %>')"
+          class="flex-1 border-2 border-emera-950 text-emera-950 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-300 rounded-sm">
+          Buy Now
+        </button>
+        <div class="flex gap-4">
+          <button onclick="addToWishlist('<%= product._id %>')"
+            class="flex-1 border-2 border-emera-950 text-emera-950 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-300 rounded-sm">
+            Add to Wishlist
+          </button>
+        </div>
+      </div>
+
+      <!-- Trust Badges — original -->
+      <div class="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
+        <div class="text-center space-y-2">
+          <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+          <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Authentic</p>
+        </div>
+        <div class="text-center space-y-2">
+          <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+          <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Secure Pay</p>
+        </div>
+        <div class="text-center space-y-2">
+          <svg class="w-6 h-6 mx-auto text-emera-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+          <p class="text-[9px] uppercase tracking-wider font-semibold text-gray-600">Free Ship</p>
+        </div>
+      </div>
+
+      <!-- Specifications Accordion — original structure, gold bar instead of emera bar -->
+      <div class="border-t border-gray-200 pt-8">
+        <details class="group" open>
+          <summary class="flex justify-between items-center cursor-pointer list-none text-[11px] uppercase tracking-[0.3em] font-bold text-gray-900 py-4">
+            <span>Product Specifications</span>
+            <span class="group-open:rotate-45 transition-transform duration-300 text-2xl font-light text-gray-400">+</span>
+          </summary>
+          <div class="pt-8 grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-10 text-xs">
+            <%
+            const specs = product.specifications || new Map();
+            const specEntries = specs instanceof Map ? Array.from(specs.entries()) : Object.entries(specs);
+            if (specEntries.length > 0) {
+              specEntries.forEach(([key, value]) => {
+            %>
+              <div class="spec-lux-bar space-y-1">
+                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]"><%= key %></p>
+                <p class="text-gray-600"><%= value %></p>
+              </div>
+            <% });
+            } else { %>
+              <div class="spec-lux-bar space-y-1">
+                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Brand</p>
+                <p class="text-gray-600"><%= product.brand %></p>
+              </div>
+              <div class="spec-lux-bar space-y-1">
+                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Category</p>
+                <p class="text-gray-600"><%= product.category.name %></p>
+              </div>
+              <div class="spec-lux-bar space-y-1">
+                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Materials</p>
+                <p class="text-gray-600">Premium Quality Materials</p>
+              </div>
+              <div class="spec-lux-bar space-y-1">
+                <p class="text-gray-900 font-semibold uppercase tracking-wide text-[10px]">Quality</p>
+                <p class="text-gray-600">Handcrafted Excellence</p>
+              </div>
+            <% } %>
+          </div>
+        </details>
+      </div>
+
+    </div><!-- /right -->
+  </div><!-- /hero -->
+
+
+  <!-- REVIEWS — original layout, lux type + colors layered -->
+  <section class="mt-32 border-t border-gray-200 pt-24">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex justify-between items-end mb-16">
+        <div class="space-y-2">
+          <span class="section-eyebrow-lux">Customer Feedback</span>
+          <h2 class="lux-serif text-4xl font-light text-gray-900">Reviews &amp; Ratings</h2>
+          <div class="gold-accent-line"></div>
+        </div>
+        <% if (canReview) { %>
+          <button onclick="openReviewModal()" class="text-[10px] uppercase tracking-widest border-b-2 border-gray-900 pb-1 font-bold hover:text-emera-700 hover:border-emera-700 transition-colors">
+            Write a Review
+          </button>
+        <% } %>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-16">
+        <div class="bg-gray-50 rounded-lg p-8 text-center border border-gray-100">
+          <div class="rating-big-lux mb-3"><%= (product.averageRating||0).toFixed(1) %></div>
+          <div class="flex gap-1 justify-center mb-3">
+            <% for(let i=0;i<5;i++) { %>
+              <span class="star <%= i < Math.round(product.averageRating||0) ? 'filled' : 'empty' %>">★</span>
+            <% } %>
+          </div>
+          <p class="text-sm text-gray-600 font-light">Based on <%= product.totalReviews||0 %> reviews</p>
+        </div>
+
+        <div class="lg:col-span-2 flex flex-col justify-center space-y-4">
+          <%
+          const totalReviewCount = product.totalReviews || 0;
+          for(let rating=5; rating>=1; rating--) {
+            const count = ratingDistribution[rating] || 0;
+            const percentage = totalReviewCount > 0 ? (count / totalReviewCount * 100).toFixed(0) : 0;
+          %>
+            <div class="flex items-center gap-4">
+              <span class="text-sm font-medium text-gray-700 w-12"><%= rating %> ★</span>
+              <div class="rating-bar-bg">
+                <div class="rating-bar-fill" style="width:<%= percentage %>%"></div>
+              </div>
+              <span class="text-sm text-gray-600 w-16 text-right font-light"><%= count %> (<%= percentage %>%)</span>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="space-y-8">
+        <% if (reviews && reviews.length > 0) { %>
+          <% reviews.forEach(review => { %>
+            <div class="border-b border-gray-200 pb-8">
+              <div class="flex items-start gap-6">
+                <div class="review-avatar-lux"><%= review.userId.name.charAt(0).toUpperCase() %></div>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <div>
+                      <h4 class="font-semibold text-gray-900"><%= review.userId.name %></h4>
+                      <div class="flex gap-1 mt-1">
+                        <% for(let i=0;i<5;i++) { %>
+                          <span class="star <%= i < review.rating ? 'filled' : 'empty' %> text-sm">★</span>
+                        <% } %>
+                      </div>
+                    </div>
+                    <% if (review.isVerifiedPurchase) { %>
+                      <span class="verified-badge">✓ Verified Purchase</span>
+                    <% } %>
+                  </div>
+                  <h5 class="font-semibold text-gray-800 mb-2"><%= review.title %></h5>
+                  <p class="text-sm text-gray-600 leading-relaxed font-light mb-3"><%= review.comment %></p>
+                  <div class="flex items-center gap-4 text-xs text-gray-500">
+                    <span><%= new Date(review.createdAt).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) %></span>
+                    <button onclick="markHelpful('<%= review._id %>')" class="hover:text-emera-700 transition-colors bg-transparent border-0">
+                      👍 Helpful (<%= review.helpful||0 %>)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="text-center py-16">
+            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+            </svg>
+            <p class="text-gray-500 text-sm font-light">No reviews yet. Be the first to review this product!</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- RELATED PRODUCTS — original layout, lux type -->
+  <% if (relatedProducts && relatedProducts.length > 0) { %>
+  <section class="mt-32 border-t border-gray-200 pt-24">
+    <div class="flex justify-between items-end mb-16">
+      <div class="space-y-2">
+        <span class="section-eyebrow-lux">You May Also Like</span>
+        <h2 class="lux-serif text-4xl font-light text-gray-900">Related Products</h2>
+        <div class="gold-accent-line"></div>
+      </div>
+      <a href="/products" class="text-[10px] uppercase tracking-widest border-b-2 border-gray-900 pb-1 font-bold hover:text-emera-700 hover:border-emera-700 transition-colors">Browse Collection</a>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+      <% relatedProducts.forEach(rp => { %>
+        <a href="/products/<%= rp._id %>" class="block group space-y-5">
+          <div class="aspect-[4/5] bg-stone-50 related-img-wrap relative rounded-sm shadow-sm">
+            <img src="<%= rp.productImage?.[0]?.url || '/images/placeholder.png' %>"
+              class="w-full h-full object-cover"
+              alt="<%= rp.name %>">
+          </div>
+          <div class="space-y-2">
+            <h3 class="lux-serif text-lg font-light group-hover:text-emera-950 transition-colors leading-tight"><%= rp.name %></h3>
+            <div class="flex justify-between items-center">
+              <p class="text-xs font-bold tracking-wide">₹<%= rp.salePrice.toLocaleString() %></p>
+              <span class="text-[9px] uppercase tracking-widest text-gray-500 group-hover:text-emera-950 transition-colors">View Details →</span>
+            </div>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+</main>
+
+
+<!-- CART SUCCESS MODAL — original emera colors -->
+<div id="success-modal" class="lux-modal-overlay">
+  <div class="lux-modal-box">
+    <div class="confetti-wrap">
+      <div class="c-dot"></div><div class="c-dot"></div><div class="c-dot"></div>
+      <div class="c-dot"></div><div class="c-dot"></div><div class="c-dot"></div><div class="c-dot"></div>
+    </div>
+    <div class="modal-header-cart">
+      <div class="modal-gold-line"></div>
+      <div class="modal-icon-ring">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <h3 class="lux-serif text-3xl font-light text-white tracking-wide">Successfully Added!</h3>
+      <p class="text-white/60 text-[9px] uppercase tracking-[0.4em] mt-2">✦ Item secured in your collection ✦</p>
+    </div>
+    <div class="modal-product-row">
+      <img id="modal-product-img" src="" alt="" class="modal-product-img">
+      <div class="flex-1 pt-1">
+        <h4 id="modal-product-name" class="lux-serif text-lg font-light text-gray-900 mb-3 leading-snug"></h4>
+        <p id="modal-product-price" class="text-base font-bold text-emera-950 mb-3"></p>
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-sm border border-gray-100">
+          <div id="modal-product-color" class="w-5 h-5 rounded-full border-2 border-white shadow-md"></div>
+          <span class="text-xs text-gray-600 uppercase tracking-wider font-medium">Selected Color</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-cart-strip">
+      <div class="flex items-center gap-4">
+        <div class="w-11 h-11 rounded-full bg-white shadow flex items-center justify-center">
+          <svg class="w-5 h-5 text-emera-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-[9px] uppercase tracking-widest font-bold text-gray-500 mb-1">Your Cart</p>
+          <p id="modal-cart-count" class="text-lg font-bold text-emera-950"></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+        <span class="text-xs font-semibold text-green-700">Ready to Checkout</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <a href="/cart" class="block text-center bg-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:bg-emera-700 transition-all duration-300">
+        View Cart &amp; Checkout
+      </a>
+      <button onclick="closeModal()" class="w-full border-2 border-gray-300 text-gray-700 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-gray-50 transition-all rounded-sm">
+        Continue Shopping
+      </button>
+      <div class="flex items-center justify-center gap-2 opacity-60 pt-1">
+        <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        <span class="text-xs text-gray-600">Secure checkout · Free shipping over ₹50,000</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- WISHLIST MODAL — original rose colors -->
+<div id="wishlist-modal" class="lux-modal-overlay">
+  <div class="lux-modal-box">
+    <div class="heart-wrap">
+      <div class="h-dot">♥</div><div class="h-dot">♥</div><div class="h-dot">♥</div><div class="h-dot">♥</div>
+    </div>
+    <div class="modal-header-wishlist">
+      <div class="modal-gold-line" style="background:linear-gradient(90deg,transparent,#f9a8d4,transparent);"></div>
+      <div class="modal-icon-ring">
+        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+      </div>
+      <h3 class="lux-serif text-3xl font-light text-white tracking-wide">Added to Wishlist!</h3>
+      <p class="text-white/60 text-[9px] uppercase tracking-[0.4em] mt-2">✦ Saved for later ✦</p>
+    </div>
+    <div class="modal-product-row">
+      <div class="relative">
+        <img id="wishlist-modal-product-img" src="" alt="" class="modal-product-img">
+        <div class="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md">
+          <svg class="w-3 h-3 text-rose-600" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="flex-1 pt-1">
+        <h4 id="wishlist-modal-product-name" class="lux-serif text-lg font-light text-gray-900 mb-3 leading-snug"></h4>
+        <p id="wishlist-modal-product-price" class="text-base font-bold text-rose-600 mb-3"></p>
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-sm border border-gray-100">
+          <div id="wishlist-modal-product-color" class="w-5 h-5 rounded-full border-2 border-white shadow-md"></div>
+          <span class="text-xs text-gray-600 uppercase tracking-wider font-medium">Selected Color</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-cart-strip" style="background:linear-gradient(135deg,#fff5f7,#fce7f3);border-bottom-color:#fecdd3;">
+      <div class="flex items-center gap-4">
+        <div class="w-11 h-11 rounded-full bg-white shadow flex items-center justify-center">
+          <svg class="w-5 h-5 text-rose-600" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-[9px] uppercase tracking-widest font-bold text-gray-500 mb-1">Your Wishlist</p>
+          <p id="wishlist-modal-count" class="text-lg font-bold text-rose-600"></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
+        <span class="text-xs font-semibold text-rose-700">Saved</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <a href="/wishlist" class="block relative overflow-hidden text-center bg-gradient-to-r from-rose-900 via-pink-800 to-rose-900 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:opacity-90 transition-all">
+        View Wishlist →
+      </a>
+      <button onclick="closeWishlistModal()" class="w-full border-2 border-gray-300 text-gray-700 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-gray-50 transition-all rounded-sm">
+        Continue Shopping
+      </button>
+      <div class="flex items-center justify-center gap-2 opacity-60 pt-1">
+        <svg class="w-4 h-4 text-rose-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/></svg>
+        <span class="text-xs text-gray-600">Save your favorites · Shop anytime</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ERROR MODAL -->
+<div id="error-modal" class="lux-modal-overlay">
+  <div class="lux-modal-box" style="max-width:400px;">
+    <div style="padding:40px 32px;text-align:center;">
+      <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+        <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </div>
+      <h3 class="lux-serif text-2xl font-light text-gray-900 mb-2">Oops!</h3>
+      <p id="error-message" class="text-sm text-gray-600 mb-6 font-light leading-relaxed">Something went wrong. Please try again.</p>
+      <button onclick="closeErrorModal()" class="w-full bg-emera-950 text-white py-3 text-[10px] uppercase tracking-[0.3em] font-bold rounded-sm hover:bg-emera-700 transition-all duration-300">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- REVIEW MODAL -->
+<div id="review-modal" class="lux-modal-overlay">
+  <div class="lux-modal-box" style="max-width:600px;">
+    <div class="flex justify-between items-center p-8 pb-6 border-b border-gray-100">
+      <h3 class="lux-serif text-2xl font-light text-gray-900">Write a Review</h3>
+      <button onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-900 text-3xl font-light bg-transparent border-0 cursor-pointer transition-colors leading-none">×</button>
+    </div>
+    <form id="review-form" class="p-8 space-y-6">
+      <input type="hidden" name="productId" value="<%= product._id %>">
+      <input type="hidden" name="orderId"   value="<%= eligibleOrderId %>">
+      <div>
+        <label class="block text-[11px] uppercase tracking-widest font-bold text-gray-500 mb-3">Your Rating</label>
+        <div class="flex gap-2">
+          <% for(let i=1;i<=5;i++) { %>
+            <button type="button" onclick="setRating(<%= i %>)" class="rating-star-btn">★</button>
+          <% } %>
+        </div>
+        <input type="hidden" name="rating" id="rating-input" required>
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase tracking-widest font-bold text-gray-500 mb-2">Review Title</label>
+        <input type="text" name="title" required maxlength="100" placeholder="Summarize your experience"
+          class="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-2 focus:ring-emera-700 outline-none text-sm font-light">
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase tracking-widest font-bold text-gray-500 mb-2">Your Review</label>
+        <textarea name="comment" required rows="5" maxlength="1000" placeholder="Share your thoughts about this product..."
+          class="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-2 focus:ring-emera-700 outline-none resize-none text-sm font-light"></textarea>
+      </div>
+      <div class="flex gap-4">
+        <button type="submit" class="flex-1 bg-emera-950 text-white py-4 rounded-sm font-bold uppercase text-xs tracking-widest hover:bg-emera-700 transition-all">Submit Review</button>
+        <button type="button" onclick="closeReviewModal()" class="flex-1 border-2 border-gray-300 py-4 rounded-sm font-bold uppercase text-xs tracking-widest hover:bg-gray-50 transition-all">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script>
+// ── Block check ──
+if (<%= !!product.isBlocked %>) location.href = "/products";
+
+const variants = <%- JSON.stringify(product.variants) %>;
+const images   = <%- JSON.stringify(product.productImage || []) %>;
+let activeVariant = 0;
+
+function stockPillHTML(qty) {
+  if (qty === 0) return `<div class="stock-pill stock-out">Sold Out</div>`;
+  if (qty < 5)   return `<div class="stock-pill stock-low">Only ${qty} Left</div>`;
+  return               `<div class="stock-pill stock-in">In Stock</div>`;
+}
+
+
+function selectVariant(i) {
+  if (!variants[i] || variants[i].quantity === 0) return;
+  activeVariant = i;
+  document.querySelectorAll('.variant-btn').forEach((b, idx) => b.classList.toggle('selected', idx === i));
+  
+  const qty = variants[i].quantity;
+  
+  // Update stock pill
+  document.getElementById('stock-status-pill').innerHTML = stockPillHTML(qty);
+  
+  if (qty > 0) {
+    document.getElementById('stock-text').textContent = qty + ' piece' + (qty !== 1 ? 's' : '') + ' available';
+  } else {
+    document.getElementById('stock-text').textContent = '';
+  }
+
+  const btn = document.getElementById('add-btn');
+  if (btn) btn.disabled = qty <= 0;
+}
+
+function changeImage(i) {
+  if (!images[i]) return;
+  const img = document.getElementById('main-img');
+  img.src = images[i].url;
+  img.style.transform = 'scale(1)';
+  img.style.transformOrigin = 'center center';
+  zoomed = false;
+  document.getElementById('main-zoom-area').classList.remove('zoomed');
+  document.querySelectorAll('.thumbnail').forEach((t, idx) => t.classList.toggle('active', idx === i));
+}
+
+const zoomArea = document.getElementById('main-zoom-area');
+const zoomImg  = document.getElementById('main-img');
+let zoomed = false;
+zoomArea?.addEventListener('click', () => {
+  if (window.innerWidth < 768) return;
+  zoomed = !zoomed;
+  zoomArea.classList.toggle('zoomed', zoomed);
+  if (!zoomed) { zoomImg.style.transform='scale(1)'; zoomImg.style.transformOrigin='center center'; }
+});
+zoomArea?.addEventListener('mousemove', e => {
+  if (!zoomed) return;
+  const r = zoomArea.getBoundingClientRect();
+  zoomImg.style.transformOrigin = `${((e.clientX-r.left)/r.width)*100}% ${((e.clientY-r.top)/r.height)*100}%`;
+  zoomImg.style.transform = 'scale(1.8)';
+});
+zoomArea?.addEventListener('mouseleave', () => {
+  if (!zoomed) return;
+  zoomed = false;
+  zoomImg.style.transform='scale(1)'; zoomImg.style.transformOrigin='center center';
+  zoomArea.classList.remove('zoomed');
+});
+
+function openLuxModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeLuxModal(id) { document.getElementById(id).classList.remove('open'); }
+['success-modal','wishlist-modal','error-modal','review-modal'].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', function(e) { if (e.target===this) this.classList.remove('open'); });
+});
+
+function showSuccessModal(cartCount) {
+  document.getElementById('modal-product-name').textContent  = "<%= product.name %>";
+  document.getElementById('modal-product-price').textContent = "₹<%= Math.round(finalPrice || product.salePrice).toLocaleString() %>";
+  document.getElementById('modal-product-img').src           = images[0]?.url || '';
+  document.getElementById('modal-product-color').style.backgroundColor = variants[activeVariant]?.color || '#000';
+  document.getElementById('modal-cart-count').textContent    = cartCount + ' item' + (cartCount!==1?'s':'');
+  openLuxModal('success-modal');
+}
+function closeModal()        { closeLuxModal('success-modal'); }
+function showWishlistModal(c) {
+  document.getElementById('wishlist-modal-product-name').textContent  = "<%= product.name %>";
+  document.getElementById('wishlist-modal-product-price').textContent = "₹<%= Math.round(finalPrice || product.salePrice).toLocaleString() %>";
+  document.getElementById('wishlist-modal-product-img').src           = images[0]?.url || '';
+  document.getElementById('wishlist-modal-product-color').style.backgroundColor = variants[activeVariant]?.color || '#000';
+  document.getElementById('wishlist-modal-count').textContent = c + ' item' + (c!==1?'s':'');
+  openLuxModal('wishlist-modal');
+}
+function closeWishlistModal(){ closeLuxModal('wishlist-modal'); }
+function showErrorModal(msg) { document.getElementById('error-message').textContent = msg||'Something went wrong.'; openLuxModal('error-modal'); }
+function closeErrorModal()   { closeLuxModal('error-modal'); }
+
+let selectedRating = 0;
+function setRating(r) {
+  selectedRating = r;
+  document.getElementById('rating-input').value = r;
+  document.querySelectorAll('.rating-star-btn').forEach((s,i) => s.classList.toggle('lit', i<r));
+}
+function openReviewModal()  {
+  <% if (!user) { %> window.location.href='/login'; return; <% } %>
+  openLuxModal('review-modal');
+}
+function closeReviewModal() {
+  closeLuxModal('review-modal');
+  document.getElementById('review-form').reset();
+  selectedRating=0;
+  document.querySelectorAll('.rating-star-btn').forEach(s=>s.classList.remove('lit'));
+}
+document.getElementById('review-form')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!selectedRating) { alert('Please select a rating'); return; }
+  const data = Object.fromEntries(new FormData(e.target));
+  try {
+    const res = await fetch('/reviews/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const result = await res.json();
+    if (result.success) { closeReviewModal(); location.reload(); }
+    else alert(result.message||'Failed to submit review');
+  } catch { alert('Failed to submit review. Please try again.'); }
+});
+async function markHelpful(reviewId) {
+  try { const r=await fetch(`/reviews/${reviewId}/helpful`,{method:'POST'}); if(r.ok) location.reload(); } catch {}
+}
+
+function addToCart(productId) {
+  fetch('/cart/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId,color:variants[activeVariant]?.color})})
+  .then(r=>{if(!r.headers.get('content-type')?.includes('application/json')){location.href='/login';return;}return r.json();})
+  .then(d=>{
+    if(!d)return;
+    if(d.code==='AUTH_REQUIRED'){location.href='/login';return;}
+    if(d.success){const b=document.getElementById('cart-count-badge');if(b)b.textContent=d.cartCount;showSuccessModal(d.cartCount||1);}
+    else showErrorModal(d.message||'Failed to add item to cart');
+  }).catch(()=>showErrorModal('An error occurred. Please try again.'));
+}
+function addToWishlist(productId) {
+  fetch(`/wishlist/add/${productId}`,{method:'POST',headers:{'Content-Type':'application/json'}})
+  .then(r=>{if(!r.headers.get('content-type')?.includes('application/json')){location.href='/login';return;}return r.json();})
+  .then(d=>{
+    if(!d)return;
+    if(d.code==='AUTH_REQUIRED'){location.href='/login';return;}
+    if(d.success){const b=document.getElementById('wishlist-count-badge');if(b)b.textContent=d.wishlistCount;showWishlistModal(d.wishlistCount||1);}
+    else showErrorModal(d.message||'Failed to add to wishlist');
+  }).catch(()=>showErrorModal('An error occurred. Please try again.'));
+}
+function buyNow(productId) {
+  fetch('/cart/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId,color:variants[activeVariant]?.color,buyNow:true})})
+  .then(r=>{if(!r.headers.get('content-type')?.includes('application/json')){location.href='/login';return;}return r.json();})
+  .then(d=>{
+    if(!d)return;
+    if(d.code==='AUTH_REQUIRED'){location.href='/login';return;}
+    if(d.redirect)location.href=d.redirect;
+    else if(!d.success)showErrorModal(d.message||'Failed to process your request');
+  }).catch(()=>showErrorModal('An error occurred. Please try again.'));
+}
+
+// ── Init: select first variant that actually has stock ──
+if (variants.length) {
+  const firstAvailable = variants.findIndex(v => v.quantity > 0);
+  if (firstAvailable !== -1) {
+    selectVariant(firstAvailable);
+  } else {
+    // All variants out of stock — disable the add button
+    const btn = document.getElementById('add-btn');
+    if (btn) btn.disabled = true;
+    document.getElementById('stock-text').textContent = '';
+  }
+}
+</script>
 
 <%- include('../partials/user/footer') %>
