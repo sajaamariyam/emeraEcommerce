@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+
 const Cart = require("../../models/cartSchema");
 const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
@@ -30,21 +31,13 @@ function mapAddress(addr) {
   };
 }
 
-function mapCoupon(coupon, subtotal = 0) {
+function mapCoupon(coupon) {
   const obj = coupon.toObject ? coupon.toObject() : { ...coupon };
 
-  let discountAmount = 0;
-  if (obj.discountType === "percentage") {
-    discountAmount = Math.round(
-      (subtotal * (obj.discountValue || obj.discountAmount || 0)) / 100,
-    );
-    if (obj.maxDiscount)
-      discountAmount = Math.min(discountAmount, obj.maxDiscount);
-  } else {
-    discountAmount = obj.discountValue || obj.discountAmount || 0;
-  }
-
-  return { ...obj, discountAmount };
+  return {
+    ...obj,
+    discountAmount: obj.discountAmount || obj.discountValue || 0,
+  };
 }
 
 const loadCheckout = async (req, res) => {
@@ -128,7 +121,7 @@ const loadCheckout = async (req, res) => {
       expiryDate: { $gte: new Date() },
     }).catch(() => []);
 
-    const coupons = rawCoupons.map((c) => mapCoupon(c, subtotal));
+    const coupons = rawCoupons.map((c) => mapCoupon(c));
 
     res.render("user/checkout", {
       user,
@@ -225,13 +218,13 @@ const placeOrder = async (req, res) => {
         expiryDate: { $gte: new Date() },
       }).catch(() => null);
 
-      if (coupon && subtotal >= (coupon.minOrderAmount || 0)) {
-        discount =
-          coupon.discountType === "percentage"
-            ? Math.round((subtotal * coupon.discountValue) / 100)
-            : coupon.discountValue || coupon.discountAmount || 0;
-        if (coupon.maxDiscount)
-          discount = Math.min(discount, coupon.maxDiscount);
+      if (
+        coupon &&
+        subtotal >= (coupon.minPurchaseAmount || coupon.minOrderAmount || 0)
+      ) {
+        discount = coupon.discountAmount || coupon.discountValue || 0;
+
+        if (discount > subtotal) discount = subtotal;
       }
     }
 
@@ -333,7 +326,7 @@ const placeOrder = async (req, res) => {
 
     return res.json({
       success: true,
-      redirectUrl: `/order-confirmation/${newOrder.orderId}`,
+      redirectUrl: `/orderConfirmation/${newOrder.orderId}`,
     });
   } catch (error) {
     console.error("PLACE ORDER ERROR:", error);
@@ -376,18 +369,14 @@ const applyCoupon = async (req, res) => {
       0,
     );
 
-    if (subtotal < (coupon.minOrderAmount || 0))
+    if (subtotal < (coupon.minPurchaseAmount || coupon.minOrderAmount || 0))
       return res.status(400).json({
         success: false,
-        message: `Minimum order of ₹${coupon.minOrderAmount.toLocaleString("en-IN")} required for this coupon`,
+        message: `Minimum order of ₹${(coupon.minPurchaseAmount || coupon.minOrderAmount).toLocaleString("en-IN")} required for this coupon`,
       });
 
-    let discountAmount =
-      coupon.discountType === "percentage"
-        ? Math.round((subtotal * (coupon.discountValue || 0)) / 100)
-        : coupon.discountValue || coupon.discountAmount || 0;
-    if (coupon.maxDiscount)
-      discountAmount = Math.min(discountAmount, coupon.maxDiscount);
+    let discountAmount = coupon.discountAmount || coupon.discountValue || 0;
+    if (discountAmount > subtotal) discountAmount = subtotal;
 
     const tax = Math.round(subtotal * 0.18);
     const newTotal = Math.max(subtotal + tax - discountAmount, 0);
