@@ -45,7 +45,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 font-medium">Total Offers</p>
-                    <p class="text-2xl font-bold text-gray-800"><%= offers.length %></p>
+                    <p class="text-2xl font-bold text-gray-800"><%= totalOffers %></p>
                 </div>
             </div>
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
@@ -54,7 +54,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 font-medium">Active Offers</p>
-                    <p class="text-2xl font-bold text-gray-800"><%= offers.filter(o => o.isActive).length %></p>
+                    <p class="text-2xl font-bold text-gray-800"><%= activeOffers %></p>
                 </div>
             </div>
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
@@ -62,8 +62,8 @@
                     <i class="fas fa-times-circle text-red-500 text-lg"></i>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500 font-medium">Inactive Offers</p>
-                    <p class="text-2xl font-bold text-gray-800"><%= offers.filter(o => !o.isActive).length %></p>
+                    <p class="text-sm text-gray-500 font-medium">Expired Offers</p>
+                    <p class="text-2xl font-bold text-gray-800"><%= expiredOffers %></p>
                 </div>
             </div>
         </div>
@@ -146,6 +146,70 @@
                     <% }) %>
                 </tbody>
             </table>
+
+            <!-- ── PAGINATION ── -->
+            <% if (totalPages > 1) { %>
+                <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                    <p class="text-sm text-gray-500">
+                        Showing page <span class="font-semibold text-gray-700"><%= currentPage %></span> of
+                        <span class="font-semibold text-gray-700"><%= totalPages %></span>
+                        &nbsp;·&nbsp; <span class="font-semibold text-gray-700"><%= totalOffers %></span> total offers
+                    </p>
+                    <div class="flex items-center gap-1">
+
+                        <!-- Prev -->
+                        <% if (currentPage > 1) { %>
+                            <a href="?page=<%= currentPage - 1 %>"
+                                class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium transition">
+                                ← Prev
+                            </a>
+                        <% } else { %>
+                            <span class="px-3 py-1.5 rounded border border-gray-200 text-gray-300 text-sm font-medium cursor-not-allowed">← Prev</span>
+                        <% } %>
+
+                        <%
+                            const maxPages  = 5;
+                            let startPage   = Math.max(1, currentPage - Math.floor(maxPages / 2));
+                            let endPage     = Math.min(totalPages, startPage + maxPages - 1);
+                            if (endPage - startPage < maxPages - 1) startPage = Math.max(1, endPage - maxPages + 1);
+                        %>
+
+                        <% if (startPage > 1) { %>
+                            <a href="?page=1"
+                                class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium transition">1</a>
+                            <% if (startPage > 2) { %><span class="px-2 text-gray-400 text-sm">…</span><% } %>
+                        <% } %>
+
+                        <% for (let i = startPage; i <= endPage; i++) { %>
+                            <a href="?page=<%= i %>"
+                                class="px-3 py-1.5 rounded text-sm font-medium transition
+                                    <%= currentPage === i
+                                        ? 'bg-teal-700 text-white border border-teal-700'
+                                        : 'border border-gray-300 text-gray-600 hover:bg-gray-50' %>">
+                                <%= i %>
+                            </a>
+                        <% } %>
+
+                        <% if (endPage < totalPages) { %>
+                            <% if (endPage < totalPages - 1) { %><span class="px-2 text-gray-400 text-sm">…</span><% } %>
+                            <a href="?page=<%= totalPages %>"
+                                class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium transition"><%= totalPages %></a>
+                        <% } %>
+
+                        <!-- Next -->
+                        <% if (currentPage < totalPages) { %>
+                            <a href="?page=<%= currentPage + 1 %>"
+                                class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium transition">
+                                Next →
+                            </a>
+                        <% } else { %>
+                            <span class="px-3 py-1.5 rounded border border-gray-200 text-gray-300 text-sm font-medium cursor-not-allowed">Next →</span>
+                        <% } %>
+
+                    </div>
+                </div>
+            <% } %>
+
         </div>
     </div>
 </div>
@@ -259,26 +323,11 @@
     const startDateInput = document.getElementById("startDate");
     const endDateInput   = document.getElementById("endDate");
 
-    // ══════════════════════════════════════
-    // TOAST SYSTEM
-    // ══════════════════════════════════════
     function showToast(message, type = 'success') {
         const existing = document.getElementById('toast-container');
         if (existing) existing.remove();
-
-        const colors = {
-            success: 'bg-green-600',
-            error:   'bg-red-600',
-            warning: 'bg-yellow-500',
-            info:    'bg-blue-600'
-        };
-        const icons = {
-            success: '✓',
-            error:   '✕',
-            warning: '⚠',
-            info:    'ℹ'
-        };
-
+        const colors = { success:'bg-green-600', error:'bg-red-600', warning:'bg-yellow-500', info:'bg-blue-600' };
+        const icons  = { success:'✓', error:'✕', warning:'⚠', info:'ℹ' };
         const container = document.createElement('div');
         container.id = 'toast-container';
         container.className = `fixed top-6 right-6 z-[999] flex items-center gap-3 px-5 py-4 rounded-lg shadow-xl text-white text-sm font-medium max-w-sm transition-all duration-300 ${colors[type]}`;
@@ -289,57 +338,37 @@
             <button onclick="this.parentElement.remove()" class="ml-2 text-white/70 hover:text-white text-lg leading-none">&times;</button>
         `;
         document.body.appendChild(container);
-
-        // Slide in
-        requestAnimationFrame(() => {
-            container.style.transform = 'translateX(0)';
-        });
-
-        // Auto-dismiss after 4s
+        requestAnimationFrame(() => { container.style.transform = 'translateX(0)'; });
         setTimeout(() => {
             container.style.transform = 'translateX(120%)';
             setTimeout(() => container.remove(), 300);
         }, 4000);
     }
 
-    // ══════════════════════════════════════
-    // SHOW SERVER-SIDE FLASH ON PAGE LOAD
-    // ══════════════════════════════════════
     window.addEventListener('DOMContentLoaded', () => {
-        // Read flash messages passed from EJS into data attributes
         const flash = document.getElementById('flash-data');
-        if (flash) {
-            const msg  = flash.dataset.message;
-            const type = flash.dataset.type;
-            if (msg) showToast(msg, type || 'success');
-        }
+        if (flash && flash.dataset.message) showToast(flash.dataset.message, flash.dataset.type || 'success');
     });
 
-    // ══════════════════════════════════════
-    // DATE HELPERS
-    // ══════════════════════════════════════
     function getTodayStr() {
-        const t  = new Date();
-        const yy = t.getFullYear();
-        const mm = String(t.getMonth() + 1).padStart(2, '0');
-        const dd = String(t.getDate()).padStart(2, '0');
-        return `${yy}-${mm}-${dd}`;
+        const t = new Date();
+        return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
     }
 
-    // ══════════════════════════════════════
-    // MODAL OPEN / CLOSE
-    // ══════════════════════════════════════
+    function toggleOfferTarget() {
+        const isProduct = document.getElementById("typeProduct").checked;
+        document.getElementById("productSelectWrap").classList.toggle("hidden", !isProduct);
+        document.getElementById("categorySelectWrap").classList.toggle("hidden", isProduct);
+    }
+
     function openAddModal() {
         offerModal.classList.remove("hidden");
         document.body.style.overflow = "hidden";
         clearFormErrors();
-
         const today = getTodayStr();
         document.getElementById("offerForm").reset();
         startDateInput.min = today;
-        startDateInput.value = '';
-        endDateInput.min = today;
-        endDateInput.value = '';
+        endDateInput.min   = today;
         toggleOfferTarget();
     }
 
@@ -349,28 +378,15 @@
         clearFormErrors();
     }
 
-    // ══════════════════════════════════════
-    // START DATE → UPDATE END DATE MIN
-    // ══════════════════════════════════════
     startDateInput.addEventListener('change', function () {
-        const selected = this.value;
-        const today    = getTodayStr();
-        endDateInput.min = selected || today;
-        if (endDateInput.value && endDateInput.value < endDateInput.min) {
+        endDateInput.min = this.value || getTodayStr();
+        if (endDateInput.value && endDateInput.value < this.value) {
             endDateInput.value = '';
             showFieldError('endDate', 'End date must be on or after the start date.');
-        } else {
-            clearFieldError('endDate');
-        }
+        } else { clearFieldError('endDate'); }
     });
+    endDateInput.addEventListener('change', function () { clearFieldError('endDate'); });
 
-    endDateInput.addEventListener('change', function () {
-        clearFieldError('endDate');
-    });
-
-    // ══════════════════════════════════════
-    // FORM VALIDATION
-    // ══════════════════════════════════════
     function showFieldError(fieldId, message) {
         clearFieldError(fieldId);
         const field = document.getElementById(fieldId);
@@ -389,79 +405,52 @@
     }
 
     function clearFormErrors() {
-        ['startDate', 'endDate'].forEach(clearFieldError);
+        ['startDate','endDate'].forEach(clearFieldError);
     }
 
     function validateForm() {
         let valid = true;
         const today = getTodayStr();
-
         const isProduct = document.getElementById("typeProduct").checked;
         if (isProduct && !document.getElementById("productSelect").value) {
-            showToast('Please select a product.', 'error');
-            valid = false;
+            showToast('Please select a product.', 'error'); valid = false;
         }
         if (!isProduct && !document.getElementById("categorySelect").value) {
-            showToast('Please select a category.', 'error');
-            valid = false;
+            showToast('Please select a category.', 'error'); valid = false;
         }
-
         const discount = document.querySelector('input[name="discountPercentage"]').value;
         if (!discount || discount < 1 || discount > 99) {
-            showToast('Discount must be between 1% and 99%.', 'error');
-            valid = false;
+            showToast('Discount must be between 1% and 99%.', 'error'); valid = false;
         }
-
         const start = startDateInput.value;
         const end   = endDateInput.value;
-
-        if (!start) {
-            showFieldError('startDate', 'Start date is required.');
-            valid = false;
-        } else if (start < today) {
-            showFieldError('startDate', 'Start date cannot be in the past.');
-            valid = false;
-        } else {
-            clearFieldError('startDate');
-        }
-
-        if (!end) {
-            showFieldError('endDate', 'End date is required.');
-            valid = false;
-        } else if (end < today) {
-            showFieldError('endDate', 'End date cannot be in the past.');
-            valid = false;
-        } else if (start && end < start) {
-            showFieldError('endDate', 'End date must be on or after the start date.');
-            valid = false;
-        } else {
-            clearFieldError('endDate');
-        }
-
+        if (!start) { showFieldError('startDate', 'Start date is required.'); valid = false; }
+        else if (start < today) { showFieldError('startDate', 'Start date cannot be in the past.'); valid = false; }
+        else { clearFieldError('startDate'); }
+        if (!end) { showFieldError('endDate', 'End date is required.'); valid = false; }
+        else if (end < today) { showFieldError('endDate', 'End date cannot be in the past.'); valid = false; }
+        else if (start && end < start) { showFieldError('endDate', 'End date must be on or after the start date.'); valid = false; }
+        else { clearFieldError('endDate'); }
         return valid;
     }
 
     function confirmDelete(offerId) {
-    const form = document.getElementById("deleteForm");
-    form.action = `/admin/offers/delete/${offerId}`; // match your route
+        const form = document.getElementById("deleteForm");
+        form.action = `/admin/offers/delete/${offerId}`;
+        document.getElementById("confirmModal").classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+    }
 
-    document.getElementById("confirmModal").classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-}
+    function closeConfirmModal() {
+        document.getElementById("confirmModal").classList.add("hidden");
+        document.body.style.overflow = "";
+    }
 
-function closeConfirmModal() {
-    document.getElementById("confirmModal").classList.add("hidden");
-    document.body.style.overflow = "";
-}
-
-    // ── Intercept form submit — client-side validation then AJAX ──
     document.getElementById("offerForm").addEventListener('submit', async function (e) {
         e.preventDefault();
         if (!validateForm()) return;
-
         const formData = new FormData(this);
         const body     = Object.fromEntries(formData.entries());
-
         try {
             const res  = await fetch('/admin/offers', {
                 method: 'POST',
@@ -469,7 +458,6 @@ function closeConfirmModal() {
                 body: JSON.stringify(body)
             });
             const data = await res.json().catch(() => null);
-
             if (res.ok) {
                 closeModal();
                 showToast(data?.message || 'Offer created successfully!', 'success');
