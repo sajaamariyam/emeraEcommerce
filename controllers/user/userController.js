@@ -657,8 +657,6 @@ const loadProducts = async (req, res) => {
     for (let product of products) {
       const offer = await getBestOffer(product);
 
-      console.log("PRODUCT:", product.name, "DISCOUNT:", offer.discount, "FINAL:", offer.finalPrice);
-
       const finalPrice = offer.finalPrice;
       const discount = offer.discount;
 

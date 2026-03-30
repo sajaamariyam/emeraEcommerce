@@ -441,6 +441,19 @@
         return valid;
     }
 
+    function confirmDelete(offerId) {
+    const form = document.getElementById("deleteForm");
+    form.action = `/admin/offers/delete/${offerId}`; // match your route
+
+    document.getElementById("confirmModal").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+}
+
+function closeConfirmModal() {
+    document.getElementById("confirmModal").classList.add("hidden");
+    document.body.style.overflow = "";
+}
+
     // ── Intercept form submit — client-side validation then AJAX ──
     document.getElementById("offerForm").addEventListener('submit', async function (e) {
         e.preventDefault();
