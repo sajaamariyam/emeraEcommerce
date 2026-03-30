@@ -10,12 +10,6 @@ const couponSchema = new Schema(
       unique: true
     },
 
-    userId: {
-      type: Schema.Types.ObjectId,
-      ref: "Order",
-      required: true
-    },
-
     minPurchaseAmount: {
       type: Number,
       default: 0

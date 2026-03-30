@@ -1,5 +1,15 @@
 <%- include("../partials/admin/header") %>
 
+<!-- Server-side flash data passed to JS toast -->
+<div id="flash-data"
+    data-message="<%= typeof flash !== 'undefined' && flash.message ? flash.message : '' %>"
+    data-type="<%= typeof flash !== 'undefined' && flash.type ? flash.type : 'success' %>"
+    class="hidden"></div>
+
+<style>
+#toast-container { transition: transform 0.3s cubic-bezier(0.16,1,0.3,1); }
+</style>
+
 <div class="ml-52 h-screen overflow-y-auto bg-gray-50">
 
     <!-- Top Navigation Bar -->
@@ -244,12 +254,70 @@
 </div>
 
 <script>
-    const offerModal  = document.getElementById("offerModal");
+    const offerModal   = document.getElementById("offerModal");
     const confirmModal = document.getElementById("confirmModal");
     const startDateInput = document.getElementById("startDate");
     const endDateInput   = document.getElementById("endDate");
 
-    // ── Get today's date as YYYY-MM-DD in local time (avoids UTC off-by-one) ──
+    // ══════════════════════════════════════
+    // TOAST SYSTEM
+    // ══════════════════════════════════════
+    function showToast(message, type = 'success') {
+        const existing = document.getElementById('toast-container');
+        if (existing) existing.remove();
+
+        const colors = {
+            success: 'bg-green-600',
+            error:   'bg-red-600',
+            warning: 'bg-yellow-500',
+            info:    'bg-blue-600'
+        };
+        const icons = {
+            success: '✓',
+            error:   '✕',
+            warning: '⚠',
+            info:    'ℹ'
+        };
+
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = `fixed top-6 right-6 z-[999] flex items-center gap-3 px-5 py-4 rounded-lg shadow-xl text-white text-sm font-medium max-w-sm transition-all duration-300 ${colors[type]}`;
+        container.style.transform = 'translateX(120%)';
+        container.innerHTML = `
+            <span class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold flex-shrink-0">${icons[type]}</span>
+            <span class="flex-1">${message}</span>
+            <button onclick="this.parentElement.remove()" class="ml-2 text-white/70 hover:text-white text-lg leading-none">&times;</button>
+        `;
+        document.body.appendChild(container);
+
+        // Slide in
+        requestAnimationFrame(() => {
+            container.style.transform = 'translateX(0)';
+        });
+
+        // Auto-dismiss after 4s
+        setTimeout(() => {
+            container.style.transform = 'translateX(120%)';
+            setTimeout(() => container.remove(), 300);
+        }, 4000);
+    }
+
+    // ══════════════════════════════════════
+    // SHOW SERVER-SIDE FLASH ON PAGE LOAD
+    // ══════════════════════════════════════
+    window.addEventListener('DOMContentLoaded', () => {
+        // Read flash messages passed from EJS into data attributes
+        const flash = document.getElementById('flash-data');
+        if (flash) {
+            const msg  = flash.dataset.message;
+            const type = flash.dataset.type;
+            if (msg) showToast(msg, type || 'success');
+        }
+    });
+
+    // ══════════════════════════════════════
+    // DATE HELPERS
+    // ══════════════════════════════════════
     function getTodayStr() {
         const t  = new Date();
         const yy = t.getFullYear();
@@ -258,71 +326,148 @@
         return `${yy}-${mm}-${dd}`;
     }
 
-    // ── Open modal: reset form + enforce date constraints ──
+    // ══════════════════════════════════════
+    // MODAL OPEN / CLOSE
+    // ══════════════════════════════════════
     function openAddModal() {
         offerModal.classList.remove("hidden");
         document.body.style.overflow = "hidden";
+        clearFormErrors();
 
         const today = getTodayStr();
-
-        // Start date: today onwards only
-        startDateInput.min   = today;
-        startDateInput.value = '';
-
-        // End date: today onwards (will tighten when start is picked)
-        endDateInput.min   = today;
-        endDateInput.value = '';
-
-        // Reset form fields
         document.getElementById("offerForm").reset();
-        // Re-apply min after reset (reset() clears min in some browsers)
         startDateInput.min = today;
-        endDateInput.min   = today;
-
-        // Ensure correct target panel is shown
+        startDateInput.value = '';
+        endDateInput.min = today;
+        endDateInput.value = '';
         toggleOfferTarget();
     }
 
     function closeModal() {
         offerModal.classList.add("hidden");
         document.body.style.overflow = "";
+        clearFormErrors();
     }
 
-    // ── When start date changes, end date min must be >= start date ──
+    // ══════════════════════════════════════
+    // START DATE → UPDATE END DATE MIN
+    // ══════════════════════════════════════
     startDateInput.addEventListener('change', function () {
         const selected = this.value;
         const today    = getTodayStr();
-
-        // End date must be at least the start date (and never before today)
         endDateInput.min = selected || today;
-
-        // If end date is now invalid (before new start), clear it
         if (endDateInput.value && endDateInput.value < endDateInput.min) {
             endDateInput.value = '';
+            showFieldError('endDate', 'End date must be on or after the start date.');
+        } else {
+            clearFieldError('endDate');
         }
     });
 
-    // ── Toggle product / category select ──
-    function toggleOfferTarget() {
+    endDateInput.addEventListener('change', function () {
+        clearFieldError('endDate');
+    });
+
+    // ══════════════════════════════════════
+    // FORM VALIDATION
+    // ══════════════════════════════════════
+    function showFieldError(fieldId, message) {
+        clearFieldError(fieldId);
+        const field = document.getElementById(fieldId);
+        field.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+        const err = document.createElement('p');
+        err.id = `${fieldId}-error`;
+        err.className = 'text-xs text-red-500 mt-1';
+        err.textContent = message;
+        field.parentElement.appendChild(err);
+    }
+
+    function clearFieldError(fieldId) {
+        const field = document.getElementById(fieldId);
+        field?.classList.remove('border-red-400', 'ring-1', 'ring-red-400');
+        document.getElementById(`${fieldId}-error`)?.remove();
+    }
+
+    function clearFormErrors() {
+        ['startDate', 'endDate'].forEach(clearFieldError);
+    }
+
+    function validateForm() {
+        let valid = true;
+        const today = getTodayStr();
+
         const isProduct = document.getElementById("typeProduct").checked;
-        document.getElementById("productSelectWrap").classList.toggle("hidden", !isProduct);
-        document.getElementById("categorySelectWrap").classList.toggle("hidden", isProduct);
-        if (isProduct) {
-            document.getElementById("categorySelect").value = "";
-        } else {
-            document.getElementById("productSelect").value = "";
+        if (isProduct && !document.getElementById("productSelect").value) {
+            showToast('Please select a product.', 'error');
+            valid = false;
         }
+        if (!isProduct && !document.getElementById("categorySelect").value) {
+            showToast('Please select a category.', 'error');
+            valid = false;
+        }
+
+        const discount = document.querySelector('input[name="discountPercentage"]').value;
+        if (!discount || discount < 1 || discount > 99) {
+            showToast('Discount must be between 1% and 99%.', 'error');
+            valid = false;
+        }
+
+        const start = startDateInput.value;
+        const end   = endDateInput.value;
+
+        if (!start) {
+            showFieldError('startDate', 'Start date is required.');
+            valid = false;
+        } else if (start < today) {
+            showFieldError('startDate', 'Start date cannot be in the past.');
+            valid = false;
+        } else {
+            clearFieldError('startDate');
+        }
+
+        if (!end) {
+            showFieldError('endDate', 'End date is required.');
+            valid = false;
+        } else if (end < today) {
+            showFieldError('endDate', 'End date cannot be in the past.');
+            valid = false;
+        } else if (start && end < start) {
+            showFieldError('endDate', 'End date must be on or after the start date.');
+            valid = false;
+        } else {
+            clearFieldError('endDate');
+        }
+
+        return valid;
     }
 
-    // ── Delete confirm ──
-    function confirmDelete(id) {
-        document.getElementById("deleteForm").action = `/admin/offers/delete/${id}`;
-        confirmModal.classList.remove("hidden");
-    }
+    // ── Intercept form submit — client-side validation then AJAX ──
+    document.getElementById("offerForm").addEventListener('submit', async function (e) {
+        e.preventDefault();
+        if (!validateForm()) return;
 
-    function closeConfirmModal() {
-        confirmModal.classList.add("hidden");
-    }
+        const formData = new FormData(this);
+        const body     = Object.fromEntries(formData.entries());
+
+        try {
+            const res  = await fetch('/admin/offers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json().catch(() => null);
+
+            if (res.ok) {
+                closeModal();
+                showToast(data?.message || 'Offer created successfully!', 'success');
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                showToast(data?.message || 'Failed to create offer. Please try again.', 'error');
+            }
+        } catch (err) {
+            showToast('Network error. Please check your connection.', 'error');
+        }
+    });
 </script>
 
 <%- include("../partials/admin/footer") %>

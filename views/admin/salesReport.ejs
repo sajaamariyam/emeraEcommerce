@@ -1,5 +1,9 @@
 <%- include("../partials/admin/header") %>
 
+<style>
+#toast-container { transition: transform 0.3s cubic-bezier(0.16,1,0.3,1); }
+</style>
+
 <div class="ml-52 h-screen overflow-y-auto bg-gray-50">
 
     <!-- Top Navigation Bar -->
@@ -22,17 +26,13 @@
                 <h2 class="text-2xl font-bold text-gray-800">Sales Overview</h2>
                 <p class="text-gray-600 mt-1">View and analyse delivered order sales data.</p>
             </div>
-
-            <!--
-                ✅ Download buttons hit server routes with current query params
-                   so the PDF/Excel match exactly what's on screen
-            -->
+            <!-- Download buttons pass current filter params so PDF/Excel match the screen -->
             <div class="flex gap-3">
-                <a href="/admin/sales-report/pdf?filter=<%= filter || '' %>&from=<%= from || '' %>&to=<%= to || '' %>"
+                <a href="/admin/sales-report/pdf?filter=<%= filter %>&from=<%= from %>&to=<%= to %>"
                    class="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 font-medium shadow-sm">
                     <i class="fas fa-file-pdf text-red-500"></i> PDF
                 </a>
-                <a href="/admin/sales-report/excel?filter=<%= filter || '' %>&from=<%= from || '' %>&to=<%= to || '' %>"
+                <a href="/admin/sales-report/excel?filter=<%= filter %>&from=<%= from %>&to=<%= to %>"
                    class="bg-teal-700 text-white px-5 py-2.5 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium shadow-md">
                     <i class="fas fa-file-excel"></i> Excel
                 </a>
@@ -41,7 +41,7 @@
 
         <!-- Filter Bar -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 mb-8">
-            <form method="GET" action="/admin/sales-report" class="flex flex-wrap items-end gap-4">
+            <form method="GET" action="/admin/sales-report" id="filterForm" class="flex flex-wrap items-end gap-4">
 
                 <!-- Quick filters -->
                 <div>
@@ -65,15 +65,15 @@
                 <div class="flex items-end gap-3">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">From</label>
-                        <input type="date" name="from" value="<%= from || '' %>"
+                        <input type="date" name="from" id="fromDate" value="<%= from %>"
                             class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none transition">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">To</label>
-                        <input type="date" name="to" value="<%= to || '' %>"
+                        <input type="date" name="to" id="toDate" value="<%= to %>"
                             class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none transition">
                     </div>
-                    <button type="submit" name="filter" value="custom"
+                    <button type="button" onclick="applyCustomFilter()"
                         class="px-5 py-2 rounded-lg text-sm font-semibold border transition
                             <%= filter === 'custom'
                                 ? 'bg-teal-700 text-white border-teal-700'
@@ -92,35 +92,6 @@
             </form>
         </div>
 
-        <script>
-            const fromInput = document.querySelector('input[name="from"]');
-            const toInput   = document.querySelector('input[name="to"]');
-            const applyBtn  = document.querySelector('button[value="custom"]');
-            const today     = new Date().toISOString().split('T')[0];
-
-            fromInput.setAttribute('max', today);
-            toInput.setAttribute('max', today);
-
-            fromInput.addEventListener('change', function() {
-                toInput.setAttribute('min', this.value);
-                if (toInput.value && toInput.value < this.value) toInput.value = this.value;
-            });
-            toInput.addEventListener('change', function() {
-                fromInput.setAttribute('max', this.value);
-            });
-            applyBtn.addEventListener('click', function(e) {
-                if (!fromInput.value || !toInput.value) {
-                    e.preventDefault();
-                    alert('Please select both From and To dates.');
-                    return;
-                }
-                if (fromInput.value > toInput.value) {
-                    e.preventDefault();
-                    alert('From date cannot be after To date.');
-                }
-            });
-        </script>     
-
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
@@ -132,7 +103,6 @@
                     <p class="text-2xl font-bold text-gray-800"><%= summary.totalOrders %></p>
                 </div>
             </div>
-
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
                 <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
                     <i class="fas fa-rupee-sign text-green-600 text-lg"></i>
@@ -142,7 +112,6 @@
                     <p class="text-2xl font-bold text-gray-800">₹<%= summary.totalSales.toLocaleString('en-IN') %></p>
                 </div>
             </div>
-
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
                 <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center">
                     <i class="fas fa-tag text-orange-500 text-lg"></i>
@@ -181,65 +150,227 @@
 
                     <% orders.forEach(order => { %>
                         <tr class="hover:bg-gray-50 transition-colors">
-
                             <td class="px-6 py-4">
                                 <p class="font-semibold text-gray-800 text-sm"><%= order.orderId %></p>
                             </td>
-
                             <td class="px-6 py-4 text-sm text-gray-600">
                                 <%= new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
                             </td>
-
                             <td class="px-6 py-4">
                                 <span class="px-2.5 py-1 bg-teal-50 text-teal-700 text-xs font-bold rounded-full border border-teal-100">
                                     <%= order.orderedItems.length %> item<%= order.orderedItems.length !== 1 ? 's' : '' %>
                                 </span>
                             </td>
-
                             <td class="px-6 py-4">
                                 <%
                                   const pm = (order.paymentMethod || '').toLowerCase();
                                   let pmClass = 'bg-gray-50 text-gray-600 border-gray-100';
-                                  if (pm === 'cod')         pmClass = 'bg-yellow-50 text-yellow-700 border-yellow-100';
-                                  else if (pm === 'upi')    pmClass = 'bg-blue-50 text-blue-700 border-blue-100';
-                                  else if (pm === 'card')   pmClass = 'bg-purple-50 text-purple-700 border-purple-100';
+                                  if (pm === 'cod')             pmClass = 'bg-yellow-50 text-yellow-700 border-yellow-100';
+                                  else if (pm === 'upi')        pmClass = 'bg-blue-50 text-blue-700 border-blue-100';
+                                  else if (pm === 'card')       pmClass = 'bg-purple-50 text-purple-700 border-purple-100';
                                   else if (pm === 'netbanking') pmClass = 'bg-indigo-50 text-indigo-700 border-indigo-100';
                                 %>
                                 <span class="px-3 py-1 text-xs font-bold rounded-full border <%= pmClass %>">
                                     <%= (order.paymentMethod || 'N/A').toUpperCase() %>
                                 </span>
                             </td>
-
                             <td class="px-6 py-4">
                                 <% if (order.discount > 0) { %>
-                                    <span class="text-orange-600 font-semibold text-sm">
-                                        -₹<%= order.discount.toLocaleString('en-IN') %>
-                                    </span>
+                                    <span class="text-orange-600 font-semibold text-sm">-₹<%= order.discount.toLocaleString('en-IN') %></span>
                                 <% } else { %>
                                     <span class="text-gray-400 text-sm">—</span>
                                 <% } %>
                             </td>
-
                             <td class="px-6 py-4">
-                                <span class="text-lg font-bold text-teal-700">
-                                    ₹<%= order.finalAmount.toLocaleString('en-IN') %>
-                                </span>
+                                <span class="text-lg font-bold text-teal-700">₹<%= order.finalAmount.toLocaleString('en-IN') %></span>
                             </td>
-
                             <td class="px-6 py-4">
                                 <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100">
                                     Delivered
                                 </span>
                             </td>
-
                         </tr>
                     <% }) %>
 
                 </tbody>
             </table>
+
+            <!-- ── Pagination ── -->
+            <% if (totalPages > 1) { %>
+                <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                    <p class="text-sm text-gray-500">
+                        Showing page <span class="font-semibold text-gray-700"><%= currentPage %></span> of
+                        <span class="font-semibold text-gray-700"><%= totalPages %></span>
+                        &nbsp;·&nbsp; <span class="font-semibold text-gray-700"><%= totalOrders %></span> total orders
+                    </p>
+                    <div class="flex items-center gap-1">
+
+                        <!-- Prev -->
+                        <% if (currentPage > 1) { %>
+                            <a href="?page=<%= currentPage - 1 %>&filter=<%= filter %>&from=<%= from %>&to=<%= to %>"
+                                class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium transition">
+                                ← Prev
+                            </a>
+                        <% } else { %>
+                            <span class="px-3 py-1.5 rounded border border-gray-200 text-gray-300 text-sm font-medium cursor-not-allowed">← Prev</span>
+                        <% } %>
+
+                        <%
+                        const maxPages = 5;
+                        let startPage  = Math.max(1, currentPage - Math.floor(maxPages / 2));
+                        let endPage    = Math.min(totalPages, startPage + maxPages - 1);
+                        if (endPage - startPage < maxPages - 1) startPage = Math.max(1, endPage - maxPages + 1);
+                        %>
+
+                        <% if (startPage > 1) { %>
+                            <a href="?page=1&filter=<%= filter %>&from=<%= from %>&to=<%= to %>"
+                                class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium transition">1</a>
+                            <% if (startPage > 2) { %><span class="px-2 text-gray-400 text-sm">…</span><% } %>
+                        <% } %>
+
+                        <% for (let i = startPage; i <= endPage; i++) { %>
+                            <a href="?page=<%= i %>&filter=<%= filter %>&from=<%= from %>&to=<%= to %>"
+                                class="px-3 py-1.5 rounded text-sm font-medium transition
+                                <%= currentPage === i
+                                    ? 'bg-teal-700 text-white border border-teal-700'
+                                    : 'border border-gray-300 text-gray-600 hover:bg-gray-50' %>">
+                                <%= i %>
+                            </a>
+                        <% } %>
+
+                        <% if (endPage < totalPages) { %>
+                            <% if (endPage < totalPages - 1) { %><span class="px-2 text-gray-400 text-sm">…</span><% } %>
+                            <a href="?page=<%= totalPages %>&filter=<%= filter %>&from=<%= from %>&to=<%= to %>"
+                                class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium transition"><%= totalPages %></a>
+                        <% } %>
+
+                        <!-- Next -->
+                        <% if (currentPage < totalPages) { %>
+                            <a href="?page=<%= currentPage + 1 %>&filter=<%= filter %>&from=<%= from %>&to=<%= to %>"
+                                class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium transition">
+                                Next →
+                            </a>
+                        <% } else { %>
+                            <span class="px-3 py-1.5 rounded border border-gray-200 text-gray-300 text-sm font-medium cursor-not-allowed">Next →</span>
+                        <% } %>
+
+                    </div>
+                </div>
+            <% } %>
         </div>
 
     </div>
 </div>
+
+<script>
+// ══════════════════════════════════════
+// TOAST SYSTEM
+// ══════════════════════════════════════
+function showToast(message, type = 'error') {
+    const existing = document.getElementById('toast-container');
+    if (existing) existing.remove();
+
+    const colors = { success:'bg-green-600', error:'bg-red-600', warning:'bg-yellow-500', info:'bg-blue-600' };
+    const icons  = { success:'✓', error:'✕', warning:'⚠', info:'ℹ' };
+
+    const el = document.createElement('div');
+    el.id = 'toast-container';
+    el.className = `fixed top-6 right-6 z-[999] flex items-center gap-3 px-5 py-4 rounded-lg shadow-xl text-white text-sm font-medium max-w-sm ${colors[type]}`;
+    el.style.transform  = 'translateX(120%)';
+    el.style.transition = 'transform 0.3s cubic-bezier(0.16,1,0.3,1)';
+    el.innerHTML = `
+        <span class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold flex-shrink-0">${icons[type]}</span>
+        <span class="flex-1">${message}</span>
+        <button onclick="this.parentElement.remove()" class="ml-2 text-white/70 hover:text-white text-lg leading-none">&times;</button>
+    `;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => { el.style.transform = 'translateX(0)'; });
+    setTimeout(() => {
+        el.style.transform = 'translateX(120%)';
+        setTimeout(() => el.remove(), 300);
+    }, 4000);
+}
+
+// ══════════════════════════════════════
+// DATE HELPERS — local time, no UTC bug
+// ══════════════════════════════════════
+function getTodayStr() {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+
+// ══════════════════════════════════════
+// DATE INPUT CONSTRAINTS
+// ══════════════════════════════════════
+const fromInput = document.getElementById('fromDate');
+const toInput   = document.getElementById('toDate');
+const today     = getTodayStr();
+
+// Max is today for both (can't report on future)
+fromInput.setAttribute('max', today);
+toInput.setAttribute('max', today);
+
+// When "from" changes, "to" min = from value
+fromInput.addEventListener('change', function () {
+    toInput.setAttribute('min', this.value);
+    // If to is now before from, nudge it
+    if (toInput.value && toInput.value < this.value) {
+        toInput.value = this.value;
+    }
+});
+
+// When "to" changes, "from" max = to value
+toInput.addEventListener('change', function () {
+    fromInput.setAttribute('max', this.value || today);
+});
+
+// ══════════════════════════════════════
+// APPLY CUSTOM FILTER (replaces alert)
+// ══════════════════════════════════════
+function applyCustomFilter() {
+    const from = fromInput.value;
+    const to   = toInput.value;
+
+    if (!from && !to) {
+        showToast('Please select both From and To dates.', 'warning');
+        fromInput.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+        toInput.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+        return;
+    }
+    if (!from) {
+        showToast('Please select a From date.', 'warning');
+        fromInput.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+        return;
+    }
+    if (!to) {
+        showToast('Please select a To date.', 'warning');
+        toInput.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+        return;
+    }
+    if (from > to) {
+        showToast('From date cannot be after To date.', 'error');
+        fromInput.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+        return;
+    }
+    if (from > today || to > today) {
+        showToast('Dates cannot be in the future.', 'error');
+        return;
+    }
+
+    // Clear any red borders and submit
+    [fromInput, toInput].forEach(el => el.classList.remove('border-red-400','ring-1','ring-red-400'));
+
+    // Build the URL manually to include filter=custom
+    const params = new URLSearchParams({ filter: 'custom', from, to });
+    window.location.href = `/admin/sales-report?${params.toString()}`;
+}
+
+
+[fromInput, toInput].forEach(el => {
+    el.addEventListener('change', () => {
+        el.classList.remove('border-red-400', 'ring-1', 'ring-red-400');
+    });
+});
+</script>
 
 <%- include("../partials/admin/footer") %>

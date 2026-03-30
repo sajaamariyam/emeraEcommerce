@@ -1019,25 +1019,64 @@ const ProfileApp = (function () {
         } catch (err) { console.error(err); showError('Network error. Please try again.'); }
     }
 
-    function launchWalletRazorpay(rzpOrder, amount) {
+ function launchWalletRazorpay(rzpOrder, amount) {
         if (typeof Razorpay === 'undefined') { showError('Payment gateway not loaded. Please refresh the page.'); return; }
-        new Razorpay({
-            key: rzpOrder.key || '', amount: rzpOrder.amount, currency: rzpOrder.currency || 'INR', order_id: rzpOrder.id,
-            name: 'Wallet Top-up', description: 'Adding \u20B9' + amount + ' to your wallet',
+ 
+        var rzp = new Razorpay({
+            key:         rzpOrder.key || '',
+            amount:      rzpOrder.amount,
+            currency:    rzpOrder.currency || 'INR',
+            order_id:    rzpOrder.id,
+            name:        'Emera',
+            description: 'Adding \u20B9' + amount + ' to your wallet',
+ 
             handler: async function(response) {
+               
                 try {
-                    var vr = await safeFetch('/wallet/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature }) });
+                    var vr = await safeFetch('/wallet/verify', {
+                        method:  'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body:    JSON.stringify({
+                            razorpay_order_id:   response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature:  response.razorpay_signature
+                        })
+                    });
                     if (vr.ok && vr.data.success) {
-                        document.getElementById('wallet-success-msg').textContent = '\u20B9' + amount.toFixed(2) + ' has been added to your wallet.';
+                        document.getElementById('wallet-success-msg').textContent =
+                            '\u20B9' + amount.toFixed(2) + ' has been added to your wallet.';
                         openEmera('walletSuccess');
                         setTimeout(function() { closeEmera('walletSuccess'); loadWallet(); }, 2000);
-                    } else { showError(vr.data.message || 'Payment verification failed'); }
-                } catch (err) { console.error(err); showError('Verification failed. Please contact support.'); }
+                    } else {
+                        showError(vr.data.message || 'Payment verification failed');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showError('Verification failed. Please contact support.');
+                }
             },
-            modal: { ondismiss: function() {} },
+ 
+            modal: {
+               
+                ondismiss: function() {
+                    showError('Payment was cancelled. No amount was deducted from your account.');
+                }
+            },
+ 
             theme: { color: '#0c0a09' }
-        }).open();
+        });
+ 
+      
+        rzp.on('payment.failed', function(response) {
+            console.error('Wallet payment failed:', response.error);
+            showError(
+                'Payment failed: ' + (response.error.description || 'Please try again.')
+            );
+        });
+ 
+        rzp.open();
     }
+ 
 
     // ─── Security ─────────────────────────────────────────────────
     async function handleChangePassword(e) {
