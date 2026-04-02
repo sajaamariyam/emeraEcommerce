@@ -1,6 +1,7 @@
 const Cart = require("../../models/cartSchema");
 const Product = require("../../models/productSchema");
 const User = require("../../models/userSchema");
+const getBestOffer = require("../../helpers/offerHelper");
 
 const loadCart = async (req, res) => {
   try {
@@ -144,13 +145,18 @@ const addToCart = async (req, res) => {
         });
       }
 
+      const offer = await getBestOffer(product);
+      existingItem.price = Math.round(offer.finalPrice);
       existingItem.quantity += 1;
     } else {
+      const offer = await getBestOffer(product);
+      const finalPrice = Math.round(offer.finalPrice);
+
       cart.items.push({
         productId,
         color: selectedColor,
         quantity: 1,
-        price: product.salePrice,
+        price: finalPrice,
       });
     }
 

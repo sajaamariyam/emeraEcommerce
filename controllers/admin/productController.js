@@ -38,17 +38,18 @@ const loadProducts = async (req, res) => {
     }
 
     let sortQuery = {};
+    let sortInJS = false;
+
     switch (sortBy) {
       case "name-desc":
         sortQuery.name = -1;
         break;
       case "stock-asc":
-        sortQuery.createdAt = 1;
-        break;
       case "stock-desc":
-        sortQuery.createdAt = -1;
+        sortInJS = true;         
+        sortQuery.name = 1;      
         break;
-      default:
+      default:                   
         sortQuery.name = 1;
     }
 
@@ -56,6 +57,19 @@ const loadProducts = async (req, res) => {
       .populate("category")
       .sort(sortQuery)
       .lean();
+
+    products = products.map(p => ({
+      ...p,
+      totalStock: p.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0,
+    }));
+
+    if (sortInJS) {
+      products.sort((a, b) =>
+        sortBy === "stock-asc"
+          ? a.totalStock - b.totalStock
+          : b.totalStock - a.totalStock
+      );
+    }
 
     if (stockLevel !== "all") {
       products = products.filter((product) => {

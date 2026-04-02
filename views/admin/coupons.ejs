@@ -131,8 +131,18 @@
                                 <span class="font-mono font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded text-sm tracking-widest"><%= coupon.code %></span>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="text-lg font-bold text-teal-700">&#8377;<%= coupon.discountAmount.toLocaleString('en-IN') %></span>
-                                <p class="text-xs text-gray-400 font-medium">Flat Off</p>
+                                <% if (coupon.isPercentage) { %>
+                                    <span class="text-lg font-bold text-teal-700"><%= coupon.discountAmount %>%</span>
+                                    <p class="text-xs text-gray-400 font-medium">
+                                        % Off
+                                        <% if (coupon.maxDiscount) { %>
+                                            · Max ₹<%= coupon.maxDiscount.toLocaleString('en-IN') %>
+                                        <% } %>
+                                    </p>
+                                <% } else { %>
+                                    <span class="text-lg font-bold text-teal-700">&#8377;<%= coupon.discountAmount.toLocaleString('en-IN') %></span>
+                                    <p class="text-xs text-gray-400 font-medium">Flat Off</p>
+                                <% } %>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">
                                 <% if (coupon.minPurchaseAmount && coupon.minPurchaseAmount > 0) { %>
@@ -243,16 +253,50 @@
                 <p id="couponCode-err" class="text-xs text-red-500 mt-1 hidden"></p>
             </div>
 
+            <!-- Discount Type Toggle -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Discount Type *</label>
+                <div class="flex gap-3">
+                    <label class="flex-1 flex items-center gap-2 p-3 border-2 border-teal-600 rounded-lg cursor-pointer bg-teal-50">
+                        <input type="radio" name="discountType" value="flat" checked
+                            onchange="toggleDiscountType('flat')"
+                            class="accent-teal-600">
+                        <span class="text-sm font-semibold text-teal-700">Flat (₹)</span>
+                    </label>
+                    <label class="flex-1 flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer">
+                        <input type="radio" name="discountType" value="percentage"
+                            onchange="toggleDiscountType('percentage')"
+                            class="accent-teal-600">
+                        <span class="text-sm font-semibold text-gray-600">Percentage (%)</span>
+                    </label>
+                </div>
+            </div>
+
             <!-- Discount Amount -->
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Discount Amount (&#8377;) *</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2" id="discountLabel">Discount Amount (₹) *</label>
                 <div class="relative">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">&#8377;</span>
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold" id="discountSymbol">₹</span>
                     <input type="number" id="discountAmount" min="1" placeholder="e.g. 200"
                         class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition"
                         oninput="clearFieldErr('discountAmount')">
                 </div>
                 <p id="discountAmount-err" class="text-xs text-red-500 mt-1 hidden"></p>
+            </div>
+
+            <!-- Max Discount (only for percentage) -->
+            <div id="maxDiscountField" class="hidden">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Max Discount (₹) <span class="text-gray-400 font-normal">optional</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
+                    <input type="number" id="maxDiscount" min="1" placeholder="e.g. 500"
+                        class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition"
+                        oninput="clearFieldErr('maxDiscount')">
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Cap the maximum discount amount</p>
+                <p id="maxDiscount-err" class="text-xs text-red-500 mt-1 hidden"></p>
             </div>
 
             <!-- Minimum Purchase Amount -->
@@ -395,6 +439,48 @@ function clearAllFieldErrs() {
 }
 
 // ══════════════════════════════════════
+// DISCOUNT TYPE TOGGLE
+// ══════════════════════════════════════
+function toggleDiscountType(type) {
+    const label    = document.getElementById('discountLabel');
+    const symbol   = document.getElementById('discountSymbol');
+    const maxField = document.getElementById('maxDiscountField');
+    const input    = document.getElementById('discountAmount');
+
+    // Update both radio label styles
+    document.querySelectorAll('input[name="discountType"]').forEach(radio => {
+        const label = radio.closest('label');
+        if (radio.value === type) {
+            label.classList.add('border-teal-600', 'bg-teal-50');
+            label.classList.remove('border-gray-300');
+            label.querySelector('span').classList.add('text-teal-700');
+            label.querySelector('span').classList.remove('text-gray-600');
+        } else {
+            label.classList.remove('border-teal-600', 'bg-teal-50');
+            label.classList.add('border-gray-300');
+            label.querySelector('span').classList.remove('text-teal-700');
+            label.querySelector('span').classList.add('text-gray-600');
+        }
+    });
+
+    if (type === 'percentage') {
+        label.textContent   = 'Discount Percentage (%) *';
+        symbol.textContent  = '%';
+        input.max           = '100';
+        input.placeholder   = 'e.g. 10';
+        maxField.classList.remove('hidden');
+    } else {
+        label.textContent   = 'Discount Amount (₹) *';
+        symbol.textContent  = '₹';
+        input.removeAttribute('max');
+        input.placeholder   = 'e.g. 200';
+        maxField.classList.add('hidden');
+    }
+    clearFieldErr('discountAmount');
+    clearFieldErr('maxDiscount');
+}
+
+// ══════════════════════════════════════
 // CREATE MODAL
 // ══════════════════════════════════════
 function openCreateModal() {
@@ -412,6 +498,8 @@ function closeCreateModal() {
     document.getElementById('discountAmount').value    = '';
     document.getElementById('minPurchaseAmount').value = '';
     document.getElementById('expiryDate').value        = '';
+    document.getElementById('maxDiscount').value       = ''; 
+    toggleDiscountType('flat');                              
 }
 
 // ══════════════════════════════════════
@@ -422,6 +510,8 @@ async function submitCreateCoupon() {
     const discountAmount    = document.getElementById('discountAmount').value.trim();
     const minPurchaseAmount = document.getElementById('minPurchaseAmount').value.trim();
     const expiryDate        = document.getElementById('expiryDate').value;
+    const maxDiscount       = document.getElementById('maxDiscount').value.trim();
+    const isPercentage      = document.querySelector('input[name="discountType"]:checked').value === 'percentage';
     const btn               = document.getElementById('createCouponBtn');
 
     clearAllFieldErrs();
@@ -439,6 +529,8 @@ async function submitCreateCoupon() {
         showFieldErr('discountAmount', 'Discount amount is required.'); valid = false;
     } else if (isNaN(discountAmount) || parseFloat(discountAmount) <= 0) {
         showFieldErr('discountAmount', 'Must be a positive number.'); valid = false;
+    } else if (isPercentage && parseFloat(discountAmount) > 100) {
+        showFieldErr('discountAmount', 'Percentage cannot exceed 100%.'); valid = false;
     }
 
     // Validate min purchase
@@ -446,9 +538,14 @@ async function submitCreateCoupon() {
         showFieldErr('minPurchaseAmount', 'Cannot be negative.'); valid = false;
     }
 
-    // Discount must be less than min purchase (if set)
-    if (minPurchaseAmount && parseFloat(discountAmount) >= parseFloat(minPurchaseAmount)) {
+    // Flat: discount must be less than min purchase
+    if (!isPercentage && minPurchaseAmount && parseFloat(discountAmount) >= parseFloat(minPurchaseAmount)) {
         showFieldErr('discountAmount', 'Discount must be less than the minimum purchase amount.'); valid = false;
+    }
+
+    // Max discount validation (percentage only)
+    if (isPercentage && maxDiscount !== '' && (isNaN(maxDiscount) || parseFloat(maxDiscount) <= 0)) {
+        showFieldErr('maxDiscount', 'Max discount must be a positive number.'); valid = false;
     }
 
     // Validate expiry
@@ -461,19 +558,20 @@ async function submitCreateCoupon() {
 
     if (!valid) return;
 
-    // Submit
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin text-sm"></i> Creating...';
 
     try {
-        const res  = await fetch('/admin/coupons', {
+        const res = await fetch('/admin/coupons', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 code,
                 discountAmount,
                 minPurchaseAmount: minPurchaseAmount || 0,
-                expiryDate
+                expiryDate,
+                isPercentage,
+                maxDiscount: isPercentage && maxDiscount ? maxDiscount : null,
             }),
         });
         const data = await res.json();
@@ -483,19 +581,13 @@ async function submitCreateCoupon() {
             showToast(data.message || 'Coupon created successfully!', 'success');
             setTimeout(() => location.reload(), 1200);
         } else {
-            // Map backend field errors to the right field
             const msg = data.message || 'Failed to create coupon.';
-            if (msg.toLowerCase().includes('code')) {
-                showFieldErr('couponCode', msg);
-            } else if (msg.toLowerCase().includes('discount')) {
-                showFieldErr('discountAmount', msg);
-            } else if (msg.toLowerCase().includes('minimum') || msg.toLowerCase().includes('purchase')) {
-                showFieldErr('minPurchaseAmount', msg);
-            } else if (msg.toLowerCase().includes('expiry') || msg.toLowerCase().includes('date')) {
-                showFieldErr('expiryDate', msg);
-            } else {
-                showToast(msg, 'error');
-            }
+            if (msg.toLowerCase().includes('code'))           showFieldErr('couponCode', msg);
+            else if (msg.toLowerCase().includes('percentage') || msg.toLowerCase().includes('discount')) showFieldErr('discountAmount', msg);
+            else if (msg.toLowerCase().includes('max'))       showFieldErr('maxDiscount', msg);
+            else if (msg.toLowerCase().includes('minimum'))   showFieldErr('minPurchaseAmount', msg);
+            else if (msg.toLowerCase().includes('expiry'))    showFieldErr('expiryDate', msg);
+            else showToast(msg, 'error');
         }
     } catch (e) {
         showToast('Network error. Please check your connection.', 'error');
@@ -504,7 +596,6 @@ async function submitCreateCoupon() {
         btn.innerHTML = '<i class="fas fa-plus text-sm"></i> Create Coupon';
     }
 }
-
 // ══════════════════════════════════════
 // DELETE COUPON
 // ══════════════════════════════════════

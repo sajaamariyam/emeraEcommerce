@@ -41,6 +41,29 @@ app.use(async (req, res, next) => {
   try {
     if (req.session.user) {
       const user = await User.findById(req.session.user);
+
+      if (!user || user.isBlocked) {
+        req.session.destroy(() => {
+          res.clearCookie("connect.sid");
+        });
+        res.locals.user = null;
+
+        const isAjax =
+          req.xhr ||
+          req.headers.accept?.includes("application/json") ||
+          req.headers["content-type"]?.includes("application/json");
+
+        if (isAjax) {
+          return res.status(403).json({
+            success: false,
+            message: "Your account has been blocked. Please contact support.",
+            blocked: true,
+          });
+        }
+
+        return res.redirect("/login?blocked=true");
+      }
+
       res.locals.user = user;
     } else {
       res.locals.user = null;

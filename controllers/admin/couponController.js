@@ -43,14 +43,13 @@ const loadCoupons = async (req, res) => {
 
 const createCoupon = async (req, res) => {
   try {
-    const { code, discountAmount, minPurchaseAmount, expiryDate } = req.body;
+    const { code, discountAmount, minPurchaseAmount, expiryDate, isPercentage, maxDiscount } = req.body;
 
     if (!code || !discountAmount || !expiryDate) {
       return res.status(400).json({ success: false, message: "Coupon code, discount amount and expiry date are required" });
     }
 
     const trimmedCode = code.trim().toUpperCase();
-
     if (!/^[A-Z0-9]{4,20}$/.test(trimmedCode)) {
       return res.status(400).json({ success: false, message: "Coupon code must be 4-20 alphanumeric characters" });
     }
@@ -65,12 +64,18 @@ const createCoupon = async (req, res) => {
       return res.status(400).json({ success: false, message: "Discount amount must be a positive number" });
     }
 
+    if (isPercentage) {
+      if (discount > 100) {
+        return res.status(400).json({ success: false, message: "Percentage discount cannot exceed 100%" });
+      }
+    }
+
     const minPurchase = Number(minPurchaseAmount) || 0;
     if (minPurchase < 0) {
       return res.status(400).json({ success: false, message: "Minimum purchase amount cannot be negative" });
     }
 
-    if (minPurchase > 0 && discount >= minPurchase) {
+    if (!isPercentage && minPurchase > 0 && discount >= minPurchase) {
       return res.status(400).json({ success: false, message: "Discount amount must be less than minimum purchase amount" });
     }
 
@@ -79,12 +84,19 @@ const createCoupon = async (req, res) => {
       return res.status(400).json({ success: false, message: "Expiry date must be a future date" });
     }
 
+    const maxDiscountValue = isPercentage && maxDiscount ? Number(maxDiscount) : null;
+    if (maxDiscountValue !== null && (isNaN(maxDiscountValue) || maxDiscountValue <= 0)) {
+      return res.status(400).json({ success: false, message: "Max discount must be a positive number" });
+    }
+
     const newCoupon = new Coupon({
-      code:               trimmedCode,
-      discountAmount:     discount,
-      minPurchaseAmount:  minPurchase,
-      expiryDate:         expiry,
-      isUsed:             false,
+      code:              trimmedCode,
+      discountAmount:    discount,
+      minPurchaseAmount: minPurchase,
+      expiryDate:        expiry,
+      isPercentage:      !!isPercentage,
+      maxDiscount:       maxDiscountValue,
+      isUsed:            false,
     });
 
     await newCoupon.save();

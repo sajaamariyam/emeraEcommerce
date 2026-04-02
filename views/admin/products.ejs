@@ -56,6 +56,7 @@
 
        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
     <form action="/admin/products" method="GET" class="space-y-4">
+        <input type="hidden" name="page" id="formPage" value="1">
 
         <!-- SEARCH ROW (FULL WIDTH) -->
         <div class="flex gap-2 w-full">
@@ -90,7 +91,7 @@
         <!-- CATEGORY -->
         <select
             name="category"
-            onchange="this.form.submit()"
+            onchange="document.getElementById('formPage').value='1'; this.form.submit()"
             class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
         >
             <option value="">All Categories</option>
@@ -107,7 +108,7 @@
         <!-- STATUS -->
         <select
             name="status"
-            onchange="this.form.submit()"
+            onchange="document.getElementById('formPage').value='1'; this.form.submit()"
             class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
         >
             <option value="all" <%= status === 'all' ? 'selected' : '' %>>
@@ -124,7 +125,7 @@
         <!-- STOCK LEVEL FILTER -->
         <select
             name="stockLevel"
-            onchange="this.form.submit()"
+            onchange="document.getElementById('formPage').value='1'; this.form.submit()"
             class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
         >
             <option value="all" <%= (stockLevel || 'all') === 'all' ? 'selected' : '' %>>
@@ -144,7 +145,7 @@
         <!-- SORT BY -->
         <select
             name="sortBy"
-            onchange="this.form.submit()"
+            onchange="document.getElementById('formPage').value='1'; this.form.submit()"
             class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
         >
             <option value="name-asc" <%= (sortBy || 'name-asc') === 'name-asc' ? 'selected' : '' %>>
@@ -183,9 +184,9 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     <% products.forEach(product => { 
-                        const totalStock = product.variants?.length
-                            ? product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)
-                            : product.quantity || 0;
+                        const totalStock = product.totalStock !== undefined
+                            ? product.totalStock
+                            : (product.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0);
                     %>
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4">
@@ -453,7 +454,6 @@
           </p>
         </div>
 
-        <!-- ✅ NEW: SPECIFICATIONS SECTION -->
         <div class="section space-y-4">
           <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700">
             Product Specifications (Optional)
@@ -905,10 +905,10 @@ async function openProductModal(productId = null) {
   form.reset();
   preview.innerHTML = "";
   variantContainer.innerHTML = "";
-  specsContainer.innerHTML = ""; // ✅ NEW
+  specsContainer.innerHTML = ""; 
   processedImages = [];
   pendingFiles = [];
-  removedOldImages = []; // ✅ Reset removed images
+  removedOldImages = []; 
 
   if (productId) {
     /* ---------- EDIT MODE ---------- */
@@ -938,9 +938,13 @@ async function openProductModal(productId = null) {
       product.productImage.forEach((img, index) => {
         const div = document.createElement("div");
         div.className = "relative aspect-[3/4] border rounded-xl overflow-hidden";
+        div.setAttribute("data-old", "true"); 
 
         div.innerHTML = `
           <img src="${img.url}" class="w-full h-full object-cover">
+          <div class="absolute top-2 left-2 bg-black/50 text-white text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+            Existing
+          </div>
           <button
             type="button"
             onclick="removeOldImage(${index}, this)"
@@ -960,7 +964,6 @@ async function openProductModal(productId = null) {
       });
     }
 
-    // ✅ NEW: Load existing specifications
     if (product.specifications) {
       const specs = product.specifications instanceof Map 
         ? Object.fromEntries(product.specifications) 
@@ -1011,7 +1014,7 @@ function addVariantRow(color = "", qty = "") {
   container.appendChild(row);
 }
 
-/* ---------------- ✅ NEW: SPECIFICATION ROW ---------------- */
+
 function addSpecRow(key = "", value = "") {
   const container = document.getElementById("specifications-container");
   
@@ -1085,12 +1088,14 @@ function cancelCrop() {
 
 function updatePreview() {
   const preview = document.getElementById("imagePreview");
-  preview.innerHTML = "";
+  
+  preview.querySelectorAll('[data-new="true"]').forEach(el => el.remove());
 
   processedImages.forEach((blob, i) => {
     const url = URL.createObjectURL(blob);
     const div = document.createElement("div");
     div.className = "relative aspect-[3/4] border rounded overflow-hidden";
+    div.setAttribute("data-new", "true");
 
     div.innerHTML = `
       <img src="${url}" class="w-full h-full object-cover">
@@ -1153,7 +1158,6 @@ document.getElementById("productForm").addEventListener("submit", e => {
 
   formData.append("variants", JSON.stringify(variants));
 
-  // ✅ NEW: Collect specifications
   const specs = {};
   const keys = document.querySelectorAll(".spec-key");
   const values = document.querySelectorAll(".spec-value");
@@ -1186,6 +1190,7 @@ document.getElementById("productForm").addEventListener("submit", e => {
 });
 
 </script>
+
 
 
 

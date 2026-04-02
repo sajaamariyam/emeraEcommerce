@@ -23,9 +23,7 @@ const loadSignup = async (req, res) => {
       return res.redirect("/");
     }
     const refToken = req.query.ref || null;
-    console.log("SIGNUP REF TOKEN:", refToken);
-    console.log("FULL QUERY:", req.query);
-    return res.render("user/signup", { refToken });
+    return res.render("user/signup", { refToken, message: null });
   } catch (error) {
     console.log("Home page not loading", error);
     res.status(500).send("Server Error");
@@ -92,6 +90,32 @@ async function sendVerificationEmail(email, otp) {
     return info.accepted.length > 0;
   } catch (error) {
     console.error("Error sending email", error);
+    return false;
+  }
+}
+
+async function sendEmailChangeOtp(email, otp) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      auth: {
+        user: process.env.NODEMAILER_EMAIL,
+        pass: process.env.NODEMAILER_PASSWORD,
+      },
+    });
+    const info = await transporter.sendMail({
+      from: `"Emera Support" <${process.env.NODEMAILER_EMAIL}>`,
+      to: email,
+      subject: "Emera — Verify your new email address",
+      text: `Your email change OTP is ${otp}. It expires in 10 minutes.`,
+      html: `<b>Email Change OTP: ${otp}</b>`,
+    });
+    return info.accepted.length > 0;
+  } catch (error) {
+    console.error("Error sending email change OTP", error);
     return false;
   }
 }
@@ -289,6 +313,7 @@ const verifyOtp = async (req, res) => {
 
     return res.json({
       success: true,
+      message: "Account created successfully! Welcome to Emera",
       redirectTo,
     });
   } catch (error) {
@@ -353,7 +378,11 @@ const loadLogin = async (req, res) => {
     if (req.session.user) {
       return res.redirect("/");
     }
-    res.render("user/login");
+    const blockedMessage =
+      req.query.blocked === "true"
+        ? "Your account has been blocked. Please contact support."
+        : null;
+    res.render("user/login", { blockedMessage });
   } catch (error) {
     res.redirect("/pageNotFound");
   }
@@ -665,7 +694,7 @@ const loadProducts = async (req, res) => {
           ...product._doc,
           finalPrice,
           discount,
-          quantity: product.variants.reduce( (sum, v) => sum + v.quantity, 0),
+          quantity: product.variants.reduce((sum, v) => sum + v.quantity, 0),
         });
       }
     }
@@ -811,9 +840,6 @@ const loadProductDetails = async (req, res) => {
 const searchProducts = async (req, res) => {
   try {
     const search = req.query.q || "";
-
-    console.log("SEARCH QUERY:", search)
-
     const page = parseInt(req.query.page) || 1;
     const limit = 8;
     const skip = (page - 1) * limit;
@@ -822,26 +848,35 @@ const searchProducts = async (req, res) => {
     const query = {
       isBlocked: false,
       isListed: true,
-      salePrice: { $lte: maxPrice },
     };
 
     if (search) {
-      query.name = { $regex: `^${search}`, $options: "i" };
+      query.name = { $regex: search, $options: "i" };
     }
 
-    const totalProducts = await Product.countDocuments(query);
+    const allProducts = await Product.find(query).populate("category");
 
-    const products = await Product.find(query)
-      .populate("category")
-      .skip(skip)
-      .limit(limit);
+    const updatedProducts = [];
+    for (let product of allProducts) {
+      const offer = await getBestOffer(product);
+      if (offer.finalPrice <= maxPrice) {
+        updatedProducts.push({
+          ...product._doc,
+          finalPrice: offer.finalPrice,
+          discount: offer.discount,
+          quantity: product.variants.reduce((sum, v) => sum + v.quantity, 0),
+        });
+      }
+    }
+
+    const totalProducts = updatedProducts.length;
+    const totalPages = Math.ceil(totalProducts / limit);
+    const paginatedProducts = updatedProducts.slice(skip, skip + limit);
 
     const categories = await Category.find({
       isBlocked: false,
       isListed: true,
     });
-
-    const totalPages = Math.ceil(totalProducts / limit);
 
     let userData = null;
     if (req.session.user) {
@@ -851,7 +886,7 @@ const searchProducts = async (req, res) => {
     res.render("user/products", {
       ...productsPageDefaults,
       user: userData,
-      products,
+      products: paginatedProducts,
       categories,
       search,
       maxPrice,
@@ -954,7 +989,12 @@ const requestEmailOtp = async (req, res) => {
     req.session.newEmail = newEmail;
     req.session.emailVerified = false;
 
-    await sendVerificationEmail(newEmail, otp);
+    const emailSent = await sendEmailChangeOtp(newEmail, otp);
+    if (!emailSent) {
+      return res
+        .status(500)
+        .json({ message: "Failed to send OTP. Please try again." });
+    }
 
     res.json({ success: true });
   } catch (error) {
@@ -1231,6 +1271,22 @@ const changePassword = async (req, res) => {
   }
 };
 
+const loadAbout = async (req, res) => {
+  try {
+    let userData = null;
+    if (req.session.user) {
+      userData = await User.findById(req.session.user);
+    }
+    res.render("user/about", {
+      user: userData,
+      showAnnouncement: false,
+    });
+  } catch (error) {
+    console.log("About page error:", error);
+    res.redirect("/pageNotFound");
+  }
+};
+
 module.exports = {
   loadHomepage,
   pageNotFound,
@@ -1263,4 +1319,5 @@ module.exports = {
   updateAddress,
   deleteAddress,
   changePassword,
+  loadAbout,
 };

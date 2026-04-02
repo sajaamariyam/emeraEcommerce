@@ -22,15 +22,21 @@ const loadOrders = async (req, res) => {
         ],
       }).select("_id");
 
-      query.$or = [{ orderId: { $regex: search, $options: "i" } }];
+      const searchConditions = [{ orderId: { $regex: search, $options: "i" } }];
 
       if (users.length > 0) {
-        query.$or.push({ userId: { $in: users.map((u) => u._id) } });
+        searchConditions.push({ userId: { $in: users.map((u) => u._id) } });
       }
+
+      query.$and = [{ $or: searchConditions }];
     }
 
-    if (status != "all") {
-      query.status = status;
+    if (status !== "all") {
+      if (query.$and) {
+        query.$and.push({ status });
+      } else {
+        query.status = status;
+      }
     }
 
     let sortQuery = {};
@@ -245,12 +251,16 @@ const approveReturn = async (req, res) => {
       );
     }
 
-    if (order.paymentMethod !== "COD" && order.paymentStatus !== "refunded") {
+    const shouldRefund =
+      order.paymentMethod !== "COD" && order.paymentStatus === "paid";
+
+    if (shouldRefund) {
+      const refundAmount = order.refundAmount || order.finalAmount;
       const user = await User.findById(order.userId);
-      user.wallet = (user.wallet || 0) + order.finalAmount;
+      user.wallet = (user.wallet || 0) + refundAmount;
       user.walletTransactions.push({
         type: "credit",
-        amount: order.finalAmount,
+        amount: refundAmount,
         description: `Refund for returned order ${order.orderId}`,
         date: new Date(),
       });
@@ -286,10 +296,11 @@ const rejectReturn = async (req, res) => {
         .json({ success: false, message: "Order not found" });
     }
 
-    if (order.returnStatus !== "requested") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Return not pending" });
+    if (order.status !== "return-requested") {
+      return res.status(400).json({
+        success: false,
+        message: "Order is not in return-requested state",
+      });
     }
 
     order.status = "delivered";

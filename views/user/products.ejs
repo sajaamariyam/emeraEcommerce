@@ -32,7 +32,6 @@
                                 name="category" 
                                 value="<%= cat._id %>"
                                 class="w-4 h-4 accent-emera-950"
-                                onchange="this.form.submit()"
                                 <%= category == cat._id ? 'checked' : '' %>>
                                 <span class="ml-5 text-[11px] uppercase tracking-[0.2em] text-gray-400">
                                 <%= cat.name %>
@@ -46,7 +45,7 @@
                     <div class="space-y-10 mb-16">
                         <h4 class="text-[10px] uppercase tracking-[0.5em] font-bold text-gray-900 border-b border-stone-100 pb-4">Price Range</h4>
                         <div class="space-y-8 px-1">
-                            <input type="range" name="maxPrice" min="0" max="100000" value="<%= maxPrice || 100000 %>" step="500" class="w-full h-1 bg-stone-100 appearance-none cursor-pointer" oninput="updatePriceLabel(this.value)" onchange="this.form.submit()">
+                            <input type="range" name="maxPrice" min="0" max="100000" value="<%= maxPrice || 100000 %>" step="500" class="w-full h-1 bg-stone-100 appearance-none cursor-pointer" oninput="updatePriceLabel(this.value)">
                             <div class="flex justify-between text-[11px] uppercase tracking-widest font-bold text-emera-950">
                                 <span>₹0</span>
                                 <span id="price-label">UP TO ₹<%= (maxPrice || 100000).toLocaleString() %></span>
@@ -54,6 +53,11 @@
                         </div>
                     </div>
 
+                    <button 
+                        type="submit"
+                        class="block w-full py-5 bg-emera-950 text-white text-center text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-black transition-all duration-500 mb-4">
+                        Apply Filters
+                    </button>
                     <a href="/products" class="block w-full py-5 border border-emera-950 text-center text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500">Clear Filters</a>
                 </form>
             </aside>

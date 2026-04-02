@@ -17,6 +17,7 @@ const wishlistController = require("../controllers/user/wishlistController");
 const reviewController = require("../controllers/user/reviewController");
 const walletController = require("../controllers/user/walletController");
 const paymentController = require("../controllers/user/paymentController");
+const couponController = require("../controllers/user/couponController");
 
 // ── AUTHENTICATION ───────────────────────────────────────────
 router.get("/login", noCache, userController.loadLogin);
@@ -33,7 +34,7 @@ router.get(
 );
 router.post("/signup", userController.signup);
 
-router.get("/otp", userController.loadOtp);
+router.get("/otp", noCache, userController.loadOtp);
 router.post("/verify-otp", userController.verifyOtp);
 router.post("/resend-otp", userController.resendOtp);
 
@@ -50,8 +51,15 @@ router.get("/auth/google", (req, res, next) => {
 
 router.get(
   "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", {
+    failureRedirect: "/login?blocked=true",
+    failureMessage: true,
+  }),
   (req, res) => {
+    if (!req.user || req.user.isBlocked) {
+      return res.redirect("/login?blocked=true");
+    }
+
     req.session.user = req.user._id;
     const redirectTo = req.session.redirectTo || "/";
     delete req.session.redirectTo;
@@ -69,7 +77,7 @@ router.get("/forgot-password", userController.loadForgotPassword);
 router.post("/forgot-password", userController.sendForgotPassword);
 router.post("/verify-forgot-otp", userController.verifyForgotOtp);
 router.post("/forgot-resend-otp", userController.resendForgotPasswordOtp);
-router.get("/reset-password", userController.loadResetPassword);
+router.get("/reset-password", noCache, userController.loadResetPassword);
 router.post("/reset-password", userController.resetPassword);
 
 router.get("/", userController.loadHomepage);
@@ -148,8 +156,8 @@ router.get(
   noCache,
   checkoutController.loadCheckout,
 );
-router.post("/checkout", userAuth, checkoutController.placeOrder);
-router.post("/checkout/apply-coupon", userAuth, checkoutController.applyCoupon);
+router.get("/checkout/coupons", couponController.getAvailableCoupons);
+router.post("/checkout/apply-coupon", couponController.applyCoupon);
 
 // ── ORDER ────────────────────────────────────────────────────
 router.get(
@@ -158,8 +166,8 @@ router.get(
   noCache,
   orderController.loadOrderConfirmation,
 );
-router.get("/orders/:orderId", userAuth, orderController.loadOrderDetails);
-router.get("/orders", userAuth, orderController.loadOrder);
+router.get("/orders/:orderId", userAuth, noCache, orderController.loadOrderDetails);
+router.get("/orders", userAuth, noCache, orderController.loadOrder);
 router.post("/orders/:orderId/cancel", userAuth, orderController.cancelOrder);
 router.post(
   "/orders/:orderId/cancel-product",
@@ -183,6 +191,7 @@ router.get(
   "/wishlist",
   saveRedirect,
   requireLogin,
+  noCache,
   wishlistController.getWishlist,
 );
 router.post(
@@ -217,7 +226,7 @@ router.post(
 );
 
 // ── WALLET ───────────────────────────────────────────────────
-router.get("/wallet", userAuth, walletController.getWallet);
+router.get("/wallet", userAuth, noCache, walletController.getWallet);
 router.post("/wallet/add", userAuth, walletController.addMoneyInit);
 router.post("/wallet/verify", userAuth, walletController.verifyAndCreditWallet);
 router.post(
@@ -227,7 +236,7 @@ router.post(
 );
 
 // ── PAYMENT──────────
-router.get("/payment/:orderId", userAuth, paymentController.loadPayment);
+router.get("/payment/:orderId", userAuth, noCache, paymentController.loadPayment);
 router.get(
   "/payment/create-order/:orderId",
   userAuth,
@@ -237,6 +246,7 @@ router.post("/payment/verify", userAuth, paymentController.verifyPayment);
 router.get(
   "/payment-failed/:orderId",
   userAuth,
+  noCache,
   paymentController.paymentFailed,
 );
 router.post(
@@ -244,5 +254,8 @@ router.post(
   userAuth,
   paymentController.walletPayment,
 );
+
+//ABOUT
+router.get("/about", userController.loadAbout);
 
 module.exports = router;

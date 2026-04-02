@@ -5,6 +5,7 @@ const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
 const User = require("../../models/userSchema");
 const Coupon = require("../../models/couponSchema");
+const {markCouponAsUsed} = require("./couponController");
 
 const generateOrderId = () =>
   "ORD-" +
@@ -310,6 +311,10 @@ const placeOrder = async (req, res) => {
 
     await newOrder.save();
 
+    if(couponCode){
+      await markCouponAsUsed(couponCode, userId);
+    }
+
     if (paymentMethod === "WALLET") {
       user.wallet -= finalAmount;
       user.walletTransactions.push({
@@ -334,64 +339,6 @@ const placeOrder = async (req, res) => {
       success: false,
       message: "Failed to place order. Please try again.",
     });
-  }
-};
-
-const applyCoupon = async (req, res) => {
-  try {
-    const userId = req.session.user;
-    if (!userId)
-      return res.status(401).json({ success: false, message: "Please login" });
-
-    const { couponCode } = req.body;
-    if (!couponCode)
-      return res
-        .status(400)
-        .json({ success: false, message: "No coupon code provided" });
-
-    const coupon = await Coupon.findOne({
-      code: couponCode.toUpperCase(),
-      isActive: true,
-      expiryDate: { $gte: new Date() },
-    });
-
-    if (!coupon)
-      return res
-        .status(404)
-        .json({ success: false, message: "Invalid or expired coupon" });
-
-    const cart = await Cart.findOne({ userId });
-    if (!cart || !cart.items.length)
-      return res.status(400).json({ success: false, message: "Cart is empty" });
-
-    const subtotal = cart.items.reduce(
-      (sum, i) => sum + i.price * i.quantity,
-      0,
-    );
-
-    if (subtotal < (coupon.minPurchaseAmount || coupon.minOrderAmount || 0))
-      return res.status(400).json({
-        success: false,
-        message: `Minimum order of ₹${(coupon.minPurchaseAmount || coupon.minOrderAmount).toLocaleString("en-IN")} required for this coupon`,
-      });
-
-    let discountAmount = coupon.discountAmount || coupon.discountValue || 0;
-    if (discountAmount > subtotal) discountAmount = subtotal;
-
-    const tax = Math.round(subtotal * 0.18);
-    const newTotal = Math.max(subtotal + tax - discountAmount, 0);
-
-    return res.json({
-      success: true,
-      discountAmount,
-      newTotal,
-      message: `Coupon applied! You save ₹${discountAmount.toLocaleString("en-IN")}`,
-    });
-  } catch (error) {
-    console.error("APPLY COUPON ERROR:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to apply coupon" });
   }
 };
 

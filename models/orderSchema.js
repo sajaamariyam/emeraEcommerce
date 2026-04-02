@@ -78,6 +78,11 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
     },
 
+    refundAmount:{
+      type: Number,
+      default: 0
+    },
+
     cancelReason: { type: String },
     returnReason: { type: String },
 

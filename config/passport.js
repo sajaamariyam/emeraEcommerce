@@ -18,6 +18,10 @@ passport.use(
         let user = await User.findOne({ email });
 
         if (user) {
+          if (user.isBlocked) {
+            return done(null, false, { message: "blocked" });
+          }
+
           if (!user.googleId) {
             user.googleId = profile.id;
             user.profileImage =
