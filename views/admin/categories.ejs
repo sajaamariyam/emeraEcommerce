@@ -205,7 +205,31 @@
 
     </form>
   </div>
+
+  <!-- DELETE CONFIRM MODAL -->
+<div id="deleteCategoryModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-black/40" onclick="closeDeleteModal()"></div>
+  <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-8 z-[70] text-center relative">
+    <div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-trash-alt text-red-500 text-xl"></i>
+    </div>
+    <h4 class="text-lg font-bold text-gray-900 mb-2">Delete Category?</h4>
+    <p class="text-sm text-gray-500 mb-6">This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button onclick="executeDelete()"
+        class="flex-1 bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700 transition">
+        Yes, Delete
+      </button>
+      <button onclick="closeDeleteModal()"
+        class="flex-1 border border-gray-300 py-2 rounded-lg font-bold hover:bg-gray-50 transition text-gray-600">
+        Cancel
+      </button>
+    </div>
+  </div>
 </div>
+</div>
+
+
 
 
 <script>
@@ -305,10 +329,73 @@
     document.body.style.overflow = "";
   }
 
+ // ── Validation ──
+  function validateForm() {
+    const name = document.getElementById("categoryName").value.trim();
+    const categoryId = document.getElementById("categoryId").value;
+    const file = imageInput.files[0];
+
+    // Name empty
+    if (!name) {
+      showError("Category name is required.");
+      return false;
+    }
+
+    // Name too short
+    if (name.length < 2) {
+      showError("Category name must be at least 2 characters.");
+      return false;
+    }
+
+    // Name too long
+    if (name.length > 50) {
+      showError("Category name must be under 50 characters.");
+      return false;
+    }
+
+    // Name only numbers
+    if (/^\d+$/.test(name)) {
+      showError("Category name cannot be only numbers.");
+      return false;
+    }
+
+    // Name special characters only
+    if (!/[a-zA-Z]/.test(name)) {
+      showError("Category name must contain at least one letter.");
+      return false;
+    }
+
+    // Image required for new category
+    if (!categoryId && !file) {
+      showError("Please upload a category image.");
+      return false;
+    }
+
+    // File type check
+    if (file) {
+      const allowed = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowed.includes(file.type)) {
+        showError("Only JPG, PNG, and WEBP images are allowed.");
+        return false;
+      }
+
+      // File size check (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showError("Image must be under 5MB.");
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   // ── Form submit ──
   form.onsubmit = async (e) => {
     e.preventDefault();
     hideError();
+
+    // ← Run validation first
+    if (!validateForm()) return;
 
     const submitBtn = document.getElementById("submitBtn");
     const submitLabel = document.getElementById("submitLabel");
@@ -320,26 +407,24 @@
     submitSpinner.classList.remove("hidden");
 
     const formData = new FormData(form);
+    // Trim name before sending
+    formData.set("name", document.getElementById("categoryName").value.trim());
     const categoryId = document.getElementById("categoryId").value;
     const url = categoryId ? `/admin/categories/edit/${categoryId}` : "/admin/categories";
 
     try {
       const res = await fetch(url, { method: "POST", body: formData });
 
-      // Always read as text first — safe for both JSON and HTML responses
       const rawText = await res.text();
-
       let data = {};
       try {
         data = JSON.parse(rawText);
       } catch {
-        // Server returned non-JSON (HTML error page, redirect, etc.)
         console.error("Non-JSON server response:", rawText.substring(0, 300));
         if (!res.ok) {
           showError(`Server error (${res.status}). Check console for details.`);
           return;
         }
-        // If status is ok but not JSON, still treat as success
         window.location.reload();
         return;
       }
@@ -370,14 +455,34 @@
     }
   }
 
+let deleteCategoryId = null;
+
   async function confirmDelete(id) {
-    if (!confirm("Delete this category?")) return;
+    deleteCategoryId = id;
+    document.getElementById("deleteCategoryModal").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  async function executeDelete() {
+    if (!deleteCategoryId) return;
     try {
-      const res = await fetch(`/admin/categories/delete/${id}`, { method: "DELETE" });
+      const res = await fetch(`/admin/categories/delete/${deleteCategoryId}`, { method: "DELETE" });
+      closeDeleteModal();
       if (res.ok) window.location.reload();
+      else {
+        const data = await res.json().catch(() => ({}));
+        showError(data.message || "Failed to delete category.");
+      }
     } catch (err) {
+      closeDeleteModal();
       console.error("Delete failed", err);
     }
+  }
+
+  function closeDeleteModal() {
+    deleteCategoryId = null;
+    document.getElementById("deleteCategoryModal").classList.add("hidden");
+    document.body.style.overflow = "";
   }
 </script>
 

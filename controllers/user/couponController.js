@@ -1,5 +1,5 @@
 const Coupon = require("../../models/couponSchema");
-const Cart   = require("../../models/cartSchema");
+const Cart = require("../../models/cartSchema");
 
 const getAvailableCoupons = async (req, res) => {
   try {
@@ -10,19 +10,24 @@ const getAvailableCoupons = async (req, res) => {
     const now = new Date();
 
     const coupons = await Coupon.find({
+      isActive: true,
       expiryDate: { $gte: now },
       isUsed: false,
       $or: [
-        { userId: { $exists: false } }, 
+        { userId: { $exists: false } },
         { userId: null },
-        { userId: userId },             
+        { userId: userId },
       ],
-    }).select("code discountAmount minPurchaseAmount expiryDate isPercentage maxDiscount");
+    }).select(
+      "code discountAmount minPurchaseAmount expiryDate isPercentage maxDiscount",
+    );
 
     return res.json({ success: true, coupons });
   } catch (error) {
     console.error("GET COUPONS ERROR:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch coupons" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch coupons" });
   }
 };
 
@@ -34,27 +39,42 @@ const applyCoupon = async (req, res) => {
 
     const { couponCode } = req.body;
     if (!couponCode)
-      return res.status(400).json({ success: false, message: "No coupon code provided" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No coupon code provided" });
 
     const coupon = await Coupon.findOne({
       code: couponCode.toUpperCase().trim(),
+      isActive: true,
       expiryDate: { $gte: new Date() },
       isUsed: false,
     });
 
     if (!coupon)
-      return res.status(404).json({ success: false, message: "Invalid or expired coupon" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Invalid or expired coupon" });
 
     if (coupon.userId && coupon.userId.toString() !== userId.toString())
-      return res.status(403).json({ success: false, message: "This coupon is not valid for your account" });
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "This coupon is not valid for your account",
+        });
 
     const cart = await Cart.findOne({ userId });
     if (!cart || !cart.items.length)
-      return res.status(400).json({ success: false, message: "Your cart is empty" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Your cart is empty" });
 
-    const subtotal = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const subtotal = cart.items.reduce(
+      (sum, i) => sum + i.price * i.quantity,
+      0,
+    );
 
-    const minPurchase = coupon.minPurchaseAmount || 0;
+    const minPurchase = coupon.minPurchaseAmount || coupon.minOrderAmount || 0;
     if (subtotal < minPurchase)
       return res.status(400).json({
         success: false,
@@ -69,12 +89,12 @@ const applyCoupon = async (req, res) => {
         discountAmount = coupon.maxDiscount;
       }
     } else {
-      discountAmount = coupon.discountAmount;
+      discountAmount = coupon.discountAmount || coupon.discountValue || 0;
     }
 
     if (discountAmount > subtotal) discountAmount = subtotal;
 
-    const tax      = Math.round(subtotal * 0.18);
+    const tax = Math.round(subtotal * 0.18);
     const newTotal = Math.max(subtotal + tax - discountAmount, 0);
 
     return res.json({
@@ -84,13 +104,13 @@ const applyCoupon = async (req, res) => {
       isPercentage: coupon.isPercentage || false,
       message: `Coupon applied! You save ₹${discountAmount.toLocaleString("en-IN")}`,
     });
-
   } catch (error) {
     console.error("APPLY COUPON ERROR:", error);
-    return res.status(500).json({ success: false, message: "Failed to apply coupon" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to apply coupon" });
   }
 };
-
 
 const markCouponAsUsed = async (couponCode, userId) => {
   try {
@@ -104,7 +124,7 @@ const markCouponAsUsed = async (couponCode, userId) => {
           { userId: userId },
         ],
       },
-      { $set: { isUsed: true } }
+      { $set: { isUsed: true, isActive: false } },
     );
   } catch (error) {
     console.error("MARK COUPON USED ERROR:", error);

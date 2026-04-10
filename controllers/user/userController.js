@@ -813,10 +813,6 @@ const loadProductDetails = async (req, res) => {
         }
       }
     }
-    console.log("DEBUG canReview:", canReview);
-    console.log("DEBUG hasOrderedProduct:", hasOrderedProduct);
-    console.log("DEBUG eligibleOrderId:", eligibleOrderId);
-    console.log("DEBUG session user:", req.session.user);
 
     res.render("user/productDetails", {
       product,

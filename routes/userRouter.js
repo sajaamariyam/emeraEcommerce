@@ -151,11 +151,13 @@ router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
 // ── CHECKOUT ─────────────────────────────────────────────────
 router.get(
   "/checkout",
+  userAuth,
   saveRedirect,
   requireLogin,
   noCache,
   checkoutController.loadCheckout,
 );
+router.post("/checkout", userAuth, checkoutController.placeOrder)
 router.get("/checkout/coupons", couponController.getAvailableCoupons);
 router.post("/checkout/apply-coupon", couponController.applyCoupon);
 
@@ -226,11 +228,11 @@ router.post(
 );
 
 // ── WALLET ───────────────────────────────────────────────────
-router.get("/wallet", userAuth, noCache, walletController.getWallet);
-router.post("/wallet/add", userAuth, walletController.addMoneyInit);
-router.post("/wallet/verify", userAuth, walletController.verifyAndCreditWallet);
+router.get("/payment/wallet", userAuth, noCache, walletController.getWallet);
+router.post("/payment/wallet/add", userAuth, walletController.addMoneyInit);
+router.post("/payment/wallet/verify", userAuth, walletController.verifyAndCreditWallet);
 router.post(
-  "/wallet/payment-failed",
+  "/payment/wallet/payment-failed",
   userAuth,
   walletController.handleWalletPaymentFailure,
 );

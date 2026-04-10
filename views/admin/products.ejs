@@ -148,7 +148,10 @@
             onchange="document.getElementById('formPage').value='1'; this.form.submit()"
             class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
         >
-            <option value="name-asc" <%= (sortBy || 'name-asc') === 'name-asc' ? 'selected' : '' %>>
+            <option value="newest" <%= (sortBy === 'newest' || !sortBy) ? 'selected' : '' %>>
+            Newest First
+            </option>
+            <option value="name-asc" <%= sortBy === 'name-asc' ? 'selected' : '' %>>
             Name (A-Z)
             </option>
             <option value="name-desc" <%= sortBy === 'name-desc' ? 'selected' : '' %>>
@@ -860,20 +863,41 @@ function openStatusModal(productId, isBlocked) {
 
 function openDeleteModal(productId) {
   const modal = document.getElementById("confirmModal");
-  const form = document.getElementById("confirmForm");
   const title = document.getElementById("confirmTitle");
   const message = document.getElementById("confirmMessage");
   const btn = document.getElementById("confirmActionBtn");
-  
+
   title.textContent = "Delete Product";
   message.textContent = "Are you sure you want to delete this product? This action cannot be undone.";
-  form.action = `/admin/products/delete/${productId}`;
   btn.textContent = "Delete";
   btn.className = "flex-1 bg-red-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-red-700 transition";
-  
+
+  // ← Use fetch DELETE instead of form POST
+  btn.onclick = async () => {
+    try {
+      btn.disabled = true;
+      btn.textContent = "Deleting...";
+      const res = await fetch(`/admin/products/delete/${productId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      closeActionModals();
+      if (data.success) {
+        showNotificationModal("Deleted!", "Product deleted successfully.", true);
+        setTimeout(() => { closeNotificationModal(); location.reload(); }, 1500);
+      } else {
+        showNotificationModal("Error", data.message || "Failed to delete product.", false);
+      }
+    } catch (err) {
+      closeActionModals();
+      showNotificationModal("Error", "Something went wrong.", false);
+    }
+  };
+
   modal.classList.remove("hidden");
   modal.classList.add("flex");
 }
+
 
 function closeActionModals() {
   const confirmModal = document.getElementById("confirmModal");

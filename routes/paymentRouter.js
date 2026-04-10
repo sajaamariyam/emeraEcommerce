@@ -9,7 +9,7 @@ router.post(
   userAuth,
   paymentController.walletPayment,
 );
-router.get(
+router.post(
   "/payment/create-order/:orderId",
   userAuth,
   paymentController.createRazorpayOrder,

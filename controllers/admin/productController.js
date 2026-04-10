@@ -11,7 +11,7 @@ const loadProducts = async (req, res) => {
       category = "",
       status = "all",
       stockLevel = "all",
-      sortBy = "name-asc",
+      sortBy = "newest",
       page = 1,
     } = req.query;
 
@@ -41,16 +41,18 @@ const loadProducts = async (req, res) => {
     let sortInJS = false;
 
     switch (sortBy) {
-      case "name-desc":
-        sortQuery.name = -1;
+      case "name-asc":
+        sortQuery.name = 1;
+        break;
+      case "name-desc":     
+        sortQuery.name = -1;      
         break;
       case "stock-asc":
-      case "stock-desc":
-        sortInJS = true;         
-        sortQuery.name = 1;      
+        sortInJs = true;
+        sortQuery.createdAt = -1;
         break;
       default:                   
-        sortQuery.name = 1;
+        sortQuery.createdAt = -1;
     }
 
     let products = await Product.find(filter)
@@ -345,8 +347,13 @@ const unblockProduct = async (req, res) => {
 };
 
 const deleteProduct = async (req, res) => {
-  await Product.findByIdAndUpdate(req.params.id, { isBlocked: true });
-  res.redirect("/admin/products");
+  try {
+    await Product.findByIdAndUpdate(req.params.id, { isBlocked: true });
+    res.json({ success: true, message: "Product deleted successfully" });
+  } catch (error) {
+    console.error("DELETE PRODUCT ERROR:", error);
+    res.status(500).json({ success: false, message: "Failed to delete product" });
+  }
 };
 
 module.exports = {
