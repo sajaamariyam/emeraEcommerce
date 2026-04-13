@@ -60,7 +60,6 @@ app.use(async (req, res, next) => {
             blocked: true,
           });
         }
-
         return res.redirect("/login?blocked=true");
       }
 
