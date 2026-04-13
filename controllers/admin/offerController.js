@@ -10,7 +10,7 @@ const loadOffers = async (req, res) => {
     const skip = (page - 1) * LIMIT;
 
     const totalOffers = await Offer.countDocuments();
-    const totalPages = Math.ceil(totalOffers / LIMIT);
+    const totalPages = Math.ceil(totalOffers / LIMIT) || 1;
     const activeOffers = await Offer.countDocuments({
       isActive: true,
       endDate: { $gte: new Date() },
@@ -68,36 +68,44 @@ const createOffer = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Category is required" });
 
+    const pct = Number(discountPercentage);
+    if (!pct || pct <= 0 || pct >= 100)
+      return res
+        .status(400)
+        .json({ success: false, message: "Discount must be between 1 and 99" });
+
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime()))
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid dates provided" });
 
     if (start >= end)
       return res
         .status(400)
         .json({ success: false, message: "End date must be after start date" });
 
-    const existingOffer = await Offer.findOne({
-      offerType,
-      productId: offerType === "product" ? productId : null,
-      categoryId: offerType === "category" ? categoryId : null,
-      isActive: true,
-    });
+    const duplicateQuery =
+      offerType === "product"
+        ? { offerType: "product", productId: productId, isActive: true }
+        : { offerType: "category", categoryId: categoryId, isActive: true };
 
+    const existingOffer = await Offer.findOne(duplicateQuery);
     if (existingOffer)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "An active offer already exists for this product/category",
-        });
+      return res.status(400).json({
+        success: false,
+        message: `An active offer already exists for this ${offerType}`,
+      });
 
     const newOffer = new Offer({
       offerType,
-      productId: offerType === "product" ? productId : null,
-      categoryId: offerType === "category" ? categoryId : null,
-      discountPercentage,
+      productId: offerType === "product" ? productId : undefined,
+      categoryId: offerType === "category" ? categoryId : undefined,
+      discountPercentage: pct,
       startDate: start,
       endDate: end,
       isActive: true,

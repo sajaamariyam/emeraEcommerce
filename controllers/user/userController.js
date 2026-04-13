@@ -19,9 +19,7 @@ const pageNotFound = async (req, res) => {
 
 const loadSignup = async (req, res) => {
   try {
-    if (req.session.user) {
-      return res.redirect("/");
-    }
+    if (req.session.user) return res.redirect("/");
     const refToken = req.query.ref || null;
     return res.render("user/signup", { refToken, message: null });
   } catch (error) {
@@ -33,10 +31,7 @@ const loadSignup = async (req, res) => {
 const loadHomepage = async (req, res) => {
   try {
     let userData = null;
-
-    if (req.session.user) {
-      userData = await User.findById(req.session.user);
-    }
+    if (req.session.user) userData = await User.findById(req.session.user);
 
     const products = await Product.find({
       isListed: true,
@@ -46,9 +41,7 @@ const loadHomepage = async (req, res) => {
       .select("name salePrice productImage")
       .limit(8);
 
-    const categories = await Category.find({
-      isListed: true,
-    });
+    const categories = await Category.find({ isListed: true });
 
     res.render("user/home", {
       user: userData,
@@ -78,7 +71,6 @@ async function sendVerificationEmail(email, otp) {
         pass: process.env.NODEMAILER_PASSWORD,
       },
     });
-
     const info = await transporter.sendMail({
       from: process.env.NODEMAILER_EMAIL,
       to: email,
@@ -86,7 +78,6 @@ async function sendVerificationEmail(email, otp) {
       text: `Your otp is ${otp}`,
       html: `<b>Your OTP: ${otp}</b>`,
     });
-
     return info.accepted.length > 0;
   } catch (error) {
     console.error("Error sending email", error);
@@ -137,7 +128,7 @@ const signup = async (req, res) => {
 
     if (password !== cPassword) {
       return res.render("user/signup", {
-        message: "Password do not match",
+        message: "Passwords do not match",
         refToken: null,
       });
     }
@@ -151,12 +142,8 @@ const signup = async (req, res) => {
     }
 
     const otp = generateOtp();
-
     const emailSent = await sendVerificationEmail(email, otp);
-
-    if (!emailSent) {
-      return res.json("email-error");
-    }
+    if (!emailSent) return res.json("email-error");
 
     req.session.userOtp = otp;
     req.session.userData = {
@@ -178,9 +165,7 @@ const signup = async (req, res) => {
 
 const securePassword = async (password) => {
   try {
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    return passwordHash;
+    return await bcrypt.hash(password, 10);
   } catch (error) {}
 };
 
@@ -195,10 +180,6 @@ const verifyOtp = async (req, res) => {
     }
 
     const sessionUser = req.session.userData;
-
-    console.log("SESSION REFERRAL TOKEN:", sessionUser.referralToken);
-    console.log("SESSION REFERRAL CODE:", sessionUser.referralCode);
-
     if (!sessionUser) {
       return res.status(400).json({
         success: false,
@@ -207,7 +188,6 @@ const verifyOtp = async (req, res) => {
     }
 
     const existingUser = await User.findOne({ email: sessionUser.email });
-
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -217,25 +197,17 @@ const verifyOtp = async (req, res) => {
 
     const passwordHash = await securePassword(sessionUser.password);
 
-    const generateReferralCode = () => {
-      return "REF" + Math.random().toString(36).substring(2, 8).toUpperCase();
-    };
-
-    const generateReferralToken = () => {
-      return crypto.randomBytes(16).toString("hex");
-    };
-
-    const newReferralCode = generateReferralCode();
-
-    const newReferralToken = generateReferralToken();
+    const generateReferralCode = () =>
+      "REF" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const generateReferralToken = () => crypto.randomBytes(16).toString("hex");
 
     const newUser = new User({
       name: sessionUser.name,
       email: sessionUser.email,
       phone: sessionUser.phone,
       password: passwordHash,
-      referralCode: newReferralCode,
-      referralToken: newReferralToken,
+      referralCode: generateReferralCode(),
+      referralToken: generateReferralToken(),
       redeemed: false,
     });
 
@@ -243,6 +215,7 @@ const verifyOtp = async (req, res) => {
 
     const referralIdentifier =
       sessionUser.referralToken || sessionUser.referralCode;
+
     if (referralIdentifier) {
       const referrer = await User.findOne({
         $or: [
@@ -251,12 +224,14 @@ const verifyOtp = async (req, res) => {
         ],
       });
 
+      const alreadyRedeemed = referrer?.redeemedUsers?.some(
+        (id) => id.toString() === newUser._id.toString(),
+      );
+
       if (
         referrer &&
         referrer._id.toString() !== newUser._id.toString() &&
-        !referrer.redeemedUsers.some(
-          (id) => id.toString() === newUser._id.toString(),
-        )
+        !alreadyRedeemed
       ) {
         referrer.wallet = (referrer.wallet || 0) + 200;
         referrer.walletTransactions.push({
@@ -266,41 +241,34 @@ const verifyOtp = async (req, res) => {
           date: new Date(),
         });
         referrer.redeemedUsers.push(newUser._id);
-        await referrer.save();
-      }
-    }
 
-    if (sessionUser.referralCode) {
-      const referrer = await User.findOne({
-        referralCode: sessionUser.referralCode,
-      });
-
-      if (
-        referrer &&
-        referrer._id.toString() !== newUser._id.toString() &&
-        !referrer.redeemedUsers.some(
-          (id) => id.toString() === newUser._id.toString(),
-        )
-      ) {
-        const generateCouponCode = () => {
-          return (
-            "COUP" + Math.random().toString(36).substring(2, 8).toUpperCase()
-          );
-        };
-
-        const couponCode = generateCouponCode();
-
+        const couponCode =
+          "COUP" + Math.random().toString(36).substring(2, 8).toUpperCase();
         const newCoupon = new Coupon({
           code: couponCode,
           userId: referrer._id,
-          discountAmount: 200,
+          discountAmount: 10,
+          isPercentage: true,
+          maxDiscount: 200,
+          minPurchaseAmount: 500,
           expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          isActive: true,
+          isUsed: false,
+          usedBy: [],
         });
-
         await newCoupon.save();
 
-        referrer.redeemedUsers.push(newUser._id);
         await referrer.save();
+
+        newUser.wallet = 100;
+        newUser.walletTransactions.push({
+          type: "credit",
+          amount: 100,
+          description: "Welcome bonus — signed up via referral link",
+          date: new Date(),
+        });
+        newUser.redeemed = true;
+        await newUser.save();
       }
     }
 
@@ -318,17 +286,14 @@ const verifyOtp = async (req, res) => {
     });
   } catch (error) {
     console.error("Error Verifying OTP", error);
-
-    res.status(500).json({ success: false, message: "An error occured" });
+    res.status(500).json({ success: false, message: "An error occurred" });
   }
 };
 
 const loadOtp = async (req, res) => {
   try {
-    if (!req.session.userData && !req.session.forgotEmail) {
+    if (!req.session.userData && !req.session.forgotEmail)
       return res.redirect("/signup");
-    }
-
     res.render("user/verify-otp");
   } catch (error) {
     console.log("Load OTP error:", error);
@@ -344,26 +309,16 @@ const resendOtp = async (req, res) => {
         message: "Session expired. Please signup again.",
       });
     }
-
     const email = req.session.userData.email;
-
     const otp = generateOtp();
     req.session.userOtp = otp;
-
     const emailSent = await sendVerificationEmail(email, otp);
-
-    if (!emailSent) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to red=send OTP",
-      });
-    }
-
-    console.log("RESEND OTP: ", otp);
-
-    return res.json({
-      success: true,
-    });
+    if (!emailSent)
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to resend OTP" });
+    console.log("RESEND OTP:", otp);
+    return res.json({ success: true });
   } catch (error) {
     console.error("Error resending OTP", error);
     res.status(500).json({
@@ -375,9 +330,7 @@ const resendOtp = async (req, res) => {
 
 const loadLogin = async (req, res) => {
   try {
-    if (req.session.user) {
-      return res.redirect("/");
-    }
+    if (req.session.user) return res.redirect("/");
     const blockedMessage =
       req.query.blocked === "true"
         ? "Your account has been blocked. Please contact support."
@@ -391,55 +344,41 @@ const loadLogin = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const findUser = await User.findOne({ isAdmin: false, email });
 
     if (!findUser) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password" });
     }
-
     if (findUser.isBlocked) {
-      return res.status(403).json({
-        success: false,
-        message: "User is blocked by Admin",
-      });
+      return res
+        .status(403)
+        .json({ success: false, message: "User is blocked by Admin" });
     }
 
     const passwordMatch = await bcrypt.compare(password, findUser.password);
-
     if (!passwordMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password" });
     }
 
-    const redirectTo = req.session.redirectTo || "/";
+    const redirectTo = req.session.redirectTo;
     const pendingAction = req.session.pendingAction;
 
     req.session.regenerate((err) => {
-      if (err) {
+      if (err)
         return res.status(500).json({
           success: false,
           message: "Session error. Please try again.",
         });
-      }
-
       req.session.user = findUser._id;
-
       req.session.redirectTo = redirectTo;
       req.session.pendingAction = pendingAction;
-
       const finalRedirect = req.session.redirectTo || "/";
       delete req.session.redirectTo;
-
-      return res.json({
-        success: true,
-        redirectTo: finalRedirect,
-      });
+      return res.json({ success: true, redirectTo: finalRedirect });
     });
   } catch (error) {
     console.error("Login error", error);
@@ -457,7 +396,6 @@ const logout = async (req, res) => {
         console.log("Session destruction error", err.message);
         return res.redirect("/pageNotFound");
       }
-
       res.clearCookie("connect.sid");
       res.redirect("/login");
     });
@@ -479,39 +417,27 @@ const loadForgotPassword = async (req, res) => {
 const sendForgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-
     const user = await User.findOne({ email });
-    if (!user) {
+    if (!user)
       return res.render("user/forgot-password", {
         message: "No user found with this email",
       });
-    }
-
     if (user.googleId) {
       return res.render("user/forgot-password", {
         message:
           "This account is linked with Google. Please login using Google.",
       });
     }
-
     const otp = generateOtp();
-
     const emailSent = await sendVerificationEmail(email, otp);
-    if (!emailSent) {
+    if (!emailSent)
       return res.render("user/forgot-password", {
         message: "Failed to send OTP. Try again",
       });
-    }
-
     req.session.forgotEmail = email;
     req.session.forgotOtp = otp;
-
     console.log("Forgot Password OTP:", otp);
-
-    res.render("user/verify-otp", {
-      otpMode: "forgot",
-      userEmail: email,
-    });
+    res.render("user/verify-otp", { otpMode: "forgot", userEmail: email });
   } catch (error) {
     console.log("Forgot password OTP error:", error);
     res.redirect("/pageNotFound");
@@ -521,21 +447,18 @@ const sendForgotPassword = async (req, res) => {
 const verifyForgotOtp = async (req, res) => {
   try {
     const { otp } = req.body;
-
     if (!req.session.forgotOtp || !req.session.forgotEmail) {
       return res.json({
         success: false,
         message: "Session expired. Please restart the process.",
       });
     }
-
     if (otp !== req.session.forgotOtp) {
       return res.json({
         success: false,
         message: "Invalid OTP. Please try again.",
       });
     }
-
     return res.redirect("/reset-password");
   } catch (error) {
     console.log("verifyForgotOtp error:", error);
@@ -546,25 +469,17 @@ const verifyForgotOtp = async (req, res) => {
 const resendForgotPasswordOtp = async (req, res) => {
   try {
     const email = req.session.forgotEmail;
-
-    if (!email) {
+    if (!email)
       return res.json({
         success: false,
         message: "Session expired. Start again.",
       });
-    }
-
     const otp = generateOtp();
     req.session.forgotOtp = otp;
-
     const emailSent = await sendVerificationEmail(email, otp);
-
-    if (!emailSent) {
+    if (!emailSent)
       return res.json({ success: false, message: "Failed to resend OTP." });
-    }
-
     console.log("Resent Forgot Password OTP:", otp);
-
     return res.json({ success: true });
   } catch (error) {
     console.log("resendForgotPasswordOtp error:", error);
@@ -574,10 +489,7 @@ const resendForgotPasswordOtp = async (req, res) => {
 
 const loadResetPassword = async (req, res) => {
   try {
-    if (!req.session.forgotEmail) {
-      return res.redirect("/forgot-password");
-    }
-
+    if (!req.session.forgotEmail) return res.redirect("/forgot-password");
     res.render("user/reset-password", { message: null });
   } catch (error) {
     console.log("Reset password page error:", error);
@@ -588,27 +500,19 @@ const loadResetPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { newPassword, confirmPassword } = req.body;
-
-    if (!req.session.forgotEmail) {
-      return res.redirect("/forgot-password");
-    }
-
+    if (!req.session.forgotEmail) return res.redirect("/forgot-password");
     if (newPassword !== confirmPassword) {
       return res.render("user/reset-password", {
         message: "Passwords do not match",
       });
     }
-
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-
     await User.updateOne(
       { email: req.session.forgotEmail },
       { $set: { password: hashedPassword } },
     );
-
     req.session.forgotEmail = null;
     req.session.forgotOtp = null;
-
     res.redirect("/login");
   } catch (error) {
     console.log("Reset password error:", error);
@@ -618,61 +522,34 @@ const resetPassword = async (req, res) => {
   }
 };
 
-const productsPageDefaults = {
-  search: "",
-  sort: "newest",
-  maxPrice: 100000,
-  categoryName: null,
-  category: "",
-  currentPage: 1,
-  totalPages: 1,
-  showAnnouncement: false,
-};
-
 const loadProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 8;
     const skip = (page - 1) * limit;
-
     const search = req.query.search || "";
     const category = req.query.category || "";
     const sort = req.query.sort || "newest";
     const maxPrice = parseInt(req.query.maxPrice) || 1000000;
 
-    let query = {
-      isBlocked: false,
-      isListed: true,
-    };
-
-    if (search) {
-      query.name = { $regex: search, $options: "i" };
-    }
-
-    if (category) {
-      query.category = category;
-    }
+    const query = { isBlocked: false, isListed: true };
+    if (search) query.name = { $regex: search, $options: "i" };
+    if (category) query.category = category;
 
     let sortOption = { createdAt: -1 };
-
     switch (sort) {
       case "price-asc":
         sortOption = { salePrice: 1 };
         break;
-
       case "price-desc":
         sortOption = { salePrice: -1 };
         break;
-
       case "name-asc":
         sortOption = { name: 1 };
         break;
-
       case "name-desc":
         sortOption = { name: -1 };
         break;
-
-      case "newest":
       default:
         sortOption = { createdAt: -1 };
     }
@@ -682,13 +559,10 @@ const loadProducts = async (req, res) => {
       .sort(sortOption);
 
     const updatedProducts = [];
-
-    for (let product of products) {
+    for (const product of products) {
       const offer = await getBestOffer(product);
-
       const finalPrice = offer.finalPrice;
       const discount = offer.discount;
-
       if (finalPrice <= maxPrice) {
         updatedProducts.push({
           ...product._doc,
@@ -699,16 +573,19 @@ const loadProducts = async (req, res) => {
       }
     }
 
+    if (sort === "price-asc") {
+      updatedProducts.sort((a, b) => a.finalPrice - b.finalPrice);
+    } else if (sort === "price-desc") {
+      updatedProducts.sort((a, b) => b.finalPrice - a.finalPrice);
+    }
+
     const totalProducts = updatedProducts.length;
-    const totalPages = Math.ceil(totalProducts / limit);
+    const totalPages = Math.ceil(totalProducts / limit) || 1;
     const paginatedProducts = updatedProducts.slice(skip, skip + limit);
 
     const categories = await Category.find({ isListed: true });
-
     let userData = null;
-    if (req.session.user) {
-      userData = await User.findById(req.session.user);
-    }
+    if (req.session.user) userData = await User.findById(req.session.user);
 
     res.render("user/products", {
       user: userData,
@@ -736,12 +613,9 @@ const loadProductDetails = async (req, res) => {
       isListed: true,
     }).populate("category");
 
-    if (!product) {
-      return res.redirect("/products");
-    }
+    if (!product) return res.redirect("/products");
 
     const offer = await getBestOffer(product);
-
     const discount = offer.discount;
     const finalPrice = offer.finalPrice;
 
@@ -763,18 +637,8 @@ const loadProductDetails = async (req, res) => {
       .lean();
 
     const ratingStats = await Review.aggregate([
-      {
-        $match: {
-          productId: product._id,
-          isApproved: true,
-        },
-      },
-      {
-        $group: {
-          _id: "$rating",
-          count: { $sum: 1 },
-        },
-      },
+      { $match: { productId: product._id, isApproved: true } },
+      { $group: { _id: "$rating", count: { $sum: 1 } } },
     ]);
 
     const ratingDistribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
@@ -785,28 +649,22 @@ const loadProductDetails = async (req, res) => {
     let canReview = false;
     let hasOrderedProduct = false;
     let eligibleOrderId = null;
-
     let userData = null;
+
     if (req.session.user) {
       userData = await User.findById(req.session.user);
-
       const deliveredOrder = await Order.findOne({
         userId: userData._id,
         status: "delivered",
-        orderedItems: {
-          $elemMatch: { productId: product._id },
-        },
+        orderedItems: { $elemMatch: { productId: product._id } },
       });
-
       if (deliveredOrder) {
         hasOrderedProduct = true;
-
         const existingReview = await Review.findOne({
           productId: product._id,
           userId: userData._id,
           orderId: deliveredOrder._id,
         });
-
         if (!existingReview) {
           canReview = true;
           eligibleOrderId = deliveredOrder._id;
@@ -835,25 +693,42 @@ const loadProductDetails = async (req, res) => {
 
 const searchProducts = async (req, res) => {
   try {
-    const search = req.query.q || "";
+    const search = req.query.q || req.query.search || "";
     const page = parseInt(req.query.page) || 1;
     const limit = 8;
     const skip = (page - 1) * limit;
     const maxPrice = Number(req.query.maxPrice) || 100000;
+    const sort = req.query.sort || "newest";
+    const category = req.query.category || "";
 
-    const query = {
-      isBlocked: false,
-      isListed: true,
-    };
+    const query = { isBlocked: false, isListed: true };
+    if (search) query.name = { $regex: search, $options: "i" };
+    if (category) query.category = category;
 
-    if (search) {
-      query.name = { $regex: search, $options: "i" };
+    let sortOption = { createdAt: -1 };
+    switch (sort) {
+      case "price-asc":
+        sortOption = { salePrice: 1 };
+        break;
+      case "price-desc":
+        sortOption = { salePrice: -1 };
+        break;
+      case "name-asc":
+        sortOption = { name: 1 };
+        break;
+      case "name-desc":
+        sortOption = { name: -1 };
+        break;
+      default:
+        sortOption = { createdAt: -1 };
     }
 
-    const allProducts = await Product.find(query).populate("category");
+    const allProducts = await Product.find(query)
+      .populate("category")
+      .sort(sortOption);
 
     const updatedProducts = [];
-    for (let product of allProducts) {
+    for (const product of allProducts) {
       const offer = await getBestOffer(product);
       if (offer.finalPrice <= maxPrice) {
         updatedProducts.push({
@@ -865,29 +740,34 @@ const searchProducts = async (req, res) => {
       }
     }
 
+    if (sort === "price-asc") {
+      updatedProducts.sort((a, b) => a.finalPrice - b.finalPrice);
+    } else if (sort === "price-desc") {
+      updatedProducts.sort((a, b) => b.finalPrice - a.finalPrice);
+    }
+
     const totalProducts = updatedProducts.length;
-    const totalPages = Math.ceil(totalProducts / limit);
+    const totalPages = Math.ceil(totalProducts / limit) || 1;
     const paginatedProducts = updatedProducts.slice(skip, skip + limit);
 
     const categories = await Category.find({
       isBlocked: false,
       isListed: true,
     });
-
     let userData = null;
-    if (req.session.user) {
-      userData = await User.findById(req.session.user);
-    }
+    if (req.session.user) userData = await User.findById(req.session.user);
 
     res.render("user/products", {
-      ...productsPageDefaults,
       user: userData,
       products: paginatedProducts,
       categories,
       search,
+      sort,
+      category,
       maxPrice,
       currentPage: page,
       totalPages,
+      showAnnouncement: false,
     });
   } catch (error) {
     console.error("SEARCH ERROR", error);
@@ -925,27 +805,15 @@ const editProfile = async (req, res) => {
   try {
     const userId = req.session.user;
     const { name, phone } = req.body;
-
-    const updateData = {
-      name,
-      phone,
-    };
-
-    if (req.file) {
-      updateData.profileImage = req.file.path;
-    }
-
+    const updateData = { name, phone };
+    if (req.file) updateData.profileImage = req.file.path;
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
       runValidators: true,
     });
-
-    console.log("Updated User:", updatedUser);
-
     res.json({ success: true, user: updatedUser });
   } catch (error) {
     console.log("EDIT PROFILE ERROR:", error);
-
     res.status(500).json({ message: error.message });
   }
 };
@@ -953,117 +821,74 @@ const editProfile = async (req, res) => {
 const requestEmailOtp = async (req, res) => {
   try {
     const { newEmail } = req.body;
-
-    if (!newEmail) {
+    if (!newEmail)
       return res.status(400).json({ message: "New email is required" });
-    }
-
     const user = await User.findById(req.session.user);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.googleId) {
-      return res.status(403).json({
-        message: "Email cannot be changed for Google accounts",
-      });
-    }
-
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.googleId)
+      return res
+        .status(403)
+        .json({ message: "Email cannot be changed for Google accounts" });
     const emailExists = await User.findOne({
       email: newEmail,
       _id: { $ne: user._id },
     });
-
-    if (emailExists) {
+    if (emailExists)
       return res.status(409).json({ message: "This email is already in use" });
-    }
-
     const otp = generateOtp();
-
     req.session.emailChangeOtp = otp;
     req.session.newEmail = newEmail;
     req.session.emailVerified = false;
-
     const emailSent = await sendEmailChangeOtp(newEmail, otp);
-    if (!emailSent) {
+    if (!emailSent)
       return res
         .status(500)
         .json({ message: "Failed to send OTP. Please try again." });
-    }
-
     res.json({ success: true });
   } catch (error) {
-    console.log("Request email OTP error: ", error);
+    console.log("Request email OTP error:", error);
     res.status(500).json({ message: "failed to send OTP" });
   }
 };
 
 const verifyEmailOtp = async (req, res) => {
   const { otp } = req.body;
-
-  if (otp !== req.session.emailChangeOtp) {
+  if (otp !== req.session.emailChangeOtp)
     return res.status(400).json({ message: "Invalid OTP" });
-  }
-
   req.session.emailVerified = true;
   res.json({ success: true });
 };
 
 const updateProfileAfterOtp = async (req, res) => {
-  if (!req.session.emailVerified) {
+  if (!req.session.emailVerified)
     return res.status(403).json({ message: "Email not verified" });
-  }
-
   const newEmail = req.session.newEmail;
-
-  if (!newEmail) {
+  if (!newEmail)
     return res.status(400).json({ message: "No email found in session" });
-  }
-
-  console.log("Saving email:", newEmail);
-
   const emailExists = await User.findOne({
     email: newEmail,
     _id: { $ne: req.session.user },
   });
-
-  if (emailExists) {
-    return res.status(409).json({
-      message: "This email is already in use",
-    });
-  }
-
+  if (emailExists)
+    return res.status(409).json({ message: "This email is already in use" });
   const user = await User.findById(req.session.user);
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
+  if (!user) return res.status(404).json({ message: "User not found" });
   user.email = newEmail;
-
   await user.save();
-
   req.session.user = user._id;
-
   req.session.emailVerified = false;
   req.session.emailChangeOtp = null;
   req.session.newEmail = null;
-
   res.json({ success: true });
 };
 
 const getAddresses = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).lean();
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const sortedAddresses = (user.addresses || []).sort((a, b) => {
-      return Number(b.isDefault) - Number(a.isDefault);
-    });
-
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const sortedAddresses = (user.addresses || []).sort(
+      (a, b) => Number(b.isDefault) - Number(a.isDefault),
+    );
     res.json(sortedAddresses);
   } catch (error) {
     console.log("GET ADDRESSES ERROR", error);
@@ -1074,10 +899,7 @@ const getAddresses = async (req, res) => {
 const addAddress = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
+    if (!user) return res.status(404).json({ message: "User not found" });
     const {
       firstName,
       lastName,
@@ -1089,9 +911,7 @@ const addAddress = async (req, res) => {
       phone,
       isDefault,
     } = req.body;
-
     const finalPhone = phone?.trim() || user.phone;
-
     if (
       !firstName ||
       !lastName ||
@@ -1105,19 +925,11 @@ const addAddress = async (req, res) => {
         .status(400)
         .json({ message: "All required fields must be filled" });
     }
-
-    if (!/^\d{6}$/.test(pincode)) {
+    if (!/^\d{6}$/.test(pincode))
       return res.status(400).json({ message: "Invalid pincode" });
-    }
-
-    if (!/^\d{10}$/.test(finalPhone)) {
+    if (!/^\d{10}$/.test(finalPhone))
       return res.status(400).json({ message: "Invalid phone number" });
-    }
-
-    if (isDefault) {
-      user.addresses.forEach((a) => (a.isDefault = false));
-    }
-
+    if (isDefault) user.addresses.forEach((a) => (a.isDefault = false));
     const newAddress = {
       fullName: `${firstName} ${lastName}`,
       street: address1 + (address2 ? `, ${address2}` : ""),
@@ -1128,10 +940,8 @@ const addAddress = async (req, res) => {
       phone: finalPhone,
       isDefault: user.addresses.length === 0 ? true : !!isDefault,
     };
-
     user.addresses.push(newAddress);
     await user.save();
-
     res.json({ success: true });
   } catch (error) {
     console.error("ADD ADDRESS ERROR", error);
@@ -1142,14 +952,10 @@ const addAddress = async (req, res) => {
 const setDefaultAddress = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
+    if (!user) return res.status(404).json({ message: "User not found" });
     user.addresses.forEach((address) => {
       address.isDefault = address._id.toString() === req.params.id;
     });
-
     await user.save();
     res.json({ success: true });
   } catch (error) {
@@ -1161,15 +967,9 @@ const setDefaultAddress = async (req, res) => {
 const updateAddress = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
+    if (!user) return res.status(404).json({ message: "User not found" });
     const address = user.addresses.id(req.params.id);
-    if (!address) {
-      return res.status(404).json({ message: "Address not found" });
-    }
-
+    if (!address) return res.status(404).json({ message: "Address not found" });
     const {
       firstName,
       lastName,
@@ -1181,17 +981,12 @@ const updateAddress = async (req, res) => {
       phone,
       isDefault,
     } = req.body;
-
     if (!firstName || !lastName || !address1 || !city || !state || !pincode) {
       return res
         .status(400)
         .json({ message: "All required fields must be filled" });
     }
-
-    if (isDefault) {
-      user.addresses.forEach((a) => (a.isDefault = false));
-    }
-
+    if (isDefault) user.addresses.forEach((a) => (a.isDefault = false));
     address.fullName = `${firstName} ${lastName}`;
     address.street = address1 + (address2 ? `, ${address2}` : "");
     address.city = city;
@@ -1200,9 +995,7 @@ const updateAddress = async (req, res) => {
     address.country = "India";
     address.phone = phone || address.phone;
     address.isDefault = !!isDefault;
-
     await user.save();
-
     res.json({ success: true });
   } catch (error) {
     console.error("UPDATE ADDRESS ERROR:", error);
@@ -1213,20 +1006,14 @@ const updateAddress = async (req, res) => {
 const deleteAddress = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
+    if (!user) return res.status(404).json({ message: "User not found" });
     user.addresses = user.addresses.filter(
-      (address) => address._id.toString() !== req.params.id,
+      (a) => a._id.toString() !== req.params.id,
     );
-
     if (user.addresses.length > 0 && !user.addresses.some((a) => a.isDefault)) {
       user.addresses[0].isDefault = true;
     }
-
     await user.save();
-
     res.json({ success: true });
   } catch (error) {
     console.error("DELETE ADDRESS ERROR:", error);
@@ -1237,32 +1024,21 @@ const deleteAddress = async (req, res) => {
 const changePassword = async (req, res) => {
   try {
     const userId = req.user._id;
-
     const { currentPassword, newPassword } = req.body;
-
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.googleId) {
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.googleId)
       return res
         .status(403)
         .json({ message: "Password can't be changed for Google accounts" });
-    }
-
     const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
+    if (!isMatch)
       return res.status(400).json({ message: "Current password is incorrect" });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
+    user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
-
     res.json({ success: true });
   } catch (error) {
-    console.error("CHANGE PASSW0RD ERROR", error);
+    console.error("CHANGE PASSWORD ERROR", error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -1270,13 +1046,8 @@ const changePassword = async (req, res) => {
 const loadAbout = async (req, res) => {
   try {
     let userData = null;
-    if (req.session.user) {
-      userData = await User.findById(req.session.user);
-    }
-    res.render("user/about", {
-      user: userData,
-      showAnnouncement: false,
-    });
+    if (req.session.user) userData = await User.findById(req.session.user);
+    res.render("user/about", { user: userData, showAnnouncement: false });
   } catch (error) {
     console.log("About page error:", error);
     res.redirect("/pageNotFound");

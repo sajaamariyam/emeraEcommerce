@@ -17,6 +17,22 @@ const generateOrderId = () =>
   Math.random().toString(36).substring(2, 7).toUpperCase();
 
 const mapAddress = (addr) => {
+  if (addr.firstName !== undefined) {
+    return {
+      _id: addr._id,
+      firstName: addr.firstName || "",
+      lastName: addr.lastName || "",
+      address1: addr.address1 || addr.street || "",
+      address2: addr.address2 || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      pincode: addr.pincode || addr.zipCode || "",
+      phone: addr.phone || "",
+      isDefault: addr.isDefault || false,
+      country: addr.country || "India",
+    };
+  }
+
   const nameParts = (addr.fullName || "").trim().split(" ");
   return {
     _id: addr._id,
@@ -32,6 +48,16 @@ const mapAddress = (addr) => {
     country: addr.country || "India",
   };
 };
+
+function recalculateTotals(newSubtotal) {
+  const discount = appliedDiscount || 0;
+  const discountedSubtotal = newSubtotal - discount;
+  const tax = Math.round(discountedSubtotal * 0.18);
+  const total = discountedSubtotal + tax;
+
+  document.getElementById("taxDisplay").textContent = `₹${tax}`;
+  document.getElementById("totalDisplay").textContent = `₹${total}`;
+}
 
 const getBestOfferPrice = async (product) => {
   const now = new Date();
@@ -76,9 +102,23 @@ const getBestOfferPrice = async (product) => {
   return salePrice || basePrice;
 };
 
-//
-// ========================== LOAD CHECKOUT ==========================
-//
+const computeCouponDiscount = (coupon, subtotal) => {
+  if (!coupon) return 0;
+
+  let discountAmount = 0;
+
+  if (coupon.isPercentage) {
+    discountAmount = Math.round((subtotal * coupon.discountAmount) / 100);
+    if (coupon.maxDiscount != null && coupon.maxDiscount > 0) {
+      discountAmount = Math.min(discountAmount, coupon.maxDiscount);
+    }
+  } else {
+    discountAmount = coupon.discountAmount || coupon.discountValue || 0;
+  }
+
+  return Math.min(discountAmount, subtotal);
+};
+
 const loadCheckout = async (req, res) => {
   try {
     const userId = req.session.user;
@@ -94,7 +134,6 @@ const loadCheckout = async (req, res) => {
 
       const product = await Product.findById(buyNow).populate("category");
       const quantity = Math.max(1, parseInt(buyQty) || 1);
-
       const variant = product?.variants.find((v) => v.color === buyColor);
 
       if (
@@ -134,7 +173,6 @@ const loadCheckout = async (req, res) => {
       const validItems = cart.items.filter((item) => {
         const p = item.productId;
         const variant = p?.variants.find((v) => v.color === item.color);
-
         return (
           p &&
           !p.isBlocked &&
@@ -158,7 +196,6 @@ const loadCheckout = async (req, res) => {
             p.variants.find((v) => v.color === item.color)?.quantity || 0;
 
           const finalPrice = await getBestOfferPrice(p);
-
           const quantity = Math.max(1, parseInt(item.quantity) || 1);
 
           return {
@@ -176,16 +213,24 @@ const loadCheckout = async (req, res) => {
       (sum, i) => sum + i.price * i.quantity,
       0,
     );
-
     const tax = Math.round(subtotal * 0.18);
     const total = subtotal + tax;
 
     const user = await User.findById(userId);
 
+    const walletBalance = Number(user.wallet) || 0;
+
     const coupons = await Coupon.find({
       isActive: true,
-      isUsed: false,
       expiryDate: { $gte: new Date() },
+      $and: [
+        {
+          $or: [{ isUsed: { $ne: true } }, { isPercentage: true }],
+        },
+        {
+          $or: [{ usedBy: { $exists: false } }, { usedBy: { $nin: [userId] } }],
+        },
+      ],
     });
 
     res.render("user/checkout", {
@@ -195,7 +240,7 @@ const loadCheckout = async (req, res) => {
       tax,
       total,
       discount: 0,
-      walletBalance: user.wallet || 0,
+      walletBalance,
       addresses: (user.addresses || []).map(mapAddress),
       COD_MAX_AMOUNT,
       coupons,
@@ -216,10 +261,6 @@ const loadCheckout = async (req, res) => {
   }
 };
 
-//
-// ========================== PLACE ORDER ==========================
-//
-
 const placeOrder = async (req, res) => {
   try {
     const userId = req.session.user;
@@ -238,22 +279,22 @@ const placeOrder = async (req, res) => {
     } = req.body;
 
     let method = "razorpay";
-
-    if (typeof paymentMethod === "string") {
-      method = paymentMethod.toLowerCase();
+    if (typeof paymentMethod === "string" && paymentMethod.trim()) {
+      method = paymentMethod.toLowerCase().trim();
     }
 
-    console.log("FIXED PAYMENT METHOD:", method);
+    console.log("PAYMENT METHOD:", method);
 
     const user = await User.findById(userId);
-    const address = user?.addresses.id(addressId);
 
-    if (!address) {
+    const rawAddress = user?.addresses.id(addressId);
+    if (!rawAddress) {
       return res.status(400).json({
         success: false,
         message: "Invalid address selected",
       });
     }
+    const address = mapAddress(rawAddress);
 
     let items = [];
     let cartRef = null;
@@ -282,10 +323,9 @@ const placeOrder = async (req, res) => {
       });
 
       if (!cartRef || !cartRef.items.length) {
-        return res.status(400).json({
-          success: false,
-          message: "Your cart is empty",
-        });
+        return res
+          .status(400)
+          .json({ success: false, message: "Your cart is empty" });
       }
 
       items = cartRef.items;
@@ -294,7 +334,6 @@ const placeOrder = async (req, res) => {
     const orderItems = await Promise.all(
       items.map(async (item) => {
         const p = item.productId;
-
         const price = await getBestOfferPrice(p);
         const quantity = Math.max(1, parseInt(item.quantity) || 1);
 
@@ -313,29 +352,27 @@ const placeOrder = async (req, res) => {
       0,
     );
 
-    const tax = Math.round(subtotal * 0.18);
-
     let discount = 0;
 
     if (couponCode) {
       const coupon = await Coupon.findOne({
-        code: couponCode.toUpperCase(),
+        code: couponCode.toUpperCase().trim(),
         isActive: true,
-        isUsed: false,
         expiryDate: { $gte: new Date() },
       });
 
-      if (coupon && subtotal >= (coupon.minPurchaseAmount || 0)) {
-        discount = coupon.isPercentage
-          ? Math.min(
-              Math.round((subtotal * coupon.discountAmount) / 100),
-              coupon.maxDiscount || Infinity,
-            )
-          : coupon.discountAmount;
+      if (coupon) {
+        const minPurchase =
+          coupon.minPurchaseAmount || coupon.minOrderAmount || 0;
+        if (subtotal >= minPurchase) {
+          discount = computeCouponDiscount(coupon, subtotal);
+        }
       }
     }
 
-    const finalAmount = Math.max(subtotal + tax - discount, 0);
+    const discountedSubtotal = subtotal - discount;
+    const tax = Math.round(discountedSubtotal * 0.18);
+    const finalAmount = Math.max(discountedSubtotal + tax, 0);
 
     if (method === "cod" && finalAmount > COD_MAX_AMOUNT) {
       return res.status(400).json({
@@ -351,16 +388,16 @@ const placeOrder = async (req, res) => {
       totalPrice: subtotal,
       discount,
       finalAmount,
-      paymentMethod: method.toUpperCase(),
-      paymentStatus: method === "cod" ? "pending" : "pending",
+      paymentMethod: method.toLowerCase(),
+      paymentStatus: "pending",
       status: "pending",
       shippingAddress: {
-        name: address.fullName,
+        name: `${address.firstName} ${address.lastName}`.trim(),
         phone: address.phone,
-        address: address.street,
+        address: address.address1,
         city: address.city,
         state: address.state,
-        pincode: address.zipCode,
+        pincode: address.pincode,
         country: address.country || "India",
       },
       couponCode: couponCode || null,
@@ -376,7 +413,9 @@ const placeOrder = async (req, res) => {
     }
 
     if (method === "wallet") {
-      if ((user.wallet || 0) < finalAmount) {
+      const walletBalance = Number(user.wallet) || 0;
+      if (walletBalance < finalAmount) {
+        await Order.deleteOne({ _id: order._id });
         return res.status(400).json({
           success: false,
           message: "Insufficient wallet balance",
@@ -384,7 +423,6 @@ const placeOrder = async (req, res) => {
       }
 
       user.wallet -= finalAmount;
-
       user.walletTransactions.push({
         type: "debit",
         amount: finalAmount,
@@ -393,7 +431,6 @@ const placeOrder = async (req, res) => {
       });
 
       await user.save();
-
       order.paymentStatus = "paid";
       await order.save();
     }
@@ -426,8 +463,6 @@ const placeOrder = async (req, res) => {
     });
   }
 };
-
-// ========================== PAYMENT FAILURE ==========================
 
 const handlePaymentFailure = async (req, res) => {
   try {

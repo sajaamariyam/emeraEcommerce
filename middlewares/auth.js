@@ -1,7 +1,13 @@
 const User = require("../models/userSchema");
-
 const userAuth = async (req, res, next) => {
   try {
+    if (req.user === false) {
+      return req.session.destroy(() => {
+        res.clearCookie("connect.sid");
+        return res.redirect("/login?blocked=true");
+      });
+    }
+
     if (!req.session.user) {
       req.session.redirectTo = req.originalUrl;
       return req.session.save(() => {
@@ -12,11 +18,10 @@ const userAuth = async (req, res, next) => {
     const user = await User.findById(req.session.user);
 
     if (!user || user.isBlocked) {
-      req.session.destroy(() => {
+      return req.session.destroy(() => {
         res.clearCookie("connect.sid");
-        return res.redirect("/login");
+        return res.redirect("/login?blocked=true");
       });
-      return;
     }
 
     req.user = user;
@@ -38,7 +43,6 @@ const saveRedirect = (req, res, next) => {
     req.session.redirectTo = req.originalUrl;
     console.log("REDIRECT SAVED:", req.session.redirectTo);
   }
-
   next();
 };
 
@@ -53,7 +57,7 @@ const requireLogin = (req, res, next) => {
 };
 
 const noCache = (req, res, next) => {
-  res.set("Cache-control", "no-store, no-cache, must-revalidate, private");
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
   res.set("Pragma", "no-cache");
   res.set("Expires", "0");
   next();
@@ -82,7 +86,6 @@ const adminAuth = async (req, res, next) => {
     }
 
     res.locals.admin = admin;
-
     next();
   } catch (error) {
     console.log("Admin auth error:", error);

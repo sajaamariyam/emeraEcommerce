@@ -159,15 +159,6 @@ const verifyAndCreditWallet = async (req, res) => {
     try {
       await user.save();
     } catch (saveErr) {
-      console.error("═══════════════════════════════════════════════════");
-      console.error("CRITICAL: WALLET CREDIT SAVE FAILED");
-      console.error(`  User    : ${user._id}`);
-      console.error(`  Amount  : ₹${amountInRupees}`);
-      console.error(`  Payment : ${razorpay_payment_id}`);
-      console.error(`  Error   : ${saveErr.message}`);
-      console.error("ACTION REQUIRED: Manually credit this wallet.");
-      console.error("═══════════════════════════════════════════════════");
-
       return res.status(500).json({
         success: false,
         message:

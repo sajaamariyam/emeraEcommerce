@@ -68,8 +68,8 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["COD", "ONLINE", "WALLET"],
-      default: "COD",
+      enum: ["razorpay", "cod", "wallet"],
+      default: "cod",
     },
 
     paymentStatus: {
@@ -78,9 +78,9 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
     },
 
-    refundAmount:{
+    refundAmount: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
     cancelReason: { type: String },

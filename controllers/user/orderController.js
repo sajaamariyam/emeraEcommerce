@@ -89,7 +89,13 @@ const loadOrder = async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
 
+    const status = req.query.status?.trim();
+
     let query = { userId };
+
+    if (status) {
+      query.status = { $regex: `^${status}$`, $options: "i" };
+    }
 
     if (search) {
       query.$or = [
@@ -450,6 +456,8 @@ const returnProduct = async (req, res) => {
     item.returnReason = reason;
     item.returnRequestedAt = new Date();
 
+    order.status = "return-requested";
+
     await order.save();
 
     return res.json({
@@ -498,7 +506,6 @@ const downloadInvoice = async (req, res) => {
 
     const fmt = (n) => `Rs. ${Number(n).toLocaleString("en-IN")}`;
 
-    // bufferPages:true lets us call switchToPage() later
     const doc = new PDFDocument({ margin: 50, size: "A4", bufferPages: true });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -718,7 +725,6 @@ const downloadInvoice = async (req, res) => {
       align: "center",
     });
 
-    // flushPages() required when bufferPages:true
     doc.flushPages();
     doc.end();
   } catch (error) {

@@ -932,7 +932,7 @@ const ProfileApp = (function () {
         document.getElementById('wallet-total-credit').textContent = '\u2014';
         document.getElementById('wallet-total-debit').textContent  = '\u2014';
         try {
-            var r = await safeFetch('/wallet');
+            var r = await safeFetch('/payment/wallet');
             if (!r.ok) {
                 showWalletError(r.status === 401 ? 'Your session has expired. Please refresh and log in again.' : r.data.message || 'Failed to load wallet data.');
                 return;
@@ -1005,7 +1005,7 @@ const ProfileApp = (function () {
         if (!amount || amount < 1 || amount > 50000) { inp.classList.add('input-error'); errEl.classList.remove('hidden'); return; }
         inp.classList.remove('input-error'); errEl.classList.add('hidden');
         try {
-            var r = await safeFetch('/wallet/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: amount }) });
+            var r = await safeFetch('/payment/wallet/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: amount }) });
             if (!r.ok) { showError(r.data.message || 'Failed to initiate payment'); return; }
             if (r.data.razorpayOrder) {
                 closeModal('add-money-modal');
@@ -1033,7 +1033,7 @@ const ProfileApp = (function () {
             handler: async function(response) {
                
                 try {
-                    var vr = await safeFetch('/wallet/verify', {
+                    var vr = await safeFetch('/payment/wallet/verify', {
                         method:  'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body:    JSON.stringify({

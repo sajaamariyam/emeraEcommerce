@@ -72,13 +72,21 @@ const loadCart = async (req, res) => {
 const addToCart = async (req, res) => {
   try {
     const userId = req.session.user;
-    const { productId, color, buyNow } = req.body;
+    const { productId, color, quantity, buyNow } = req.body; 
     const MAX_CART_QTY = 5;
 
     if (!userId) {
       return res.status(401).json({
         success: false,
         code: "AUTH_REQUIRED",
+      });
+    }
+
+    if (buyNow) {
+      const qty = parseInt(quantity) || 1;
+      return res.json({
+        success: true,
+        redirect: `/checkout?buyNow=${productId}&color=${encodeURIComponent(color || "")}&qty=${qty}`,
       });
     }
 
@@ -163,13 +171,6 @@ const addToCart = async (req, res) => {
     await cart.save();
 
     await User.updateOne({ _id: userId }, { $pull: { wishlist: productId } });
-
-    if (buyNow) {
-      return res.json({
-        success: true,
-        redirect: "/checkout",
-      });
-    }
 
     const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -258,20 +259,11 @@ const incrementQty = async (req, res) => {
     await cart.save();
 
     const updatedCart = await Cart.findOne({ userId });
-    let subtotal = 0;
-    updatedCart.items.forEach((i) => {
-      subtotal += i.price * i.quantity;
-    });
-    const tax = Math.round(subtotal * 0.18);
-    const total = subtotal + tax;
 
     res.json({
       success: true,
       quantity: item.quantity,
       itemTotal: item.price * item.quantity,
-      subtotal,
-      tax,
-      total,
     });
   } catch (error) {
     console.log("INCREMENT ERROR:", error);

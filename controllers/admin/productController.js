@@ -19,39 +19,34 @@ const loadProducts = async (req, res) => {
     const skip = (page - 1) * limit;
 
     let filter = {};
-
-    if (search) {
-      filter.name = { $regex: search, $options: "i" };
-    }
-
-    if (category) {
-      filter.category = category;
-    }
+    if (search) filter.name = { $regex: search, $options: "i" };
+    if (category) filter.category = category;
 
     if (status === "listed") {
       filter.isListed = true;
       filter.isBlocked = false;
     }
-
     if (status === "unlisted") {
       filter.isBlocked = true;
     }
 
     let sortQuery = {};
+
     let sortInJS = false;
 
     switch (sortBy) {
       case "name-asc":
         sortQuery.name = 1;
         break;
-      case "name-desc":     
-        sortQuery.name = -1;      
+      case "name-desc":
+        sortQuery.name = -1;
         break;
       case "stock-asc":
-        sortInJs = true;
+      case "stock-desc":
+        sortInJS = true;
         sortQuery.createdAt = -1;
         break;
-      default:                   
+      default:
         sortQuery.createdAt = -1;
     }
 
@@ -60,73 +55,54 @@ const loadProducts = async (req, res) => {
       .sort(sortQuery)
       .lean();
 
-    products = products.map(p => ({
+    products = products.map((p) => ({
       ...p,
-      totalStock: p.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0,
+      totalStock:
+        p.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0,
     }));
+
+    if (stockLevel !== "all") {
+      products = products.filter((p) => {
+        if (stockLevel === "in-stock") return p.totalStock >= 5;
+        if (stockLevel === "low") return p.totalStock > 0 && p.totalStock < 5;
+        if (stockLevel === "out") return p.totalStock === 0;
+        return true;
+      });
+    }
 
     if (sortInJS) {
       products.sort((a, b) =>
         sortBy === "stock-asc"
           ? a.totalStock - b.totalStock
-          : b.totalStock - a.totalStock
+          : b.totalStock - a.totalStock,
       );
     }
 
-    if (stockLevel !== "all") {
-      products = products.filter((product) => {
-        const totalStock =
-          product.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0;
-
-        if (stockLevel === "in-stock") {
-          return totalStock >= 5;
-        }
-
-        if (stockLevel === "low") {
-          return totalStock > 0 && totalStock < 5;
-        }
-
-        if (stockLevel === "out") {
-          return totalStock === 0;
-        }
-
-        return true;
-      });
-    }
-
     const totalFiltered = products.length;
+    const totalPages = Math.ceil(totalFiltered / limit) || 1;
     const paginatedProducts = products.slice(skip, skip + limit);
-    const totalPages = Math.ceil(totalFiltered / limit);
 
     const totalProducts = await Product.countDocuments();
-
     const listedProducts = await Product.countDocuments({
       isListed: true,
       isBlocked: false,
     });
-
-    const unlistedProducts = await Product.countDocuments({
-      isBlocked: true,
-    });
+    const unlistedProducts = await Product.countDocuments({ isBlocked: true });
 
     const outOfStockCount = await Product.countDocuments({
       isListed: true,
       isBlocked: false,
-      variants: {
-        $not: {
-          $elemMatch: { quantity: { $gt: 0 } },
-        },
-      },
+      variants: { $not: { $elemMatch: { quantity: { $gt: 0 } } } },
     });
 
     const allProducts = await Product.find({
       isListed: true,
       isBlocked: false,
     }).lean();
-    const lowStockCount = allProducts.filter((product) => {
-      const totalStock =
-        product.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0;
-      return totalStock > 0 && totalStock < 5;
+    const lowStockCount = allProducts.filter((p) => {
+      const total =
+        p.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0;
+      return total > 0 && total < 5;
     }).length;
 
     const categories = await Category.find({ isListed: true });
@@ -167,18 +143,63 @@ const addProduct = async (req, res) => {
       variants,
     } = req.body;
 
-    if (!req.files || req.files.length < 3) {
+    if (!name?.trim())
+      return res
+        .status(400)
+        .json({ success: false, message: "Product name is required" });
+    if (!category)
+      return res
+        .status(400)
+        .json({ success: false, message: "Category is required" });
+    if (!brand?.trim())
+      return res
+        .status(400)
+        .json({ success: false, message: "Brand is required" });
+    if (!description?.trim())
+      return res
+        .status(400)
+        .json({ success: false, message: "Description is required" });
+
+    const regPrice = Number(regularPrice);
+    const salePrc = Number(salePrice);
+
+    if (!regPrice || regPrice <= 0)
+      return res.status(400).json({
+        success: false,
+        message: "Regular price must be greater than 0",
+      });
+    if (!salePrc || salePrc <= 0)
+      return res
+        .status(400)
+        .json({ success: false, message: "Sale price must be greater than 0" });
+    if (salePrc > regPrice)
+      return res.status(400).json({
+        success: false,
+        message: "Sale price cannot be greater than regular price",
+      });
+
+    if (!req.files || req.files.length < 3)
       return res
         .status(400)
         .json({ success: false, message: "Minimum 3 images required" });
-    }
 
     const parsedVariants = JSON.parse(variants || "[]");
-
-    if (!parsedVariants.length) {
+    if (!parsedVariants.length)
       return res
         .status(400)
         .json({ success: false, message: "At least one variant required" });
+
+    for (const v of parsedVariants) {
+      if (!v.color?.trim())
+        return res.status(400).json({
+          success: false,
+          message: "Each variant must have a color name",
+        });
+      if (v.quantity < 0)
+        return res.status(400).json({
+          success: false,
+          message: "Variant quantity cannot be negative",
+        });
     }
 
     let specifications = {};
@@ -196,25 +217,24 @@ const addProduct = async (req, res) => {
     }));
 
     const product = new Product({
-      name,
-      description,
+      name: name.trim(),
+      description: description.trim(),
       category,
-      brand,
-      regularPrice,
-      salePrice,
+      brand: brand.trim(),
+      regularPrice: regPrice,
+      salePrice: salePrc,
       variants: parsedVariants,
       productImage: productImages,
-      specifications: specifications,
+      specifications,
       isListed: true,
       isBlocked: false,
     });
 
     await product.save();
-
     res.status(201).json({ success: true });
   } catch (error) {
     console.error("Add product error:", error);
-    res.status(500).json({ success: false });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -232,24 +252,80 @@ const editProduct = async (req, res) => {
       removedImages,
     } = req.body;
 
-    const parsedVariants = JSON.parse(variants || "[]");
+    if (!name?.trim())
+      return res
+        .status(400)
+        .json({ success: false, message: "Product name is required" });
+    if (!category)
+      return res
+        .status(400)
+        .json({ success: false, message: "Category is required" });
+    if (!brand?.trim())
+      return res
+        .status(400)
+        .json({ success: false, message: "Brand is required" });
+    if (!description?.trim())
+      return res
+        .status(400)
+        .json({ success: false, message: "Description is required" });
 
-    if (!parsedVariants.length) {
+    const regPrice = Number(regularPrice);
+    const salePrc = Number(salePrice);
+
+    if (!regPrice || regPrice <= 0)
+      return res.status(400).json({
+        success: false,
+        message: "Regular price must be greater than 0",
+      });
+    if (!salePrc || salePrc <= 0)
+      return res
+        .status(400)
+        .json({ success: false, message: "Sale price must be greater than 0" });
+    if (salePrc > regPrice)
+      return res.status(400).json({
+        success: false,
+        message: "Sale price cannot be greater than regular price",
+      });
+
+    const parsedVariants = JSON.parse(variants || "[]");
+    if (!parsedVariants.length)
       return res
         .status(400)
         .json({ success: false, message: "At least one variant is required" });
+
+    for (const v of parsedVariants) {
+      if (!v.color?.trim())
+        return res.status(400).json({
+          success: false,
+          message: "Each variant must have a color name",
+        });
+      if (v.quantity < 0)
+        return res.status(400).json({
+          success: false,
+          message: "Variant quantity cannot be negative",
+        });
     }
 
     const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ success: false });
-    }
+    if (!product)
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
 
     if (removedImages) {
       const removeIndexes = JSON.parse(removedImages);
       product.productImage = product.productImage.filter(
         (_, index) => !removeIndexes.includes(index),
       );
+    }
+
+    const newImageCount = req.files?.length || 0;
+    const remainingImageCount = product.productImage.length;
+    if (remainingImageCount + newImageCount < 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Product must have at least 3 images",
+      });
     }
 
     if (req.files && req.files.length > 0) {
@@ -260,12 +336,12 @@ const editProduct = async (req, res) => {
       product.productImage.push(...newImages);
     }
 
-    product.name = name;
-    product.description = description;
+    product.name = name.trim();
+    product.description = description.trim();
     product.category = category;
-    product.brand = brand;
-    product.regularPrice = regularPrice;
-    product.salePrice = salePrice;
+    product.brand = brand.trim();
+    product.regularPrice = regPrice;
+    product.salePrice = salePrc;
     product.variants = parsedVariants;
 
     if (req.body.specifications) {
@@ -277,30 +353,24 @@ const editProduct = async (req, res) => {
     }
 
     await product.save();
-
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Edit product error:", error);
-    res.status(500).json({ success: false });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
 const updateStock = async (req, res) => {
   try {
     const { productId, action, color, quantity } = req.body;
-
     const product = await Product.findById(productId);
-
-    if (!product) {
-      return res.json({ success: false });
-    }
+    if (!product)
+      return res.json({ success: false, message: "Product not found" });
 
     if (action === "set") {
       const variant = product.variants.find((v) => v.color === color);
-
-      if (!variant) {
-        return res.json({ success: false });
-      }
+      if (!variant)
+        return res.json({ success: false, message: "Variant not found" });
       variant.quantity = Math.max(0, Number(quantity));
     }
 
@@ -324,11 +394,10 @@ const updateStock = async (req, res) => {
 const getProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate("category");
-    if (!product) {
+    if (!product)
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
-    }
     res.json(product);
   } catch (error) {
     console.error("Get product error:", error);
@@ -352,7 +421,9 @@ const deleteProduct = async (req, res) => {
     res.json({ success: true, message: "Product deleted successfully" });
   } catch (error) {
     console.error("DELETE PRODUCT ERROR:", error);
-    res.status(500).json({ success: false, message: "Failed to delete product" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to delete product" });
   }
 };
 

@@ -251,11 +251,25 @@ const approveReturn = async (req, res) => {
       );
     }
 
+    const returnItems = order.orderedItems.filter(
+      (item) => item.itemStatus === "return-requested",
+    );
+
+    for (const item of returnItems) {
+      await Product.updateOne(
+        { _id: item.productId, "variants.color": item.color },
+        { $inc: { "variants.$.quantity": item.quantity } },
+      );
+    }
+
     const shouldRefund =
       order.paymentMethod !== "COD" && order.paymentStatus === "paid";
 
     if (shouldRefund) {
-      const refundAmount = order.refundAmount || order.finalAmount;
+      const refundAmount = returnItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
+      );
       const user = await User.findById(order.userId);
       user.wallet = (user.wallet || 0) + refundAmount;
       user.walletTransactions.push({

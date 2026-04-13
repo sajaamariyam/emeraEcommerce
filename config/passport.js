@@ -8,12 +8,18 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/google/callback",
+      callbackURL:
+        process.env.GOOGLE_CALLBACK_URL ||
+        "http://localhost:3000/auth/google/callback",
     },
 
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const email = profile.emails[0].value;
+        const email = profile.emails?.[0]?.value;
+
+        if (!email) {
+          return done(null, false, { message: "no_email" });
+        }
 
         let user = await User.findOne({ email });
 
@@ -34,7 +40,7 @@ passport.use(
 
         const newUser = new User({
           name: profile.displayName,
-          email: email,
+          email,
           googleId: profile.id,
           profileImage: profile.photos?.[0]?.value || "",
           isAdmin: false,
@@ -44,7 +50,7 @@ passport.use(
         await newUser.save();
         return done(null, newUser);
       } catch (error) {
-        console.error("Google Auth Error", error);
+        console.error("Google Auth Error:", error);
         return done(error, null);
       }
     },
@@ -54,15 +60,18 @@ passport.use(
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
 
-passport.deserializeUser((id, done) => {
-  User.findById(id)
-    .then((user) => {
-      done(null, user);
-    })
-    .catch((err) => {
-      done(err, null);
-    });
+    if (!user || user.isBlocked) {
+      return done(null, false);
+    }
+
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
 });
 
 module.exports = passport;

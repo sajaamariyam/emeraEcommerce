@@ -12,11 +12,20 @@ const getAvailableCoupons = async (req, res) => {
     const coupons = await Coupon.find({
       isActive: true,
       expiryDate: { $gte: now },
-      isUsed: false,
-      $or: [
-        { userId: { $exists: false } },
-        { userId: null },
-        { userId: userId },
+      $and: [
+        {
+          $or: [{ isUsed: { $ne: true } }, { isPercentage: true }],
+        },
+        {
+          $or: [{ usedBy: { $exists: false } }, { usedBy: { $nin: [userId] } }],
+        },
+        {
+          $or: [
+            { userId: { $exists: false } },
+            { userId: null },
+            { userId: userId },
+          ],
+        },
       ],
     }).select(
       "code discountAmount minPurchaseAmount expiryDate isPercentage maxDiscount",
@@ -37,7 +46,8 @@ const applyCoupon = async (req, res) => {
     if (!userId)
       return res.status(401).json({ success: false, message: "Please login" });
 
-    const { couponCode } = req.body;
+    const { couponCode, isBuyNow, buyNowProductId, buyNowQty } = req.body;
+
     if (!couponCode)
       return res
         .status(400)
@@ -47,7 +57,6 @@ const applyCoupon = async (req, res) => {
       code: couponCode.toUpperCase().trim(),
       isActive: true,
       expiryDate: { $gte: new Date() },
-      isUsed: false,
     });
 
     if (!coupon)
@@ -55,24 +64,44 @@ const applyCoupon = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Invalid or expired coupon" });
 
-    if (coupon.userId && coupon.userId.toString() !== userId.toString())
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "This coupon is not valid for your account",
-        });
+    const alreadyUsed =
+      (coupon.usedBy &&
+        coupon.usedBy.some((id) => id.toString() === userId.toString())) ||
+      (coupon.isUsed && !coupon.isPercentage);
 
-    const cart = await Cart.findOne({ userId });
-    if (!cart || !cart.items.length)
+    if (alreadyUsed)
       return res
         .status(400)
-        .json({ success: false, message: "Your cart is empty" });
+        .json({ success: false, message: "You have already used this coupon" });
 
-    const subtotal = cart.items.reduce(
-      (sum, i) => sum + i.price * i.quantity,
-      0,
-    );
+    if (coupon.userId && coupon.userId.toString() !== userId.toString())
+      return res.status(403).json({
+        success: false,
+        message: "This coupon is not valid for your account",
+      });
+
+    let subtotal = 0;
+
+    if (isBuyNow && buyNowProductId) {
+      const Product = require("../../models/productSchema");
+      const product = await Product.findById(buyNowProductId);
+      if (product) {
+        const qty = Math.max(1, parseInt(buyNowQty) || 1);
+        const price =
+          Number(product.salePrice) ||
+          Number(product.price) ||
+          Number(product.regularPrice) ||
+          0;
+        subtotal = price * qty;
+      }
+    } else {
+      const cart = await Cart.findOne({ userId });
+      if (!cart || !cart.items.length)
+        return res
+          .status(400)
+          .json({ success: false, message: "Your cart is empty" });
+      subtotal = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    }
 
     const minPurchase = coupon.minPurchaseAmount || coupon.minOrderAmount || 0;
     if (subtotal < minPurchase)
@@ -85,17 +114,18 @@ const applyCoupon = async (req, res) => {
 
     if (coupon.isPercentage) {
       discountAmount = Math.round((subtotal * coupon.discountAmount) / 100);
-      if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) {
-        discountAmount = coupon.maxDiscount;
+      if (coupon.maxDiscount != null && coupon.maxDiscount > 0) {
+        discountAmount = Math.min(discountAmount, coupon.maxDiscount);
       }
     } else {
       discountAmount = coupon.discountAmount || coupon.discountValue || 0;
     }
 
-    if (discountAmount > subtotal) discountAmount = subtotal;
+    discountAmount = Math.min(discountAmount, subtotal);
 
-    const tax = Math.round(subtotal * 0.18);
-    const newTotal = Math.max(subtotal + tax - discountAmount, 0);
+    const discountedSubtotal = subtotal - discountAmount;
+    const tax = Math.round(discountedSubtotal * 0.18);
+    const newTotal = Math.max(discountedSubtotal + tax, 0);
 
     return res.json({
       success: true,
@@ -115,17 +145,22 @@ const applyCoupon = async (req, res) => {
 const markCouponAsUsed = async (couponCode, userId) => {
   try {
     if (!couponCode) return;
-    await Coupon.findOneAndUpdate(
-      {
-        code: couponCode.toUpperCase().trim(),
-        $or: [
-          { userId: { $exists: false } },
-          { userId: null },
-          { userId: userId },
-        ],
-      },
-      { $set: { isUsed: true, isActive: false } },
-    );
+
+    const coupon = await Coupon.findOne({
+      code: couponCode.toUpperCase().trim(),
+    });
+
+    if (!coupon) return;
+
+    const update = {
+      $addToSet: { usedBy: userId },
+    };
+
+    if (!coupon.isPercentage) {
+      update.$set = { isUsed: true, isActive: false };
+    }
+
+    await Coupon.findByIdAndUpdate(coupon._id, update);
   } catch (error) {
     console.error("MARK COUPON USED ERROR:", error);
   }

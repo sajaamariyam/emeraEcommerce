@@ -1,38 +1,45 @@
 const Offer = require("../models/offerSchema");
-
 const getBestOffer = async (product) => {
   const now = new Date();
 
-  const productOffer = await Offer.findOne({
-    offerType: "product",
-    productId: product._id,
-    isActive: true,
-    startDate: { $lte: now },
-    endDate: { $gte: now },
-  });
+  const basePrice =
+    Number(product.salePrice) ||
+    Number(product.price) ||
+    Number(product.regularPrice) ||
+    Number(product.basePrice) ||
+    0;
 
-  const categoryOffer = await Offer.findOne({
-    offerType: "category",
-    categoryId: product.category,
-    isActive: true,
-    startDate: { $lte: now },
-    endDate: { $gte: now },
-  });
+  const categoryId = product.category?._id ?? product.category ?? null;
+
+  const [productOffer, categoryOffer] = await Promise.all([
+    Offer.findOne({
+      offerType: "product",
+      productId: product._id,
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    }),
+    categoryId
+      ? Offer.findOne({
+          offerType: "category",
+          categoryId: categoryId,
+          isActive: true,
+          startDate: { $lte: now },
+          endDate: { $gte: now },
+        })
+      : Promise.resolve(null),
+  ]);
 
   let discount = 0;
-
-  if (productOffer && categoryOffer) {
-    discount = Math.max(
-      productOffer.discountPercentage,
-      categoryOffer.discountPercentage,
-    );
-  } else if (productOffer) {
-    discount = productOffer.discountPercentage;
-  } else if (categoryOffer) {
+  if (productOffer) discount = productOffer.discountPercentage;
+  if (categoryOffer && categoryOffer.discountPercentage > discount) {
     discount = categoryOffer.discountPercentage;
   }
 
-  const finalPrice = product.salePrice - (product.salePrice * discount) / 100;
+  const finalPrice =
+    discount > 0
+      ? Math.round(basePrice - (basePrice * discount) / 100)
+      : basePrice;
 
   return { discount, finalPrice };
 };
