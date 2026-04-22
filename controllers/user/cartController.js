@@ -39,17 +39,26 @@ const loadCart = async (req, res) => {
         continue;
       }
 
-      const itemTotal = item.price * item.quantity;
+      const offer = await getBestOffer(item.productId);
+      const livePrice = Math.round(offer.finalPrice);
+
+      if (item.price !== livePrice) {
+        item.price = livePrice;
+      }
+
+      const itemTotal = livePrice * item.quantity;
       subtotal += itemTotal;
 
       cartItems.push({
         product: item.productId,
         color: item.color,
         quantity: item.quantity,
-        price: item.price,
+        price: livePrice,
         totalPrice: itemTotal,
       });
     }
+
+    await cart.save();
 
     const tax = Math.round(subtotal * 0.18);
     const total = subtotal + tax;
@@ -72,14 +81,11 @@ const loadCart = async (req, res) => {
 const addToCart = async (req, res) => {
   try {
     const userId = req.session.user;
-    const { productId, color, quantity, buyNow } = req.body; 
+    const { productId, color, quantity, buyNow } = req.body;
     const MAX_CART_QTY = 5;
 
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        code: "AUTH_REQUIRED",
-      });
+      return res.status(401).json({ success: false, code: "AUTH_REQUIRED" });
     }
 
     if (buyNow) {
@@ -98,38 +104,31 @@ const addToCart = async (req, res) => {
       !product.isListed ||
       !product.category.isListed
     ) {
-      return res.status(400).json({
-        success: false,
-        message: "Product unavailable",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Product unavailable" });
     }
 
     let selectedColor = color;
 
     if (!selectedColor) {
       const firstAvailable = product.variants.find((v) => v.quantity > 0);
-
       if (!firstAvailable) {
-        return res.status(400).json({
-          success: false,
-          message: "Out of stock",
-        });
+        return res
+          .status(400)
+          .json({ success: false, message: "Out of stock" });
       }
-
       selectedColor = firstAvailable.color;
     }
 
     const variant = product.variants.find((v) => v.color === selectedColor);
-
     if (!variant || variant.quantity <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Selected variant out of stock",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Selected variant out of stock" });
     }
 
     let cart = await Cart.findOne({ userId });
-
     if (!cart) {
       cart = new Cart({ userId, items: [] });
     }
@@ -138,28 +137,23 @@ const addToCart = async (req, res) => {
       (i) => i.productId.toString() === productId && i.color === selectedColor,
     );
 
+    const offer = await getBestOffer(product);
+    const finalPrice = Math.round(offer.finalPrice);
+
     if (existingItem) {
       if (existingItem.quantity + 1 > variant.quantity) {
-        return res.status(400).json({
-          success: false,
-          message: "Stock limit reached",
-        });
+        return res
+          .status(400)
+          .json({ success: false, message: "Stock limit reached" });
       }
-
       if (existingItem.quantity + 1 > MAX_CART_QTY) {
-        return res.status(400).json({
-          success: false,
-          message: "Maximum quantity limit reached",
-        });
+        return res
+          .status(400)
+          .json({ success: false, message: "Maximum quantity limit reached" });
       }
-
-      const offer = await getBestOffer(product);
-      existingItem.price = Math.round(offer.finalPrice);
+      existingItem.price = finalPrice;
       existingItem.quantity += 1;
     } else {
-      const offer = await getBestOffer(product);
-      const finalPrice = Math.round(offer.finalPrice);
-
       cart.items.push({
         productId,
         color: selectedColor,
@@ -169,21 +163,14 @@ const addToCart = async (req, res) => {
     }
 
     await cart.save();
-
     await User.updateOne({ _id: userId }, { $pull: { wishlist: productId } });
 
     const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
-    return res.json({
-      success: true,
-      cartCount,
-    });
+    return res.json({ success: true, cartCount });
   } catch (error) {
     console.error("ADD TO CART ERROR:", error);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong",
-    });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -193,14 +180,12 @@ const incrementQty = async (req, res) => {
     const { productId } = req.params;
     const { color } = req.body;
 
-    console.log("PARAMS:", req.params);
-    console.log("BODY:", req.body);
-
     const cart = await Cart.findOne({ userId }).populate("items.productId");
-    if (!cart)
+    if (!cart) {
       return res
         .status(400)
         .json({ success: false, message: "Cart not found" });
+    }
 
     const item = cart.items.find(
       (i) =>
@@ -208,65 +193,61 @@ const incrementQty = async (req, res) => {
         i.color.toLowerCase() === color.toLowerCase(),
     );
 
-    if (!item)
+    if (!item) {
       return res
         .status(400)
         .json({ success: false, message: "Item not found" });
+    }
 
     if (item.productId.isBlocked || !item.productId.isListed) {
-      return res.status(400).json({
-        success: false,
-        message: "Product unavailable",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Product unavailable" });
     }
-
-    if (!item.productId.variants || !item.productId.variants.length) {
-      return res.status(400).json({
-        success: false,
-        message: "variants not available for this product",
-      });
-    }
-
-    console.log("VARIANTS:", item.productId.variants);
 
     const variant = item.productId.variants.find(
       (v) => v.color.toLowerCase() === color.toLowerCase(),
     );
-
     if (!variant) {
-      return res.status(400).json({
-        success: false,
-        message: "Selected variant not found",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Selected variant not found" });
     }
+
     const MAX_CART_QTY = 5;
-
     if (item.quantity + 1 > variant.quantity) {
-      return res.status(400).json({
-        success: false,
-        message: "Out of stock",
-      });
+      return res.status(400).json({ success: false, message: "Out of stock" });
     }
-
     if (item.quantity + 1 > MAX_CART_QTY) {
-      return res.status(400).json({
-        success: false,
-        message: "Maximum quantity limit reached",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Maximum quantity limit reached" });
     }
 
+    const offer = await getBestOffer(item.productId);
+    item.price = Math.round(offer.finalPrice);
     item.quantity += 1;
+
     await cart.save();
 
     const updatedCart = await Cart.findOne({ userId });
+    let subtotal = 0;
+    updatedCart.items.forEach((i) => {
+      subtotal += i.price * i.quantity;
+    });
+    const tax = Math.round(subtotal * 0.18);
+    const total = subtotal + tax;
 
     res.json({
       success: true,
       quantity: item.quantity,
       itemTotal: item.price * item.quantity,
+      subtotal,
+      tax,
+      total,
     });
   } catch (error) {
-    console.log("INCREMENT ERROR:", error);
+    console.error("INCREMENT ERROR:", error);
     res.status(500).json({ success: false });
   }
 };
@@ -278,8 +259,11 @@ const decrementQty = async (req, res) => {
     const { color } = req.body;
 
     const cart = await Cart.findOne({ userId });
-    if (!cart)
-      return res.status(400).json({ success: true, message: "Cart not found" });
+    if (!cart) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Cart not found" });
+    }
 
     const index = cart.items.findIndex(
       (i) =>
@@ -287,8 +271,11 @@ const decrementQty = async (req, res) => {
         i.color.toLowerCase() === color.toLowerCase(),
     );
 
-    if (index === -1)
-      return res.status(400).json({ success: true, message: "Item not found" });
+    if (index === -1) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Item not found" });
+    }
 
     if (cart.items[index].quantity === 1) {
       cart.items.splice(index, 1);
@@ -300,19 +287,25 @@ const decrementQty = async (req, res) => {
 
     const updatedCart = await Cart.findOne({ userId });
     let subtotal = 0;
-    updatedCart.items.forEach((i) => {
-      subtotal += i.price * i.quantity;
-    });
+    if (updatedCart) {
+      updatedCart.items.forEach((i) => {
+        subtotal += i.price * i.quantity;
+      });
+    }
     const tax = Math.round(subtotal * 0.18);
     const total = subtotal + tax;
-    const cartEmpty = updatedCart.items.length === 0;
+    const cartEmpty = !updatedCart || updatedCart.items.length === 0;
 
-    const updatedItem = updatedCart.items.find(
-      (i) => i.productId.toString() === productId,
+    const updatedItem = updatedCart?.items.find(
+      (i) =>
+        i.productId.toString() === productId &&
+        i.color.toLowerCase() === color.toLowerCase(),
     );
+
     res.json({
       success: true,
       quantity: updatedItem ? updatedItem.quantity : 0,
+      itemTotal: updatedItem ? updatedItem.price * updatedItem.quantity : 0,
       subtotal,
       tax,
       total,
@@ -336,18 +329,18 @@ const removeItem = async (req, res) => {
     );
 
     if (result.modifiedCount === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Item not found or already removed",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Item not found or already removed" });
     }
 
     const updatedCart = await Cart.findOne({ userId });
     let subtotal = 0;
-    if (updatedCart)
+    if (updatedCart) {
       updatedCart.items.forEach((i) => {
         subtotal += i.price * i.quantity;
       });
+    }
     const tax = Math.round(subtotal * 0.18);
     const total = subtotal + tax;
     const cartEmpty = !updatedCart || updatedCart.items.length === 0;

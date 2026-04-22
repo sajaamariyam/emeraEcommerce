@@ -1,13 +1,7 @@
 const User = require("../models/userSchema");
+
 const userAuth = async (req, res, next) => {
   try {
-    if (req.user === false) {
-      return req.session.destroy(() => {
-        res.clearCookie("connect.sid");
-        return res.redirect("/login?blocked=true");
-      });
-    }
-
     if (!req.session.user) {
       req.session.redirectTo = req.originalUrl;
       return req.session.save(() => {

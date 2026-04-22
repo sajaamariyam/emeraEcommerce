@@ -25,7 +25,6 @@ const loadOffers = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(LIMIT);
-
     const products = await Product.find({ isListed: true });
     const categories = await Category.find({ isListed: true });
 
@@ -62,7 +61,6 @@ const createOffer = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Product is required" });
-
     if (offerType === "category" && !categoryId)
       return res
         .status(400)
@@ -83,7 +81,6 @@ const createOffer = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Invalid dates provided" });
-
     if (start >= end)
       return res
         .status(400)
@@ -91,8 +88,8 @@ const createOffer = async (req, res) => {
 
     const duplicateQuery =
       offerType === "product"
-        ? { offerType: "product", productId: productId, isActive: true }
-        : { offerType: "category", categoryId: categoryId, isActive: true };
+        ? { offerType: "product", productId, isActive: true }
+        : { offerType: "category", categoryId, isActive: true };
 
     const existingOffer = await Offer.findOne(duplicateQuery);
     if (existingOffer)
@@ -121,6 +118,73 @@ const createOffer = async (req, res) => {
   }
 };
 
+const editOffer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { discountPercentage, startDate, endDate, isActive } = req.body;
+
+    const offer = await Offer.findById(id);
+    if (!offer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Offer not found" });
+    }
+
+    const pct = Number(discountPercentage);
+    if (!pct || pct <= 0 || pct >= 100) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Discount must be between 1 and 99" });
+    }
+
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid dates provided" });
+    }
+    if (start >= end) {
+      return res
+        .status(400)
+        .json({ success: false, message: "End date must be after start date" });
+    }
+
+    offer.discountPercentage = pct;
+    offer.startDate = start;
+    offer.endDate = end;
+    if (isActive !== undefined)
+      offer.isActive = isActive === "true" || isActive === true;
+
+    await offer.save();
+    return res.json({ success: true, message: "Offer updated successfully" });
+  } catch (error) {
+    console.error("EDIT OFFER ERROR:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+const getOffer = async (req, res) => {
+  try {
+    const offer = await Offer.findById(req.params.id)
+      .populate("productId")
+      .populate("categoryId");
+
+    if (!offer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Offer not found" });
+    }
+    res.json({ success: true, offer });
+  } catch (error) {
+    console.error("GET OFFER ERROR:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 const toggleOfferStatus = async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id);
@@ -144,4 +208,11 @@ const deleteOffer = async (req, res) => {
   }
 };
 
-module.exports = { loadOffers, createOffer, toggleOfferStatus, deleteOffer };
+module.exports = {
+  loadOffers,
+  createOffer,
+  editOffer,
+  getOffer,
+  toggleOfferStatus,
+  deleteOffer,
+};

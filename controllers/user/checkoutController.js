@@ -1,5 +1,3 @@
-const crypto = require("crypto");
-
 const Cart = require("../../models/cartSchema");
 const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
@@ -49,22 +47,12 @@ const mapAddress = (addr) => {
   };
 };
 
-function recalculateTotals(newSubtotal) {
-  const discount = appliedDiscount || 0;
-  const discountedSubtotal = newSubtotal - discount;
-  const tax = Math.round(discountedSubtotal * 0.18);
-  const total = discountedSubtotal + tax;
-
-  document.getElementById("taxDisplay").textContent = `₹${tax}`;
-  document.getElementById("totalDisplay").textContent = `₹${total}`;
-}
-
 const getBestOfferPrice = async (product) => {
   const now = new Date();
 
   const basePrice =
-    Number(product.price) ||
     Number(product.regularPrice) ||
+    Number(product.price) ||
     Number(product.basePrice) ||
     0;
 
@@ -89,7 +77,6 @@ const getBestOfferPrice = async (product) => {
   ]);
 
   let discount = 0;
-
   if (productOffer) discount = productOffer.discountPercentage;
   if (categoryOffer && categoryOffer.discountPercentage > discount) {
     discount = categoryOffer.discountPercentage;
@@ -106,7 +93,6 @@ const computeCouponDiscount = (coupon, subtotal) => {
   if (!coupon) return 0;
 
   let discountAmount = 0;
-
   if (coupon.isPercentage) {
     discountAmount = Math.round((subtotal * coupon.discountAmount) / 100);
     if (coupon.maxDiscount != null && coupon.maxDiscount > 0) {
@@ -191,10 +177,8 @@ const loadCheckout = async (req, res) => {
       cartItems = await Promise.all(
         validItems.map(async (item) => {
           const p = item.productId;
-
           const variantStock =
             p.variants.find((v) => v.color === item.color)?.quantity || 0;
-
           const finalPrice = await getBestOfferPrice(p);
           const quantity = Math.max(1, parseInt(item.quantity) || 1);
 
@@ -217,16 +201,13 @@ const loadCheckout = async (req, res) => {
     const total = subtotal + tax;
 
     const user = await User.findById(userId);
-
     const walletBalance = Number(user.wallet) || 0;
 
     const coupons = await Coupon.find({
       isActive: true,
       expiryDate: { $gte: new Date() },
       $and: [
-        {
-          $or: [{ isUsed: { $ne: true } }, { isPercentage: true }],
-        },
+        { $or: [{ isUsed: { $ne: true } }, { isPercentage: true }] },
         {
           $or: [{ usedBy: { $exists: false } }, { usedBy: { $nin: [userId] } }],
         },
@@ -283,16 +264,12 @@ const placeOrder = async (req, res) => {
       method = paymentMethod.toLowerCase().trim();
     }
 
-    console.log("PAYMENT METHOD:", method);
-
     const user = await User.findById(userId);
-
     const rawAddress = user?.addresses.id(addressId);
     if (!rawAddress) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid address selected",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid address selected" });
     }
     const address = mapAddress(rawAddress);
 
@@ -302,13 +279,11 @@ const placeOrder = async (req, res) => {
     if (isBuyNow) {
       const product =
         await Product.findById(buyNowProductId).populate("category");
-
       if (!product) {
         return res
           .status(400)
           .json({ success: false, message: "Product not found" });
       }
-
       items = [
         {
           productId: product,
@@ -327,7 +302,6 @@ const placeOrder = async (req, res) => {
           .status(400)
           .json({ success: false, message: "Your cart is empty" });
       }
-
       items = cartRef.items;
     }
 
@@ -353,7 +327,6 @@ const placeOrder = async (req, res) => {
     );
 
     let discount = 0;
-
     if (couponCode) {
       const coupon = await Coupon.findOne({
         code: couponCode.toUpperCase().trim(),
@@ -416,10 +389,9 @@ const placeOrder = async (req, res) => {
       const walletBalance = Number(user.wallet) || 0;
       if (walletBalance < finalAmount) {
         await Order.deleteOne({ _id: order._id });
-        return res.status(400).json({
-          success: false,
-          message: "Insufficient wallet balance",
-        });
+        return res
+          .status(400)
+          .json({ success: false, message: "Insufficient wallet balance" });
       }
 
       user.wallet -= finalAmount;
@@ -429,8 +401,8 @@ const placeOrder = async (req, res) => {
         description: `Payment for order ${order.orderId}`,
         date: new Date(),
       });
-
       await user.save();
+
       order.paymentStatus = "paid";
       await order.save();
     }
@@ -457,23 +429,20 @@ const placeOrder = async (req, res) => {
     });
   } catch (error) {
     console.error("PLACE ORDER ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to place order",
-    });
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to place order" });
   }
 };
 
 const handlePaymentFailure = async (req, res) => {
   try {
     const order = await Order.findOne({ orderId: req.body.orderId });
-
     if (order) {
       order.status = "cancelled";
       order.cancelReason = req.body.error_description || "Payment failed";
       await order.save();
     }
-
     res.json({ success: true });
   } catch (error) {
     console.error("PAYMENT FAILURE ERROR:", error);

@@ -7,17 +7,20 @@ const getWallet = async (req, res) => {
     const user = await User.findById(req.session.user).select(
       "wallet walletTransactions name",
     );
-    if (!user)
+    if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
+    }
+
+    const transactions = (user.walletTransactions || []).sort(
+      (a, b) => new Date(b.date) - new Date(a.date),
+    );
 
     return res.json({
       success: true,
       balance: user.wallet || 0,
-      transactions: (user.walletTransactions || []).sort(
-        (a, b) => new Date(b.date) - new Date(a.date),
-      ),
+      transactions,
     });
   } catch (error) {
     console.error("GET WALLET ERROR:", error);
@@ -39,10 +42,11 @@ const addMoneyInit = async (req, res) => {
     }
 
     const user = await User.findById(req.session.user);
-    if (!user)
+    if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
+    }
 
     let rzpOrder;
     try {
@@ -110,7 +114,7 @@ const verifyAndCreditWallet = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "Payment verification failed. If money was deducted, it will be refunded within 5–7 business days. Contact support with your payment ID.",
+          "Payment verification failed. If money was deducted, it will be refunded within 5–7 business days.",
         paymentId: razorpay_payment_id,
       });
     }
@@ -123,7 +127,7 @@ const verifyAndCreditWallet = async (req, res) => {
       return res.status(502).json({
         success: false,
         message:
-          "Could not verify payment with Razorpay. Please contact support with your payment ID.",
+          "Could not verify payment with Razorpay. Please contact support.",
         paymentId: razorpay_payment_id,
       });
     }
@@ -131,10 +135,11 @@ const verifyAndCreditWallet = async (req, res) => {
     const amountInRupees = rzpOrder.amount / 100;
 
     const user = await User.findById(req.session.user);
-    if (!user)
+    if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
+    }
 
     const alreadyCredited = (user.walletTransactions || []).some(
       (t) => t.razorpayPaymentId === razorpay_payment_id,
@@ -143,7 +148,7 @@ const verifyAndCreditWallet = async (req, res) => {
       return res.json({
         success: true,
         balance: user.wallet,
-        message: "Payment already credited to wallet.",
+        message: "Payment already credited.",
       });
     }
 
@@ -162,7 +167,7 @@ const verifyAndCreditWallet = async (req, res) => {
       return res.status(500).json({
         success: false,
         message:
-          "Payment was received but wallet update failed. Please contact support with your payment ID and we will credit your wallet manually.",
+          "Payment received but wallet update failed. Contact support with your payment ID.",
         paymentId: razorpay_payment_id,
       });
     }
@@ -174,26 +179,21 @@ const verifyAndCreditWallet = async (req, res) => {
     });
   } catch (error) {
     console.error("WALLET VERIFY ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message:
-        "Failed to verify payment. Please contact support if amount was deducted.",
-    });
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to verify payment." });
   }
 };
 
 const handleWalletPaymentFailure = async (req, res) => {
   try {
     const { razorpay_order_id, error_description } = req.body;
-
     console.log(
-      `WALLET: Payment failed/dismissed for order ${razorpay_order_id}. Reason: ${error_description}`,
+      `WALLET: Payment failed for order ${razorpay_order_id}. Reason: ${error_description}`,
     );
-
     return res.json({
       success: true,
-      message:
-        "Payment was not completed. No amount was deducted from your account.",
+      message: "Payment was not completed. No amount was deducted.",
     });
   } catch (error) {
     console.error("WALLET FAILURE HANDLER ERROR:", error);

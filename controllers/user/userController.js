@@ -522,19 +522,24 @@ const resetPassword = async (req, res) => {
   }
 };
 
+function parseCategoryParam(raw) {
+  if (!raw) return [];
+  return (Array.isArray(raw) ? raw : [raw]).filter(Boolean);
+}
+
 const loadProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 8;
     const skip = (page - 1) * limit;
     const search = req.query.search || "";
-    const category = req.query.category || "";
+    const categoryIds = parseCategoryParam(req.query.category);
     const sort = req.query.sort || "newest";
     const maxPrice = parseInt(req.query.maxPrice) || 1000000;
 
     const query = { isBlocked: false, isListed: true };
     if (search) query.name = { $regex: search, $options: "i" };
-    if (category) query.category = category;
+    if (categoryIds.length > 0) query.category = { $in: categoryIds };
 
     let sortOption = { createdAt: -1 };
     switch (sort) {
@@ -595,7 +600,7 @@ const loadProducts = async (req, res) => {
       totalPages,
       search,
       sort,
-      category,
+      selectedCategories: categoryIds,
       maxPrice,
       showAnnouncement: false,
     });
@@ -699,11 +704,11 @@ const searchProducts = async (req, res) => {
     const skip = (page - 1) * limit;
     const maxPrice = Number(req.query.maxPrice) || 100000;
     const sort = req.query.sort || "newest";
-    const category = req.query.category || "";
+    const categoryIds = parseCategoryParam(req.query.category);
 
     const query = { isBlocked: false, isListed: true };
     if (search) query.name = { $regex: search, $options: "i" };
-    if (category) query.category = category;
+    if (categoryIds.length > 0) query.category = { $in: categoryIds };
 
     let sortOption = { createdAt: -1 };
     switch (sort) {
@@ -763,7 +768,7 @@ const searchProducts = async (req, res) => {
       categories,
       search,
       sort,
-      category,
+      selectedCategories: categoryIds,
       maxPrice,
       currentPage: page,
       totalPages,
@@ -778,7 +783,17 @@ const searchProducts = async (req, res) => {
 const loadProfile = async (req, res) => {
   try {
     const userData = await User.findById(req.session.user);
-    if (!userData) return res.redirect("/login");
+
+    if (!userData) {
+      return res.redirect("/login");
+    }
+
+    if (userData.isBlocked) {
+      return req.session.destroy(() => {
+        res.clearCookie("connect.sid");
+        res.redirect("/login?blocked=true");
+      });
+    }
 
     userData.addresses = userData.addresses.sort(
       (a, b) => b.isDefault - a.isDefault,
@@ -797,7 +812,7 @@ const loadProfile = async (req, res) => {
     });
   } catch (error) {
     console.log("PROFILE LOAD ERROR", error);
-    res.status(500).json({ message: "Profile update failed" });
+    res.redirect("/pageNotFound");
   }
 };
 

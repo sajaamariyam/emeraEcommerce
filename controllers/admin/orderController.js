@@ -2,6 +2,55 @@ const Order = require("../../models/orderSchema");
 const User = require("../../models/userSchema");
 const Product = require("../../models/productSchema");
 
+const STATUS_RANK = {
+  pending: 0,
+  processing: 1,
+  shipped: 2,
+  "out-for-delivery": 3,
+  delivered: 4,
+  cancelled: 5,
+  "return-requested": 6,
+  returned: 7,
+};
+
+function isRollback(current, next) {
+  if (current === "cancelled" || current === "returned") return true;
+  const curRank = STATUS_RANK[current] ?? -1;
+  const nextRank = STATUS_RANK[next] ?? -1;
+  if (next === "cancelled" && curRank < STATUS_RANK["delivered"]) return false;
+  if (next === "return-requested" && current === "delivered") return false;
+  if (next === "returned" && current === "return-requested") return false;
+  return nextRank < curRank;
+}
+
+function computeRefundAmount(order, returnItems) {
+  const activeItems = order.orderedItems.filter(
+    (i) =>
+      i.itemStatus === "active" ||
+      returnItems.some((r) => r._id?.toString() === i._id?.toString()),
+  );
+
+  const totalSubtotal = activeItems.reduce(
+    (sum, i) => sum + i.price * i.quantity,
+    0,
+  );
+  const returnSubtotal = returnItems.reduce(
+    (sum, i) => sum + i.price * i.quantity,
+    0,
+  );
+
+  if (totalSubtotal === 0) return 0;
+
+  const ratio = returnSubtotal / totalSubtotal;
+
+  const discount = order.discount || 0;
+  const discountedSub = Math.max(totalSubtotal - discount, 0);
+  const tax = Math.round(discountedSub * 0.18);
+  const gross = discountedSub + tax;
+
+  return Math.round(gross * ratio);
+}
+
 const loadOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -23,11 +72,9 @@ const loadOrders = async (req, res) => {
       }).select("_id");
 
       const searchConditions = [{ orderId: { $regex: search, $options: "i" } }];
-
       if (users.length > 0) {
         searchConditions.push({ userId: { $in: users.map((u) => u._id) } });
       }
-
       query.$and = [{ $or: searchConditions }];
     }
 
@@ -43,9 +90,6 @@ const loadOrders = async (req, res) => {
     switch (sortBy) {
       case "date-asc":
         sortQuery.createdAt = 1;
-        break;
-      case "date-desc":
-        sortQuery.createdAt = -1;
         break;
       case "amount-desc":
         sortQuery.finalAmount = -1;
@@ -66,17 +110,23 @@ const loadOrders = async (req, res) => {
       .limit(limit)
       .lean();
 
-    const pendingOrders = await Order.countDocuments({ status: "pending" });
-    const shippedOrders = await Order.countDocuments({ status: "shipped" });
-    const outForDelivery = await Order.countDocuments({
-      status: "out-for-delivery",
-    });
-    const deliveredOrders = await Order.countDocuments({ status: "delivered" });
-    const cancelledOrders = await Order.countDocuments({ status: "cancelled" });
-    const returnRequestedOrders = await Order.countDocuments({
-      status: "return-requested",
-    });
-    const returnedOrders = await Order.countDocuments({ status: "returned" });
+    const [
+      pendingOrders,
+      shippedOrders,
+      outForDelivery,
+      deliveredOrders,
+      cancelledOrders,
+      returnRequestedOrders,
+      returnedOrders,
+    ] = await Promise.all([
+      Order.countDocuments({ status: "pending" }),
+      Order.countDocuments({ status: "shipped" }),
+      Order.countDocuments({ status: "out-for-delivery" }),
+      Order.countDocuments({ status: "delivered" }),
+      Order.countDocuments({ status: "cancelled" }),
+      Order.countDocuments({ status: "return-requested" }),
+      Order.countDocuments({ status: "returned" }),
+    ]);
 
     res.render("admin/orders", {
       admin: res.locals.admin,
@@ -103,9 +153,7 @@ const loadOrders = async (req, res) => {
 
 const getOrderDetails = async (req, res) => {
   try {
-    const orderId = req.params.id;
-
-    const order = await Order.findById(orderId)
+    const order = await Order.findById(req.params.id)
       .populate("userId")
       .populate("orderedItems.productId")
       .lean();
@@ -127,10 +175,9 @@ const updateOrderStatus = async (req, res) => {
     const { orderId, status } = req.body;
 
     if (!orderId || !status) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing orderId or status",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing orderId or status" });
     }
 
     const ALLOWED_STATUSES = [
@@ -153,24 +200,33 @@ const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(orderId).populate(
       "orderedItems.productId",
     );
-
     if (!order) {
       return res
         .status(404)
         .json({ success: false, message: "Order not found" });
     }
 
+    if (isRollback(order.status, status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot change status from "${order.status}" to "${status}"`,
+      });
+    }
+
     if (status === "cancelled" && order.status !== "cancelled") {
       for (const item of order.orderedItems) {
-        if (item.productId && item.productId._id) {
+        if (item.itemStatus === "active" && item.productId?._id) {
           await Product.updateOne(
             { _id: item.productId._id, "variants.color": item.color },
             { $inc: { "variants.$.quantity": item.quantity } },
           );
         }
       }
-
-      if (order.paymentMethod !== "COD" && order.paymentStatus !== "refunded") {
+      if (
+        order.paymentMethod !== "COD" &&
+        order.paymentStatus !== "refunded" &&
+        order.paymentStatus === "paid"
+      ) {
         const user = await User.findById(order.userId);
         user.wallet = (user.wallet || 0) + order.finalAmount;
         user.walletTransactions.push({
@@ -182,30 +238,9 @@ const updateOrderStatus = async (req, res) => {
         await user.save();
         order.paymentStatus = "refunded";
       }
-    }
-
-    if (status === "returned" && order.status !== "returned") {
-      for (const item of order.orderedItems) {
-        if (item.productId && item.productId._id) {
-          await Product.updateOne(
-            { _id: item.productId._id, "variants.color": item.color },
-            { $inc: { "variants.$.quantity": item.quantity } },
-          );
-        }
-      }
-
-      if (order.paymentStatus !== "refunded") {
-        const user = await User.findById(order.userId);
-        user.wallet += order.finalAmount;
-        user.walletTransactions.push({
-          type: "credit",
-          amount: order.finalAmount,
-          description: `Refund for returned order ${order.orderId}`,
-          date: new Date(),
-        });
-        await user.save();
-        order.paymentStatus = "refunded";
-      }
+      order.orderedItems.forEach((item) => {
+        if (item.itemStatus === "active") item.itemStatus = "cancelled";
+      });
     }
 
     if (status === "delivered") {
@@ -230,7 +265,6 @@ const approveReturn = async (req, res) => {
     const { id } = req.params;
 
     const order = await Order.findById(id);
-
     if (!order) {
       return res
         .status(404)
@@ -244,32 +278,24 @@ const approveReturn = async (req, res) => {
       });
     }
 
-    for (const item of order.orderedItems) {
-      await Product.updateOne(
-        { _id: item.productId, "variants.color": item.color },
-        { $inc: { "variants.$.quantity": item.quantity } },
-      );
-    }
-
     const returnItems = order.orderedItems.filter(
       (item) => item.itemStatus === "return-requested",
     );
 
-    for (const item of returnItems) {
+    const itemsToReturn =
+      returnItems.length > 0
+        ? returnItems
+        : order.orderedItems.filter((item) => item.itemStatus === "active");
+
+    for (const item of itemsToReturn) {
       await Product.updateOne(
         { _id: item.productId, "variants.color": item.color },
         { $inc: { "variants.$.quantity": item.quantity } },
       );
     }
 
-    const shouldRefund =
-      order.paymentMethod !== "COD" && order.paymentStatus === "paid";
-
-    if (shouldRefund) {
-      const refundAmount = returnItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
-      );
+    if (order.paymentMethod !== "COD" && order.paymentStatus === "paid") {
+      const refundAmount = computeRefundAmount(order, itemsToReturn);
       const user = await User.findById(order.userId);
       user.wallet = (user.wallet || 0) + refundAmount;
       user.walletTransactions.push({
@@ -281,6 +307,12 @@ const approveReturn = async (req, res) => {
       await user.save();
       order.paymentStatus = "refunded";
     }
+
+    itemsToReturn.forEach((item) => {
+      item.itemStatus = "returned";
+      item.returnStatus = "approved";
+      item.returnedAt = new Date();
+    });
 
     order.status = "returned";
     order.returnStatus = "approved";
@@ -303,7 +335,6 @@ const rejectReturn = async (req, res) => {
     const { id } = req.params;
 
     const order = await Order.findById(id);
-
     if (!order) {
       return res
         .status(404)
@@ -316,6 +347,13 @@ const rejectReturn = async (req, res) => {
         message: "Order is not in return-requested state",
       });
     }
+
+    order.orderedItems.forEach((item) => {
+      if (item.itemStatus === "return-requested") {
+        item.itemStatus = "active";
+        item.returnStatus = "rejected";
+      }
+    });
 
     order.status = "delivered";
     order.returnStatus = "rejected";
