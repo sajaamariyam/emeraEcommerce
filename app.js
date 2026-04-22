@@ -30,7 +30,7 @@ app.use(
     }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 72 * 60 * 60 * 1000,
     },
@@ -68,6 +68,7 @@ app.use(async (req, res, next) => {
       res.locals.user = null;
     }
   } catch (error) {
+    console.error("User middleware error:", error);
     res.locals.user = null;
   }
   next();
@@ -101,9 +102,10 @@ app.use("/admin", adminRouter);
 app.use("/", userRouter);
 app.use("/", paymentRouter);
 
-app.listen(process.env.PORT, () => {
-  console.log("server running http://localhost:3000/");
-  console.log("http://localhost:3000/admin/adminLogin");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
 
 module.exports = app;
