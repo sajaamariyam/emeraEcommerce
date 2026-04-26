@@ -8,14 +8,14 @@ const cartCount = require("./middlewares/cartCount");
 const wishlistCount = require("./middlewares/wishlistCount");
 const userHeader = require("./middlewares/userHeader");
 const nocache = require("nocache");
-const passport = require("./config/passport");
-const db = require("./config/db");
+// const passport = require("./config/passport");
+// const db = require("./config/db");
 const userRouter = require("./routes/userRouter");
 const adminRouter = require("./routes/adminRouter");
 const paymentRouter = require("./routes/paymentRouter");
 const User = require("./models/userSchema");
 
-db();
+// db();
 const app = express();
 
 app.use(
@@ -89,8 +89,8 @@ app.use(nocache());
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.json());
 
-app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.initialize());
+// app.use(passport.session());
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -104,8 +104,8 @@ app.use("/", paymentRouter);
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(3000, '0.0.0.0', () => {
+  console.log('Server running');
 });
 
 module.exports = app;
