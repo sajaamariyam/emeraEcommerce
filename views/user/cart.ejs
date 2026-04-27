@@ -37,10 +37,10 @@
                     <div class="flex flex-col sm:flex-row gap-8">
                     
                         <div class="w-full sm:w-48 h-48 bg-stone-200 overflow-hidden flex-shrink-0">
-                            <img src="<%= item.product.productImage?.[0]?.url || '/images/placeholder.png' %>">
-                                alt="<%= item.product.name %>"
-                                class="w-full h-full object-cover"
-                            >
+                            <img src="<%= item.product.productImage?.[0]?.url || '/images/placeholder.png' %>"
+                                    alt="<%= item.product.name %>"
+                                    class="w-full h-full object-cover"
+                                >
                         </div>
 
                         
@@ -66,32 +66,39 @@
                                 <% } %>
                             </div>
 
-                            <% if (item.product.stock === 0) { %>
-                            <p class="text-red-500 text-[10px] uppercase tracking-widest mt-2">
-                                Out of stock
-                            </p>
+                            <%
+                            const itemVariant = item.product.variants?.find(v => v.color === item.color);
+                            const variantQty = itemVariant ? itemVariant.quantity : 0;
+                            const isOutOfStock = variantQty === 0;
+                            %>
+                            <% if (isOutOfStock) { %>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span class="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                                <p class="text-red-500 text-[10px] uppercase tracking-widest font-bold">
+                                    Out of Stock — Please remove this item
+                                </p>
+                            </div>
                             <% } %>
 
                             
                             <div class="flex items-center justify-between mt-8">
                                 <div class="flex items-center gap-4 border border-stone-300 px-6 py-3">
-                                    <button
-                                    class="qty-btn"
+                                   <button
+                                    class="qty-btn <%= isOutOfStock ? 'opacity-30 cursor-not-allowed' : '' %>"
                                     data-action="decrease"
                                     data-item-id="<%= item.product._id %>"
                                     data-color="<%= item.color %>"
+                                    <%= isOutOfStock ? 'disabled' : '' %>
                                     >
                                     −
                                     </button>
-
-
-                                   <span class="text-sm font-light w-8 text-center"><%= item.quantity %></span>
-
-                                   <button
-                                    class="qty-btn"
+                                    <span class="text-sm font-light w-8 text-center"><%= item.quantity %></span>
+                                    <button
+                                    class="qty-btn <%= isOutOfStock ? 'opacity-30 cursor-not-allowed' : '' %>"
                                     data-action="increase"
                                     data-item-id="<%= item.product._id %>"
                                     data-color="<%= item.color %>"
+                                    <%= isOutOfStock ? 'disabled' : '' %>
                                     >
                                     +
                                     </button>
@@ -149,18 +156,26 @@
                     <%
                     let hasOutOfStock = false;
                     for (let i = 0; i < cartItems.length; i++) {
-                    if (cartItems[i].product.stock === 0) {
-                        hasOutOfStock = true;
-                        break;
-                    }
+                        const variant = cartItems[i].product.variants?.find(v => v.color === cartItems[i].color);
+                        const qty = variant ? variant.quantity : 0;
+                        if (qty === 0) { hasOutOfStock = true; break; }
                     }
                     %>
 
+                    <% if (hasOutOfStock) { %>
+                    <div class="mb-4 p-4 bg-red-50 border border-red-200 text-center">
+                        <p class="text-red-600 text-[10px] uppercase tracking-widest font-bold">
+                            ⚠ Remove out of stock items to proceed
+                        </p>
+                    </div>
+                    <% } %>
 
-                   <button
+                    <button
                     type="button"
-                    onclick="window.location.href='/checkout'"
-                    class="block text-center btn-hover w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold"
+                    <% if (!hasOutOfStock) { %>onclick="window.location.href='/checkout'"<% } %>
+                    class="block text-center w-full py-6 text-[10px] uppercase tracking-[0.4em] font-bold transition-all
+                    <%= hasOutOfStock ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-emera-950 text-white hover:bg-emera-700' %>"
+                    <%= hasOutOfStock ? 'disabled' : '' %>
                     >
                     Proceed to Checkout
                     </button>

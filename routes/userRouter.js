@@ -17,8 +17,9 @@ const wishlistController = require("../controllers/user/wishlistController");
 const reviewController = require("../controllers/user/reviewController");
 const walletController = require("../controllers/user/walletController");
 const paymentController = require("../controllers/user/paymentController");
+const couponController = require("../controllers/user/couponController");
 
-//AUTHENTICATION ROUTES
+// ── AUTHENTICATION ───────────────────────────────────────────────────────────
 router.get("/login", noCache, userController.loadLogin);
 router.post("/login", userController.login);
 
@@ -33,7 +34,7 @@ router.get(
 );
 router.post("/signup", userController.signup);
 
-router.get("/otp", userController.loadOtp);
+router.get("/otp", noCache, userController.loadOtp);
 router.post("/verify-otp", userController.verifyOtp);
 router.post("/resend-otp", userController.resendOtp);
 
@@ -51,9 +52,17 @@ router.get("/auth/google", (req, res, next) => {
 router.get(
   "/auth/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "/login",
+    failureRedirect: "/login?blocked=true",
+    failureMessage: true,
   }),
   (req, res) => {
+    if (!req.user || req.user.isBlocked) {
+      return req.session.destroy(() => {
+        res.clearCookie("connect.sid");
+        return res.redirect("/login?blocked=true");
+      });
+    }
+
     req.session.user = req.user._id;
     const redirectTo = req.session.redirectTo || "/";
     delete req.session.redirectTo;
@@ -70,25 +79,21 @@ router.get(
 
 router.get("/forgot-password", userController.loadForgotPassword);
 router.post("/forgot-password", userController.sendForgotPassword);
-
 router.post("/verify-forgot-otp", userController.verifyForgotOtp);
 router.post("/forgot-resend-otp", userController.resendForgotPasswordOtp);
-
-router.get("/reset-password", userController.loadResetPassword);
+router.get("/reset-password", noCache, userController.loadResetPassword);
 router.post("/reset-password", userController.resetPassword);
 
 router.get("/", userController.loadHomepage);
 router.get("/logout", noCache, userController.logout);
 
-//PRODUCT ROUTES
+// ── PRODUCT ──────────────────────────────────────────────────────────────────
 router.get("/products", userController.loadProducts);
 router.get("/products/:id", saveRedirect, userController.loadProductDetails);
-
 router.get("/pageNotFound", userController.pageNotFound);
-
 router.get("/search", userController.searchProducts);
 
-//PROFILE ROUTES
+// ── PROFILE ──────────────────────────────────────────────────────────────────
 router.get("/profile", requireLogin, noCache, userController.loadProfile);
 router.get(
   "/api/profile/orders",
@@ -96,6 +101,7 @@ router.get(
   noCache,
   orderController.getProfileOrders,
 );
+
 router.post(
   "/profile/edit",
   userAuth,
@@ -134,7 +140,7 @@ router.post(
   userController.changePassword,
 );
 
-//CART ROUTES
+// ── CART ─────────────────────────────────────────────────────────────────────
 router.get(
   "/cart",
   saveRedirect,
@@ -147,27 +153,33 @@ router.put("/cart/increment/:productId", userAuth, cartController.incrementQty);
 router.put("/cart/decrement/:productId", userAuth, cartController.decrementQty);
 router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
 
-//CHECKOUT ROUTES
+// ── CHECKOUT ─────────────────────────────────────────────────────────────────
 router.get(
   "/checkout",
+  userAuth,
   saveRedirect,
   requireLogin,
   noCache,
   checkoutController.loadCheckout,
 );
-router.post("/checkout/apply-coupon", userAuth, checkoutController.applyCoupon);
 router.post("/checkout", userAuth, checkoutController.placeOrder);
+router.get("/checkout/coupons", couponController.getAvailableCoupons);
+router.post("/checkout/apply-coupon", couponController.applyCoupon);
 
-//ORDER ROUTES
+// ── ORDER ─────────────────────────────────────────────────────────────────────
 router.get(
   "/orderConfirmation/:orderId",
   userAuth,
   noCache,
   orderController.loadOrderConfirmation,
 );
-router.get("/orders/:orderId", userAuth, orderController.loadOrderDetails);
-router.get("/orders", userAuth, orderController.loadOrder);
-
+router.get(
+  "/orders/:orderId",
+  userAuth,
+  noCache,
+  orderController.loadOrderDetails,
+);
+router.get("/orders", userAuth, noCache, orderController.loadOrder);
 router.post("/orders/:orderId/cancel", userAuth, orderController.cancelOrder);
 router.post(
   "/orders/:orderId/cancel-product",
@@ -175,22 +187,23 @@ router.post(
   orderController.cancelProduct,
 );
 router.post("/orders/:orderId/return", userAuth, orderController.returnOrder);
-router.get(
-  "/orders/:orderId/invoice",
-  userAuth,
-  orderController.downloadInvoice,
-);
 router.post(
   "/orders/:orderId/return-product",
   userAuth,
   orderController.returnProduct,
 );
+router.get(
+  "/orders/:orderId/invoice",
+  userAuth,
+  orderController.downloadInvoice,
+);
 
-//WISHLIST
+// ── WISHLIST ──────────────────────────────────────────────────────────────────
 router.get(
   "/wishlist",
   saveRedirect,
   requireLogin,
+  noCache,
   wishlistController.getWishlist,
 );
 router.post(
@@ -210,7 +223,7 @@ router.post(
   wishlistController.addAllToCart,
 );
 
-//REVIEW ROUTES
+// ── REVIEW ────────────────────────────────────────────────────────────────────
 router.post("/reviews/submit", userAuth, reviewController.submitReview);
 router.get("/reviews/product/:productId", reviewController.getProductReviews);
 router.get(
@@ -224,16 +237,26 @@ router.post(
   reviewController.markHelpful,
 );
 
-//WALLET
-router.get("/wallet", userAuth, walletController.getWallet);
-router.post("/wallet/add", userAuth, walletController.addMoneyInit);
-router.post("/wallet/verify", userAuth, walletController.verifyAndCreditWallet);
-
-//PAYMENT
+// ── WALLET ────────────────────────────────────────────────────────────────────
+router.get("/payment/wallet", userAuth, noCache, walletController.getWallet);
+router.post("/payment/wallet/add", userAuth, walletController.addMoneyInit);
 router.post(
-  "/payment/wallet/:orderId",
+  "/payment/wallet/verify",
   userAuth,
-  paymentController.walletPayment,
+  walletController.verifyAndCreditWallet,
+);
+router.post(
+  "/payment/wallet/payment-failed",
+  userAuth,
+  walletController.handleWalletPaymentFailure,
+);
+
+// ── PAYMENT ───────────────────────────────────────────────────────────────────
+router.get(
+  "/payment/:orderId",
+  userAuth,
+  noCache,
+  paymentController.loadPayment,
 );
 router.get(
   "/payment/create-order/:orderId",
@@ -244,8 +267,16 @@ router.post("/payment/verify", userAuth, paymentController.verifyPayment);
 router.get(
   "/payment-failed/:orderId",
   userAuth,
+  noCache,
   paymentController.paymentFailed,
 );
-router.get("/payment/:orderId", userAuth, paymentController.loadPayment);
+router.post(
+  "/payment/wallet/:orderId",
+  userAuth,
+  paymentController.walletPayment,
+);
+
+// ── ABOUT ─────────────────────────────────────────────────────────────────────
+router.get("/about", userController.loadAbout);
 
 module.exports = router;

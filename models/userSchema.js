@@ -84,15 +84,11 @@ const userSchema = new Schema({
   },
   walletTransactions: [
     {
-      type: {
-        type: String,
-      },
+      type: { type: String },
       amount: Number,
       description: String,
-      date: {
-        type: Date,
-        default: Date.now,
-      },
+      razorpayPaymentId: { type: String, default: null },
+      date: { type: Date, default: Date.now },
     },
   ],
   orderHistory: [

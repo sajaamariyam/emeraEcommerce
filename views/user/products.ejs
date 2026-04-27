@@ -17,10 +17,17 @@
         <div class="flex flex-col lg:flex-row gap-24">
             <!-- Filtering Sidebar -->
             <aside class="w-full lg:w-72 space-y-16 flex-shrink-0">
+                <%
+                  /* FIX: normalise selectedCategories to a plain string array so
+                     .includes() works regardless of whether it came as a string or array */
+                  const _selCats = (typeof selectedCategories !== 'undefined' ? selectedCategories : [])
+                    .map(String);
+                %>
                 <form action="/products" method="GET" id="filter-form">
                     <input type="hidden" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>">
-                    <input type="hidden" name="sort" value="<%= typeof sort !== 'undefined' ? sort : 'newest' %>">
-                    
+                    <!-- FIX: removed hidden sort input — sort is now handled exclusively
+                         via handleSortChange() so the two mechanisms don't conflict -->
+
                     <!-- Category Filter -->
                     <div class="space-y-10 mb-16">
                         <h4 class="text-[10px] uppercase tracking-[0.5em] font-bold text-gray-900 border-b border-stone-100 pb-4">Category</h4>
@@ -32,8 +39,8 @@
                                 name="category" 
                                 value="<%= cat._id %>"
                                 class="w-4 h-4 accent-emera-950"
-                                onchange="this.form.submit()"
-                                <%= category == cat._id ? 'checked' : '' %>>
+                                <!-- FIX: compare against array of selected ids, not single string -->
+                                <%= _selCats.includes(String(cat._id)) ? 'checked' : '' %>>
                                 <span class="ml-5 text-[11px] uppercase tracking-[0.2em] text-gray-400">
                                 <%= cat.name %>
                                 </span>
@@ -46,7 +53,7 @@
                     <div class="space-y-10 mb-16">
                         <h4 class="text-[10px] uppercase tracking-[0.5em] font-bold text-gray-900 border-b border-stone-100 pb-4">Price Range</h4>
                         <div class="space-y-8 px-1">
-                            <input type="range" name="maxPrice" min="0" max="100000" value="<%= maxPrice || 100000 %>" step="500" class="w-full h-1 bg-stone-100 appearance-none cursor-pointer" oninput="updatePriceLabel(this.value)" onchange="this.form.submit()">
+                            <input type="range" name="maxPrice" min="0" max="100000" value="<%= maxPrice || 100000 %>" step="500" class="w-full h-1 bg-stone-100 appearance-none cursor-pointer" oninput="updatePriceLabel(this.value)">
                             <div class="flex justify-between text-[11px] uppercase tracking-widest font-bold text-emera-950">
                                 <span>₹0</span>
                                 <span id="price-label">UP TO ₹<%= (maxPrice || 100000).toLocaleString() %></span>
@@ -54,6 +61,11 @@
                         </div>
                     </div>
 
+                    <button 
+                        type="submit"
+                        class="block w-full py-5 bg-emera-950 text-white text-center text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-black transition-all duration-500 mb-4">
+                        Apply Filters
+                    </button>
                     <a href="/products" class="block w-full py-5 border border-emera-950 text-center text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500">Clear Filters</a>
                 </form>
             </aside>
@@ -64,6 +76,8 @@
                 <div class="flex flex-col sm:flex-row items-center justify-between mb-16 gap-10 border-b border-stone-50 pb-12">
                     <div class="flex items-center space-x-12">
                         <span class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Sort By</span>
+                        <!-- FIX: onchange now calls handleSortChange which preserves all
+                             current filter params (categories, maxPrice, search) in the URL -->
                         <select onchange="handleSortChange(this.value)" class="bg-transparent text-[10px] uppercase tracking-[0.3em] font-bold outline-none cursor-pointer hover:text-emera-950 transition-colors">
                             <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>Newest</option>
                             <option value="price-asc" <%= sort === 'price-asc' ? 'selected' : '' %>>Price: Low to High</option>
@@ -134,15 +148,25 @@
                 </div>
 
                 <!-- Pagination -->
+                <%
+                  /* FIX: build a base query string with all current filter params
+                     so page links never lose search/category/sort/maxPrice state */
+                  const _searchParam   = encodeURIComponent(search || '');
+                  const _sortParam     = encodeURIComponent(sort || 'newest');
+                  const _maxPriceParam = encodeURIComponent(maxPrice || 100000);
+                  /* Build repeated category params e.g. &category=X&category=Y */
+                  const _catParams = _selCats.map(c => `&category=${encodeURIComponent(c)}`).join('');
+                  const _baseQuery = `search=${_searchParam}&sort=${_sortParam}&maxPrice=${_maxPriceParam}${_catParams}`;
+                %>
                 <% if (totalPages > 1) { %>
                     <div class="mt-40 flex justify-center items-center space-x-12 border-t border-stone-50 pt-20">
                         <% if (currentPage > 1) { %>
-                            <a href="/products?page=<%= currentPage - 1 %>&search=<%= search || '' %>&category=<%= category || '' %>&sort=<%= sort || '' %>&maxPrice=<%= maxPrice || '' %>" class="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-black transition-colors">Previous</a>
+                            <a href="/products?page=<%= currentPage - 1 %>&<%= _baseQuery %>" class="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-black transition-colors">Previous</a>
                         <% } %>
 
                         <div class="flex space-x-6">
                             <% for(let i = 1; i <= totalPages; i++) { %>
-                                <a href="/products?page=<%= i %>&search=<%= search || '' %>&category=<%= category || '' %>&sort=<%= sort || '' %>&maxPrice=<%= maxPrice || '' %>" 
+                                <a href="/products?page=<%= i %>&<%= _baseQuery %>" 
                                    class="text-[10px] uppercase tracking-[0.3em] font-bold <%= currentPage === i ? 'text-emera-950 border-b border-emera-950' : 'text-gray-300 hover:text-black' %>">
                                     <%= i %>
                                 </a>
@@ -150,7 +174,7 @@
                         </div>
 
                         <% if (currentPage < totalPages) { %>
-                            <a href="/products?page=<%= currentPage + 1 %>&search=<%= search || '' %>&category=<%= category || '' %>&sort=<%= sort || '' %>&maxPrice=<%= maxPrice || '' %>" class="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-black transition-colors">Next</a>
+                            <a href="/products?page=<%= currentPage + 1 %>&<%= _baseQuery %>" class="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-black transition-colors">Next</a>
                         <% } %>
                     </div>
                 <% } %>
@@ -165,11 +189,34 @@
             document.getElementById('price-label').textContent = `UP TO ₹${Number(val).toLocaleString()}`;
         }
 
+        /*
+         * FIX: handleSortChange now collects ALL active filter state from the
+         * current form/URL before navigating, so changing sort never loses the
+         * selected categories, maxPrice or search term.
+         */
         function handleSortChange(val) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('sort', val);
-        url.searchParams.set('page', 1); // important: reset pagination
-        window.location.href = url.toString();
+            const url = new URL(window.location.href);
+            const form = document.getElementById('filter-form');
+
+            // Preserve search term from the hidden input in the form
+            const searchVal = form.querySelector('[name="search"]').value;
+            url.searchParams.set('search', searchVal);
+
+            // Preserve maxPrice from the range slider
+            const maxPriceVal = form.querySelector('[name="maxPrice"]').value;
+            url.searchParams.set('maxPrice', maxPriceVal);
+
+            // Preserve checked categories (replace any stale ones in the URL)
+            url.searchParams.delete('category');
+            form.querySelectorAll('[name="category"]:checked').forEach(el => {
+                url.searchParams.append('category', el.value);
+            });
+
+            // Set new sort and reset to page 1
+            url.searchParams.set('sort', val);
+            url.searchParams.set('page', '1');
+
+            window.location.href = url.toString();
         }
 
 

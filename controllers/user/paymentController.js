@@ -8,25 +8,24 @@ const crypto = require("crypto");
 const loadPayment = async (req, res) => {
   try {
     const { orderId } = req.params;
-
-    const order = await Order.findOne({ orderId }).populate(
-      "orderedItems.productId",
-    );
-
+ 
+    let order = await Order.findOne({ orderId }).populate("orderedItems.productId");
+ 
+    if (!order) {
+      order = await Order.findById(orderId).populate("orderedItems.productId");
+    }
+ 
     if (!order) {
       return res.redirect("/pageNotFound");
     }
-
-    if (order.paymentStatus === "paid") {
-      return res.redirect(`/orderConfirmation/${order.orderId}`);
-    }
-
-    const user = await User.findById(order.userId);
-
+ 
+    const user = await User.findById(req.session.user);
+ 
     res.render("user/payment", {
       order,
       user,
-      showAnnouncement: false,
+      showAnnouncement: false,   
+      cartCount: 0,              
     });
   } catch (error) {
     console.error("LOAD PAYMENT ERROR:", error);

@@ -1,21 +1,23 @@
 <%- include("../partials/admin/header") %>
 
-<div class="ml-52 h-screen overflow-y-auto bg-gray-50">
+<div id="flash-data"
+    data-message="<%= typeof flash !== 'undefined' && flash.message ? flash.message : '' %>"
+    data-type="<%= typeof flash !== 'undefined' && flash.type ? flash.type : 'success' %>"
+    class="hidden"></div>
 
-    <!-- Top Navigation Bar -->
+<style>#toast-container { transition: transform 0.3s cubic-bezier(0.16,1,0.3,1); }</style>
+
+<div class="ml-52 h-screen overflow-y-auto bg-gray-50">
     <div class="bg-white border-b sticky top-0 z-10">
         <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
             <h1 class="text-xl font-semibold text-teal-700">Offer Management</h1>
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                    <%= admin.name.charAt(0) %>
-                </div>
+                <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium"><%= admin.name.charAt(0) %></div>
                 <span class="text-sm text-gray-700"><%= admin.name %></span>
             </div>
         </div>
     </div>
 
-    <!-- Main Content Area -->
     <div class="p-8 max-w-7xl mx-auto">
         <div class="flex items-center justify-between mb-8">
             <div>
@@ -27,38 +29,21 @@
             </button>
         </div>
 
-        <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
-                <div class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center">
-                    <i class="fas fa-tags text-teal-600 text-lg"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Total Offers</p>
-                    <p class="text-2xl font-bold text-gray-800"><%= offers.length %></p>
-                </div>
+                <div class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center"><i class="fas fa-tags text-teal-600 text-lg"></i></div>
+                <div><p class="text-sm text-gray-500 font-medium">Total Offers</p><p class="text-2xl font-bold text-gray-800"><%= totalOffers %></p></div>
             </div>
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
-                <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
-                    <i class="fas fa-check-circle text-green-600 text-lg"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Active Offers</p>
-                    <p class="text-2xl font-bold text-gray-800"><%= offers.filter(o => o.isActive).length %></p>
-                </div>
+                <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center"><i class="fas fa-check-circle text-green-600 text-lg"></i></div>
+                <div><p class="text-sm text-gray-500 font-medium">Active Offers</p><p class="text-2xl font-bold text-gray-800"><%= activeOffers %></p></div>
             </div>
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
-                <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
-                    <i class="fas fa-times-circle text-red-500 text-lg"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Inactive Offers</p>
-                    <p class="text-2xl font-bold text-gray-800"><%= offers.filter(o => !o.isActive).length %></p>
-                </div>
+                <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center"><i class="fas fa-times-circle text-red-500 text-lg"></i></div>
+                <div><p class="text-sm text-gray-500 font-medium">Expired Offers</p><p class="text-2xl font-bold text-gray-800"><%= expiredOffers %></p></div>
             </div>
         </div>
 
-        <!-- Offers Table -->
         <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
             <table class="w-full text-left">
                 <thead class="bg-gray-50 border-b border-gray-200">
@@ -66,68 +51,43 @@
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Applied To</th>
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Discount</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Start Date</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">End Date</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Start</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">End</th>
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     <% if (offers.length === 0) { %>
-                        <tr>
-                            <td colspan="7" class="px-6 py-16 text-center text-gray-400">
-                                <i class="fas fa-tag text-4xl mb-3 block opacity-30"></i>
-                                <p class="font-medium">No offers found. Create your first offer!</p>
-                            </td>
-                        </tr>
+                        <tr><td colspan="7" class="px-6 py-16 text-center text-gray-400"><i class="fas fa-tag text-4xl mb-3 block opacity-30"></i><p class="font-medium">No offers found.</p></td></tr>
                     <% } %>
                     <% offers.forEach(offer => { %>
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4">
                                 <% if (offer.offerType === 'product') { %>
-                                    <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full border border-blue-100 flex items-center gap-1 w-fit">
-                                        <i class="fas fa-box text-[10px]"></i> Product
-                                    </span>
+                                    <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full border border-blue-100 flex items-center gap-1 w-fit"><i class="fas fa-box text-[10px]"></i> Product</span>
                                 <% } else { %>
-                                    <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-full border border-purple-100 flex items-center gap-1 w-fit">
-                                        <i class="fas fa-layer-group text-[10px]"></i> Category
-                                    </span>
+                                    <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-full border border-purple-100 flex items-center gap-1 w-fit"><i class="fas fa-layer-group text-[10px]"></i> Category</span>
                                 <% } %>
                             </td>
+                            <td class="px-6 py-4 font-semibold text-gray-800 text-sm">
+                                <% if (offer.offerType === 'product' && offer.productId) { %><%= offer.productId.name || 'Deleted Product' %>
+                                <% } else if (offer.offerType === 'category' && offer.categoryId) { %><%= offer.categoryId.name || 'Deleted Category' %>
+                                <% } else { %><span class="text-gray-400 italic">N/A</span><% } %>
+                            </td>
+                            <td class="px-6 py-4"><span class="text-lg font-bold text-teal-700"><%= offer.discountPercentage %>%</span><p class="text-xs text-gray-400">OFF</p></td>
+                            <td class="px-6 py-4 text-sm text-gray-600"><%= new Date(offer.startDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) %></td>
+                            <td class="px-6 py-4 text-sm text-gray-600"><%= new Date(offer.endDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) %></td>
                             <td class="px-6 py-4">
-                                <p class="font-semibold text-gray-800">
-                                    <% if (offer.offerType === 'product' && offer.productId) { %>
-                                        <%= offer.productId.name || 'Deleted Product' %>
-                                    <% } else if (offer.offerType === 'category' && offer.categoryId) { %>
-                                        <%= offer.categoryId.name || 'Deleted Category' %>
-                                    <% } else { %>
-                                        <span class="text-gray-400 italic">N/A</span>
-                                    <% } %>
-                                </p>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="text-lg font-bold text-teal-700"><%= offer.discountPercentage %>%</span>
-                                <p class="text-xs text-gray-400 font-medium">OFF</p>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
-                                <%= new Date(offer.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
-                                <%= new Date(offer.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
-                            </td>
-                            <td class="px-6 py-4">
-                                <% if (offer.isActive) { %>
-                                    <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100">Active</span>
-                                <% } else { %>
-                                    <span class="px-3 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-full border border-red-100">Inactive</span>
-                                <% } %>
+                                <% if (offer.isActive) { %><span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100">Active</span>
+                                <% } else { %><span class="px-3 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-full border border-red-100">Inactive</span><% } %>
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex justify-end gap-4">
+                                    <%# FIX: Edit button was missing — added here %>
+                                    <button onclick="openEditModal('<%= offer._id %>')" class="text-teal-600 hover:text-teal-800 text-sm font-bold transition">Edit</button>
                                     <form action="/admin/offers/toggle/<%= offer._id %>" method="POST" class="inline">
-                                        <button type="submit" class="text-gray-500 hover:text-gray-700 text-sm font-bold transition">
-                                            <%= offer.isActive ? 'Deactivate' : 'Activate' %>
-                                        </button>
+                                        <button type="submit" class="text-gray-500 hover:text-gray-700 text-sm font-bold transition"><%= offer.isActive ? 'Deactivate' : 'Activate' %></button>
                                     </form>
                                     <button onclick="confirmDelete('<%= offer._id %>')" class="text-red-600 hover:text-red-800 text-sm font-bold transition">Delete</button>
                                 </div>
@@ -136,88 +96,71 @@
                     <% }) %>
                 </tbody>
             </table>
+
+            <% if (totalPages > 1) { %>
+                <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                    <p class="text-sm text-gray-500">Page <span class="font-semibold"><%= currentPage %></span> of <span class="font-semibold"><%= totalPages %></span></p>
+                    <div class="flex items-center gap-1">
+                        <% if (currentPage > 1) { %><a href="?page=<%= currentPage - 1 %>" class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium">← Prev</a><% } %>
+                        <% for (let i = 1; i <= totalPages; i++) { %>
+                            <a href="?page=<%= i %>" class="px-3 py-1.5 rounded text-sm font-medium transition <%= currentPage === i ? 'bg-teal-700 text-white border border-teal-700' : 'border border-gray-300 text-gray-600 hover:bg-gray-50' %>"><%= i %></a>
+                        <% } %>
+                        <% if (currentPage < totalPages) { %><a href="?page=<%= currentPage + 1 %>" class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium">Next →</a><% } %>
+                    </div>
+                </div>
+            <% } %>
         </div>
     </div>
 </div>
 
-<!-- Add Offer Modal -->
+<!-- ── Add Offer Modal ── -->
 <div id="offerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="fixed inset-0 bg-black/50" onclick="closeModal()"></div>
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg z-50 overflow-hidden transform transition-all">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg z-50 overflow-hidden">
         <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
             <h3 class="text-lg font-bold text-gray-800">Add New Offer</h3>
             <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
         </div>
-        <form action="/admin/offers" method="POST" id="offerForm" class="p-6">
-            <div class="space-y-5">
-
-                <!-- Offer Type -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Offer Type</label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="offerType" value="product" id="typeProduct" onchange="toggleOfferTarget()" class="accent-teal-600" checked>
-                            <span class="text-sm font-medium text-gray-700">Product Offer</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="offerType" value="category" id="typeCategory" onchange="toggleOfferTarget()" class="accent-teal-600">
-                            <span class="text-sm font-medium text-gray-700">Category Offer</span>
-                        </label>
-                    </div>
+        <form action="/admin/offers" method="POST" id="offerForm" class="p-6 space-y-5">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Offer Type</label>
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="offerType" value="product" id="typeProduct" onchange="toggleOfferTarget()" class="accent-teal-600" checked><span class="text-sm font-medium">Product Offer</span></label>
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="offerType" value="category" id="typeCategory" onchange="toggleOfferTarget()" class="accent-teal-600"><span class="text-sm font-medium">Category Offer</span></label>
                 </div>
-
-                <!-- Product Select -->
-                <div id="productSelectWrap">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
-                    <select name="productId" id="productSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                        <option value="">-- Select Product --</option>
-                        <% products.forEach(product => { %>
-                            <option value="<%= product._id %>"><%= product.name %></option>
-                        <% }) %>
-                    </select>
-                </div>
-
-                <!-- Category Select -->
-                <div id="categorySelectWrap" class="hidden">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                    <select name="categoryId" id="categorySelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                        <option value="">-- Select Category --</option>
-                        <% categories.forEach(cat => { %>
-                            <option value="<%= cat._id %>"><%= cat.name %></option>
-                        <% }) %>
-                    </select>
-                </div>
-
-                <!-- Discount Percentage -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Discount Percentage</label>
-                    <div class="relative">
-                        <input type="number" name="discountPercentage" min="1" max="99" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition pr-10"
-                            placeholder="e.g. 20">
-                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
-                    </div>
-                </div>
-
-                <!-- Date Range -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
-                        <input type="date" name="startDate" id="startDate" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition">
-                        <p class="text-xs text-gray-400 mt-1">Today or later</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
-                        <input type="date" name="endDate" id="endDate" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition">
-                        <p class="text-xs text-gray-400 mt-1">Must be after start date</p>
-                    </div>
-                </div>
-
             </div>
-
-            <div class="flex gap-3 mt-8">
+            <div id="productSelectWrap">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
+                <select name="productId" id="productSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+                    <option value="">-- Select Product --</option>
+                    <% products.forEach(product => { %><option value="<%= product._id %>"><%= product.name %></option><% }) %>
+                </select>
+            </div>
+            <div id="categorySelectWrap" class="hidden">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <select name="categoryId" id="categorySelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+                    <option value="">-- Select Category --</option>
+                    <% categories.forEach(cat => { %><option value="<%= cat._id %>"><%= cat.name %></option><% }) %>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Discount Percentage</label>
+                <div class="relative">
+                    <input type="number" name="discountPercentage" min="1" max="99" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none pr-10" placeholder="e.g. 20">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
+                    <input type="date" name="startDate" id="startDate" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
+                    <input type="date" name="endDate" id="endDate" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-2">
                 <button type="submit" class="flex-1 bg-teal-700 text-white py-3 rounded-lg font-bold hover:bg-teal-800 transition shadow-md">Save Offer</button>
                 <button type="button" onclick="closeModal()" class="flex-1 border border-gray-300 text-gray-600 py-3 rounded-lg font-bold hover:bg-gray-50 transition">Cancel</button>
             </div>
@@ -225,104 +168,210 @@
     </div>
 </div>
 
-<!-- Confirm Delete Modal -->
+<!-- ── FIX: Edit Offer Modal ── -->
+<div id="editOfferModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/50" onclick="closeEditModal()"></div>
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md z-50 overflow-hidden">
+        <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+            <h3 class="text-lg font-bold text-gray-800">Edit Offer</h3>
+            <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        </div>
+        <div class="p-6 space-y-5">
+            <input type="hidden" id="editOfferId">
+            <div id="editOfferTarget" class="text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-3 border border-gray-200"></div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Discount Percentage</label>
+                <div class="relative">
+                    <input type="number" id="editDiscount" min="1" max="99" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none pr-10" placeholder="e.g. 20">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
+                    <input type="date" id="editStartDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
+                    <input type="date" id="editEndDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-2">
+                <button onclick="submitEditOffer()" id="editOfferBtn" class="flex-1 bg-teal-700 text-white py-3 rounded-lg font-bold hover:bg-teal-800 transition shadow-md">Save Changes</button>
+                <button onclick="closeEditModal()" class="flex-1 border border-gray-300 text-gray-600 py-3 rounded-lg font-bold hover:bg-gray-50 transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Delete Confirm Modal ── -->
 <div id="confirmModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
     <div class="fixed inset-0 bg-black/40" onclick="closeConfirmModal()"></div>
-    <div class="bg-white rounded-lg shadow-2xl max-w-sm w-full p-6 z-[70] text-center transform transition-all">
-        <div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-trash-alt text-red-500 text-xl"></i>
-        </div>
+    <div class="bg-white rounded-lg shadow-2xl max-w-sm w-full p-6 z-[70] text-center">
+        <div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-trash-alt text-red-500 text-xl"></i></div>
         <h4 class="text-lg font-bold text-gray-900 mb-2">Delete Offer?</h4>
-        <p class="text-sm text-gray-500 mb-6">This action cannot be undone. The offer will be permanently removed.</p>
+        <p class="text-sm text-gray-500 mb-6">This cannot be undone.</p>
         <div class="flex gap-3">
-            <form id="deleteForm" action="" method="POST" class="flex-1">
-                <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700 transition">Yes, Delete</button>
-            </form>
+            <form id="deleteForm" action="" method="POST" class="flex-1"><button type="submit" class="w-full bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700 transition">Yes, Delete</button></form>
             <button onclick="closeConfirmModal()" class="flex-1 border border-gray-300 py-2 rounded-lg font-bold hover:bg-gray-50 transition text-gray-600">Cancel</button>
         </div>
     </div>
 </div>
 
 <script>
-    const offerModal  = document.getElementById("offerModal");
-    const confirmModal = document.getElementById("confirmModal");
-    const startDateInput = document.getElementById("startDate");
-    const endDateInput   = document.getElementById("endDate");
+function showToast(message, type = 'success') {
+    const existing = document.getElementById('toast-container');
+    if (existing) existing.remove();
+    const colors = { success:'bg-green-600', error:'bg-red-600', warning:'bg-yellow-500', info:'bg-blue-600' };
+    const icons  = { success:'✓', error:'✕', warning:'⚠', info:'ℹ' };
+    const el = document.createElement('div');
+    el.id = 'toast-container';
+    el.className = `fixed top-6 right-6 z-[999] flex items-center gap-3 px-5 py-4 rounded-lg shadow-xl text-white text-sm font-medium max-w-sm ${colors[type]}`;
+    el.style.transform = 'translateX(120%)';
+    el.style.transition = 'transform 0.3s cubic-bezier(0.16,1,0.3,1)';
+    el.innerHTML = `<span class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">${icons[type]}</span><span class="flex-1">${message}</span><button onclick="this.parentElement.remove()" class="ml-2 text-white/70 hover:text-white text-lg">&times;</button>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => { el.style.transform = 'translateX(0)'; });
+    setTimeout(() => { el.style.transform = 'translateX(120%)'; setTimeout(() => el.remove(), 300); }, 4000);
+}
 
-    // ── Get today's date as YYYY-MM-DD in local time (avoids UTC off-by-one) ──
-    function getTodayStr() {
-        const t  = new Date();
-        const yy = t.getFullYear();
-        const mm = String(t.getMonth() + 1).padStart(2, '0');
-        const dd = String(t.getDate()).padStart(2, '0');
-        return `${yy}-${mm}-${dd}`;
-    }
+window.addEventListener('DOMContentLoaded', () => {
+    const flash = document.getElementById('flash-data');
+    if (flash && flash.dataset.message) showToast(flash.dataset.message, flash.dataset.type || 'success');
+});
 
-    // ── Open modal: reset form + enforce date constraints ──
-    function openAddModal() {
-        offerModal.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
+function getTodayStr() {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+
+function toggleOfferTarget() {
+    const isProduct = document.getElementById("typeProduct").checked;
+    document.getElementById("productSelectWrap").classList.toggle("hidden", !isProduct);
+    document.getElementById("categorySelectWrap").classList.toggle("hidden", isProduct);
+}
+
+const startDateInput = document.getElementById("startDate");
+const endDateInput   = document.getElementById("endDate");
+
+function openAddModal() {
+    document.getElementById("offerModal").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    const today = getTodayStr();
+    document.getElementById("offerForm").reset();
+    startDateInput.min = today; endDateInput.min = today;
+    toggleOfferTarget();
+}
+function closeModal() {
+    document.getElementById("offerModal").classList.add("hidden");
+    document.body.style.overflow = "";
+}
+
+// ── FIX: Edit Offer ──────────────────────────────────────────────────────────
+async function openEditModal(offerId) {
+    try {
+        const res  = await fetch(`/admin/offers/${offerId}`);
+        const data = await res.json();
+        if (!data.success) { showToast('Failed to load offer data', 'error'); return; }
+
+        const offer = data.offer;
+        document.getElementById('editOfferId').value = offerId;
+
+        const targetName = offer.offerType === 'product'
+            ? `Product: ${offer.productId?.name || 'N/A'}`
+            : `Category: ${offer.categoryId?.name || 'N/A'}`;
+        document.getElementById('editOfferTarget').innerHTML =
+            `<span class="font-semibold text-gray-800">Editing offer for</span> — ${targetName}`;
+
+        document.getElementById('editDiscount').value = offer.discountPercentage;
+
+        // Format dates as YYYY-MM-DD for the input
+        const fmt = (d) => new Date(d).toISOString().slice(0, 10);
+        document.getElementById('editStartDate').value = fmt(offer.startDate);
+        document.getElementById('editEndDate').value   = fmt(offer.endDate);
 
         const today = getTodayStr();
+        document.getElementById('editStartDate').min = today;
+        document.getElementById('editEndDate').min   = today;
 
-        // Start date: today onwards only
-        startDateInput.min   = today;
-        startDateInput.value = '';
-
-        // End date: today onwards (will tighten when start is picked)
-        endDateInput.min   = today;
-        endDateInput.value = '';
-
-        // Reset form fields
-        document.getElementById("offerForm").reset();
-        // Re-apply min after reset (reset() clears min in some browsers)
-        startDateInput.min = today;
-        endDateInput.min   = today;
-
-        // Ensure correct target panel is shown
-        toggleOfferTarget();
+        document.getElementById('editOfferModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    } catch (e) {
+        showToast('Network error loading offer', 'error');
     }
+}
+function closeEditModal() {
+    document.getElementById('editOfferModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
 
-    function closeModal() {
-        offerModal.classList.add("hidden");
-        document.body.style.overflow = "";
-    }
+async function submitEditOffer() {
+    const id         = document.getElementById('editOfferId').value;
+    const discount   = document.getElementById('editDiscount').value.trim();
+    const startDate  = document.getElementById('editStartDate').value;
+    const endDate    = document.getElementById('editEndDate').value;
+    const btn        = document.getElementById('editOfferBtn');
+    const today      = getTodayStr();
 
-    // ── When start date changes, end date min must be >= start date ──
-    startDateInput.addEventListener('change', function () {
-        const selected = this.value;
-        const today    = getTodayStr();
+    if (!discount || discount < 1 || discount > 99) { showToast('Discount must be 1–99%', 'error'); return; }
+    if (!startDate) { showToast('Start date is required', 'error'); return; }
+    if (!endDate)   { showToast('End date is required', 'error'); return; }
+    if (endDate <= startDate) { showToast('End date must be after start date', 'error'); return; }
 
-        // End date must be at least the start date (and never before today)
-        endDateInput.min = selected || today;
-
-        // If end date is now invalid (before new start), clear it
-        if (endDateInput.value && endDateInput.value < endDateInput.min) {
-            endDateInput.value = '';
-        }
-    });
-
-    // ── Toggle product / category select ──
-    function toggleOfferTarget() {
-        const isProduct = document.getElementById("typeProduct").checked;
-        document.getElementById("productSelectWrap").classList.toggle("hidden", !isProduct);
-        document.getElementById("categorySelectWrap").classList.toggle("hidden", isProduct);
-        if (isProduct) {
-            document.getElementById("categorySelect").value = "";
+    btn.disabled = true; btn.textContent = 'Saving...';
+    try {
+        const res  = await fetch(`/admin/offers/${id}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ discountPercentage: discount, startDate, endDate })
+        });
+        const data = await res.json();
+        if (data.success) {
+            closeEditModal();
+            showToast(data.message || 'Offer updated successfully!', 'success');
+            setTimeout(() => location.reload(), 1200);
         } else {
-            document.getElementById("productSelect").value = "";
+            showToast(data.message || 'Failed to update offer', 'error');
         }
+    } catch (e) {
+        showToast('Network error. Please check your connection.', 'error');
+    } finally {
+        btn.disabled = false; btn.textContent = 'Save Changes';
     }
+}
 
-    // ── Delete confirm ──
-    function confirmDelete(id) {
-        document.getElementById("deleteForm").action = `/admin/offers/delete/${id}`;
-        confirmModal.classList.remove("hidden");
-    }
+function confirmDelete(offerId) {
+    document.getElementById("deleteForm").action = `/admin/offers/delete/${offerId}`;
+    document.getElementById("confirmModal").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+}
+function closeConfirmModal() {
+    document.getElementById("confirmModal").classList.add("hidden");
+    document.body.style.overflow = "";
+}
 
-    function closeConfirmModal() {
-        confirmModal.classList.add("hidden");
-    }
+document.getElementById("offerForm").addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const today     = getTodayStr();
+    const isProduct = document.getElementById("typeProduct").checked;
+    const start     = startDateInput.value;
+    const end       = endDateInput.value;
+    const discount  = this.querySelector('[name="discountPercentage"]').value;
+
+    if (isProduct && !document.getElementById("productSelect").value)  { showToast('Please select a product.',  'error'); return; }
+    if (!isProduct && !document.getElementById("categorySelect").value){ showToast('Please select a category.', 'error'); return; }
+    if (!discount || discount < 1 || discount > 99) { showToast('Discount must be 1–99%', 'error'); return; }
+    if (!start || start < today) { showToast('Start date must be today or later', 'error'); return; }
+    if (!end   || end   < today) { showToast('End date must be today or later',   'error'); return; }
+    if (end <= start)            { showToast('End date must be after start date',  'error'); return; }
+
+    const body = Object.fromEntries(new FormData(this).entries());
+    try {
+        const res  = await fetch('/admin/offers', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const data = await res.json().catch(() => null);
+        if (res.ok) { closeModal(); showToast(data?.message || 'Offer created!', 'success'); setTimeout(() => location.reload(), 1200); }
+        else showToast(data?.message || 'Failed to create offer.', 'error');
+    } catch { showToast('Network error.', 'error'); }
+});
 </script>
 
 <%- include("../partials/admin/footer") %>

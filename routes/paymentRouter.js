@@ -1,18 +1,24 @@
 const express = require("express");
 const router = express.Router();
 const paymentController = require("../controllers/user/paymentController");
+const { userAuth } = require("../middlewares/auth");
 
-router.get("/payment/:orderId", paymentController.loadPayment);
-
-router.get(
+router.post("/payment/verify", userAuth, paymentController.verifyPayment);
+router.post(
+  "/payment/wallet/:orderId",
+  userAuth,
+  paymentController.walletPayment,
+);
+router.post(
   "/payment/create-order/:orderId",
+  userAuth,
   paymentController.createRazorpayOrder,
 );
-
-router.post("/payment/verify", paymentController.verifyPayment);
-
-router.post("/payment/wallet/:orderId", paymentController.walletPayment);
-
-router.get("/payment-failed/:orderId", paymentController.paymentFailed);
+router.get(
+  "/payment-failed/:orderId",
+  userAuth,
+  paymentController.paymentFailed,
+);
+router.get("/payment/:orderId", userAuth, paymentController.loadPayment);
 
 module.exports = router;

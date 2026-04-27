@@ -8,14 +8,14 @@ const cartCount = require("./middlewares/cartCount");
 const wishlistCount = require("./middlewares/wishlistCount");
 const userHeader = require("./middlewares/userHeader");
 const nocache = require("nocache");
-const passport = require("./config/passport");
-const db = require("./config/db");
+// const passport = require("./config/passport");
+// const db = require("./config/db");
 const userRouter = require("./routes/userRouter");
 const adminRouter = require("./routes/adminRouter");
 const paymentRouter = require("./routes/paymentRouter");
 const User = require("./models/userSchema");
 
-db();
+// db();
 const app = express();
 
 app.use(
@@ -30,7 +30,7 @@ app.use(
     }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 72 * 60 * 60 * 1000,
     },
@@ -41,11 +41,34 @@ app.use(async (req, res, next) => {
   try {
     if (req.session.user) {
       const user = await User.findById(req.session.user);
+
+      if (!user || user.isBlocked) {
+        req.session.destroy(() => {
+          res.clearCookie("connect.sid");
+        });
+        res.locals.user = null;
+
+        const isAjax =
+          req.xhr ||
+          req.headers.accept?.includes("application/json") ||
+          req.headers["content-type"]?.includes("application/json");
+
+        if (isAjax) {
+          return res.status(403).json({
+            success: false,
+            message: "Your account has been blocked. Please contact support.",
+            blocked: true,
+          });
+        }
+        return res.redirect("/login?blocked=true");
+      }
+
       res.locals.user = user;
     } else {
       res.locals.user = null;
     }
   } catch (error) {
+    console.error("User middleware error:", error);
     res.locals.user = null;
   }
   next();
@@ -66,8 +89,8 @@ app.use(nocache());
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.json());
 
-app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.initialize());
+// app.use(passport.session());
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -79,9 +102,10 @@ app.use("/admin", adminRouter);
 app.use("/", userRouter);
 app.use("/", paymentRouter);
 
-app.listen(process.env.PORT, () => {
-  console.log("server running http://localhost:3000/");
-  console.log("http://localhost:3000/admin/adminLogin");
+const PORT = process.env.PORT || 3000;
+
+app.listen(3000, '0.0.0.0', () => {
+  console.log('Server running');
 });
 
 module.exports = app;

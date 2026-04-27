@@ -1,310 +1,277 @@
 <%- include("../partials/admin/header") %>
 
-<!-- Include Cropper.js for image processing -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <div class="ml-52 h-screen overflow-y-auto bg-gray-50">
 
-    <!-- Top bar -->
-    <div class="bg-white border-b sticky top-0 z-10">
-        <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-semibold text-teal-700">Product Management</h1>
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                    <%= admin.name.charAt(0) %>
-                </div>
-                <span class="text-sm text-gray-700"><%= admin.name %></span>
-            </div>
+  <!-- Top bar -->
+  <div class="bg-white border-b sticky top-0 z-10">
+    <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-semibold text-teal-700">Product Management</h1>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+          <%= admin.name.charAt(0) %>
         </div>
+        <span class="text-sm text-gray-700"><%= admin.name %></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="p-8 max-w-7xl mx-auto">
+
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">Catalogue Control</h2>
+        <p class="text-gray-600 mt-1">Manage product visibility, stock, and details.</p>
+      </div>
+      <button onclick="openProductModal()"
+              class="bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium shadow-md">
+        <i class="fas fa-plus"></i> Add New Product
+      </button>
     </div>
 
-    <div class="p-8 max-w-7xl mx-auto">
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-800">Catalogue Control</h2>
-                <p class="text-gray-600 mt-1">Manage product visibility, stock, and details.</p>
-            </div>
-            <button onclick="openProductModal()" class="bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium shadow-md">
-                <i class="fas fa-plus"></i> Add New Product
-            </button>
-        </div>
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Total Pieces</p>
+        <p class="text-3xl font-bold text-gray-800"><%= totalProducts %></p>
+        <div class="h-1 w-10 bg-teal-500 mt-3"></div>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Listed</p>
+        <p class="text-3xl font-bold text-green-600"><%= listedProducts %></p>
+        <div class="h-1 w-10 bg-green-500 mt-3"></div>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Low Stock</p>
+        <p class="text-3xl font-bold text-orange-600"><%= lowStockCount || 0 %></p>
+        <div class="h-1 w-10 bg-orange-500 mt-3"></div>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Out of Stock</p>
+        <p class="text-3xl font-bold text-red-600"><%= outOfStockCount %></p>
+        <div class="h-1 w-10 bg-red-500 mt-3"></div>
+      </div>
+    </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Total Pieces</p>
-                <p class="text-3xl font-bold text-gray-800"><%= totalProducts %></p>
-                <div class="h-1 w-10 bg-teal-500 mt-3"></div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Listed</p>
-                <p class="text-3xl font-bold text-green-600"><%= listedProducts %></p>
-                <div class="h-1 w-10 bg-green-500 mt-3"></div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Low Stock</p>
-                <p class="text-3xl font-bold text-orange-600"><%= lowStockCount || 0 %></p>
-                <div class="h-1 w-10 bg-orange-500 mt-3"></div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Out of Stock</p>
-                <p class="text-3xl font-bold text-red-600"><%= outOfStockCount %></p>
-                <div class="h-1 w-10 bg-red-500 mt-3"></div>
-            </div>
-        </div>
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <form action="/admin/products" method="GET" class="space-y-4">
+        <input type="hidden" name="page" id="formPage" value="1">
 
-       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-    <form action="/admin/products" method="GET" class="space-y-4">
-
-        <!-- SEARCH ROW (FULL WIDTH) -->
+        <!-- Search -->
         <div class="flex gap-2 w-full">
-        <input
-            type="text"
-            name="search"
-            value="<%= search %>"
-            placeholder="Search products"
-            class="w-full border px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-black"
-        />
-
-        <button
-            type="submit"
-            class="bg-black text-white px-6 rounded-lg"
-        >
-            Search
-        </button>
-
-        <% if (search) { %>
-            <a
-            href="/admin/products"
-            class="bg-gray-300 px-5 py-2 rounded-lg text-black flex items-center"
-            >
-            Clear
-            </a>
-        <% } %>
+          <input type="text" name="search" value="<%= search %>" placeholder="Search products"
+                 class="w-full border px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-black"/>
+          <button type="submit" class="bg-black text-white px-6 rounded-lg">Search</button>
+          <% if (search) { %>
+            <a href="/admin/products" class="bg-gray-300 px-5 py-2 rounded-lg text-black flex items-center">Clear</a>
+          <% } %>
         </div>
 
-        <!-- FILTER ROW -->
+        <!-- Filter Row -->
         <div class="flex flex-col md:flex-row gap-4">
 
-        <!-- CATEGORY -->
-        <select
-            name="category"
-            onchange="this.form.submit()"
-            class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
-        >
+          <!-- Category -->
+          <select name="category"
+                  onchange="document.getElementById('formPage').value='1'; this.form.submit()"
+                  class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black">
             <option value="">All Categories</option>
             <% categories.forEach(cat => { %>
-            <option
-                value="<%= cat._id %>"
-                <%= category === cat._id.toString() ? 'selected' : '' %>
-            >
+              <option value="<%= cat._id %>" <%= category === cat._id.toString() ? 'selected' : '' %>>
                 <%= cat.name %>
-            </option>
+              </option>
             <% }) %>
-        </select>
+          </select>
 
-        <!-- STATUS -->
-        <select
-            name="status"
-            onchange="this.form.submit()"
-            class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
-        >
-            <option value="all" <%= status === 'all' ? 'selected' : '' %>>
-            All Status
-            </option>
-            <option value="listed" <%= status === 'listed' ? 'selected' : '' %>>
-            Listed
-            </option>
-            <option value="unlisted" <%= status === 'unlisted' ? 'selected' : '' %>>
-            Unlisted
-            </option>
-        </select>
+          <!-- Status -->
+          <select name="status"
+                  onchange="document.getElementById('formPage').value='1'; this.form.submit()"
+                  class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black">
+            <option value="all"      <%= status === 'all'      ? 'selected' : '' %>>All Status</option>
+            <option value="listed"   <%= status === 'listed'   ? 'selected' : '' %>>Listed</option>
+            <option value="unlisted" <%= status === 'unlisted' ? 'selected' : '' %>>Unlisted</option>
+          </select>
 
-        <!-- STOCK LEVEL FILTER -->
-        <select
-            name="stockLevel"
-            onchange="this.form.submit()"
-            class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
-        >
-            <option value="all" <%= (stockLevel || 'all') === 'all' ? 'selected' : '' %>>
-            All Stock Levels
-            </option>
-            <option value="in-stock" <%= stockLevel === 'in-stock' ? 'selected' : '' %>>
-            In Stock (5+)
-            </option>
-            <option value="low" <%= stockLevel === 'low' ? 'selected' : '' %>>
-            Low Stock (1-4)
-            </option>
-            <option value="out" <%= stockLevel === 'out' ? 'selected' : '' %>>
-            Out of Stock
-            </option>
-        </select>
+          <!-- Stock Level -->
+          <select name="stockLevel"
+                  onchange="document.getElementById('formPage').value='1'; this.form.submit()"
+                  class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black">
+            <option value="all"      <%= (stockLevel || 'all') === 'all'  ? 'selected' : '' %>>All Stock Levels</option>
+            <option value="in-stock" <%= stockLevel === 'in-stock'        ? 'selected' : '' %>>In Stock (5+)</option>
+            <option value="low"      <%= stockLevel === 'low'             ? 'selected' : '' %>>Low Stock (1–4)</option>
+            <option value="out"      <%= stockLevel === 'out'             ? 'selected' : '' %>>Out of Stock</option>
+          </select>
 
-        <!-- SORT BY -->
-        <select
-            name="sortBy"
-            onchange="this.form.submit()"
-            class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
-        >
-            <option value="name-asc" <%= (sortBy || 'name-asc') === 'name-asc' ? 'selected' : '' %>>
-            Name (A-Z)
-            </option>
-            <option value="name-desc" <%= sortBy === 'name-desc' ? 'selected' : '' %>>
-            Name (Z-A)
-            </option>
-            <option value="stock-asc" <%= sortBy === 'stock-asc' ? 'selected' : '' %>>
-            Stock (Low to High)
-            </option>
-            <option value="stock-desc" <%= sortBy === 'stock-desc' ? 'selected' : '' %>>
-            Stock (High to Low)
-            </option>
-        </select>
+          <!-- Sort By -->
+          <select name="sortBy"
+                  onchange="document.getElementById('formPage').value='1'; this.form.submit()"
+                  class="w-full md:w-1/4 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black">
+            <option value="newest"     <%= (sortBy === 'newest' || !sortBy) ? 'selected' : '' %>>Newest First</option>
+            <option value="name-asc"   <%= sortBy === 'name-asc'   ? 'selected' : '' %>>Name (A–Z)</option>
+            <option value="name-desc"  <%= sortBy === 'name-desc'  ? 'selected' : '' %>>Name (Z–A)</option>
+            <option value="stock-asc"  <%= sortBy === 'stock-asc'  ? 'selected' : '' %>>Stock (Low to High)</option>
+            <option value="stock-desc" <%= sortBy === 'stock-desc' ? 'selected' : '' %>>Stock (High to Low)</option>
+          </select>
 
         </div>
-
-    </form>
+      </form>
     </div>
 
+    <!-- Table -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+      <table class="w-full text-left">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Pricing</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Stock</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <% if (products.length === 0) { %>
+            <tr>
+              <td colspan="6" class="px-6 py-16 text-center text-gray-400">
+                <i class="fas fa-box-open text-4xl mb-4 block"></i>
+                No products found matching your filters.
+              </td>
+            </tr>
+          <% } %>
+          <% products.forEach(product => {
+              const totalStock = product.totalStock !== undefined
+                ? product.totalStock
+                : (product.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0);
+          %>
+            <tr class="hover:bg-gray-50 transition-colors">
 
-
-        <!-- Table -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Pricing</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Stock</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    <% products.forEach(product => { 
-                        const totalStock = product.variants?.length
-                            ? product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)
-                            : product.quantity || 0;
-                    %>
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-4">
-                                  <img
-                                    src="<%= product.productImage && product.productImage.length > 0
-                                            ? product.productImage[0].url
-                                            : 'https://via.placeholder.com/80x100?text=No+Image' %>"
-                                    alt="<%= product.name %>"
-                                    class="w-12 h-14 object-cover rounded shadow-sm"
-                                    />
-
-
-                                    <div>
-                                        <p class="font-bold text-gray-800"><%= product.name %></p>
-                                        <p class="text-xs text-gray-400">ID: <%= product._id.toString().slice(-6) %></p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
-                            <%= product.category?.name || "Uncategorized" %>
-                            </td>
-
-                            <td class="px-6 py-4">
-                                <p class="text-sm font-bold text-gray-900">₹<%= product.salePrice.toLocaleString() %></p>
-                                <p class="text-[10px] text-gray-400 line-through">₹<%= product.regularPrice.toLocaleString() %></p>
-                            </td>
-                            <td class="px-6 py-4 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <span class="<%= totalStock === 0 ? 'text-red-600 font-bold' : totalStock < 5 ? 'text-orange-600 font-bold' : 'text-gray-600' %>">
-                                        <%= totalStock %> Items
-                                    </span>
-                                    <button onclick="openStockModal('<%= product._id %>', '<%= product.name %>', <%= JSON.stringify(product.variants || []) %>)" 
-                                            class="text-teal-600 hover:text-teal-800 text-xs">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                                <!-- Show variant breakdown if exists -->
-                                <% if (product.variants && product.variants.length > 0) { %>
-                                    <div class="mt-1 text-[10px] text-gray-400">
-                                        <% product.variants.slice(0, 2).forEach(v => { %>
-                                            <div><%= v.color %>: <%= v.quantity %></div>
-                                        <% }) %>
-                                        <% if (product.variants.length > 2) { %>
-                                            <div class="text-teal-600">+<%= product.variants.length - 2 %> more</div>
-                                        <% } %>
-                                    </div>
-                                <% } %>
-                            </td>
-                            <td class="px-6 py-4">
-                                <% if (product.isBlocked) { %>
-                                    <span class="px-3 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase rounded-full border border-red-100">Unlisted</span>
-                                <% } else { %>
-                                    <span class="px-3 py-1 bg-green-50 text-green-700 text-[10px] font-bold uppercase rounded-full border border-green-100">Listed</span>
-                                <% } %>
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <div class="flex justify-end gap-3">
-                                    <button onclick="openProductModal('<%= product._id %>')" class="text-teal-600 hover:text-teal-800 text-sm font-bold">Edit</button>
-                                    <button onclick="openStatusModal('<%= product._id %>', <%= product.isBlocked %>)" class="text-gray-500 hover:text-gray-700 text-sm font-bold">
-                                        <%= product.isBlocked ? 'List' : 'Unlist' %>
-                                    </button>
-                                    <button onclick="openDeleteModal('<%= product._id %>')" class="text-red-600 hover:text-red-800 text-sm font-bold">Delete</button>
-                                </div>
-                            </td>
-                        </tr>
-                    <% }) %>
-                </tbody>
-            </table>
-            
-            <!-- Pagination -->
-            <% if (totalPages > 1) { %>
-                <div class="px-6 py-6 bg-gray-50 border-t border-gray-200 flex justify-center gap-2">
-                    <% for(let i = 1; i <= totalPages; i++) { %>
-                        <a href="/admin/products?page=<%= i %>&search=<%= search || '' %>&category=<%= category || '' %>&status=<%= status || 'all' %>&stockLevel=<%= stockLevel || 'all' %>&sortBy=<%= sortBy || 'name-asc' %>" 
-                           class="w-10 h-10 flex items-center justify-center text-sm font-bold border rounded transition-all <%= currentPage === i ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-400 hover:bg-gray-100' %>">
-                            <%= i %>
-                        </a>
-                    <% } %>
+              <!-- Product -->
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-4">
+                  <img src="<%= product.productImage && product.productImage.length > 0
+                                ? product.productImage[0].url
+                                : 'https://via.placeholder.com/80x100?text=No+Image' %>"
+                       alt="<%= product.name %>"
+                       class="w-12 h-14 object-cover rounded shadow-sm">
+                  <div>
+                    <p class="font-bold text-gray-800"><%= product.name %></p>
+                    <p class="text-xs text-gray-400">ID: <%= product._id.toString().slice(-6) %></p>
+                  </div>
                 </div>
-            <% } %>
+              </td>
+
+              <!-- Category -->
+              <td class="px-6 py-4 text-sm text-gray-600">
+                <%= product.category?.name || "Uncategorized" %>
+              </td>
+
+              <!-- Pricing -->
+              <td class="px-6 py-4">
+                <p class="text-sm font-bold text-gray-900">₹<%= product.salePrice.toLocaleString() %></p>
+                <p class="text-[10px] text-gray-400 line-through">₹<%= product.regularPrice.toLocaleString() %></p>
+              </td>
+
+              <!-- Stock -->
+              <td class="px-6 py-4 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="<%= totalStock === 0 ? 'text-red-600 font-bold' : totalStock < 5 ? 'text-orange-600 font-bold' : 'text-gray-600' %>">
+                    <%= totalStock %> Items
+                  </span>
+                  <button onclick="openStockModal('<%= product._id %>', '<%= product.name.replace(/'/g, `\\'`) %>', <%= JSON.stringify(product.variants || []) %>)"
+                          class="text-teal-600 hover:text-teal-800 text-xs">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                </div>
+                <% if (product.variants && product.variants.length > 0) { %>
+                  <div class="mt-1 text-[10px] text-gray-400">
+                    <% product.variants.slice(0, 2).forEach(v => { %>
+                      <div><%= v.color %>: <%= v.quantity %></div>
+                    <% }) %>
+                    <% if (product.variants.length > 2) { %>
+                      <div class="text-teal-600">+<%= product.variants.length - 2 %> more</div>
+                    <% } %>
+                  </div>
+                <% } %>
+              </td>
+
+              <!-- Status -->
+              <td class="px-6 py-4">
+                <% if (product.isBlocked) { %>
+                  <span class="px-3 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase rounded-full border border-red-100">Unlisted</span>
+                <% } else { %>
+                  <span class="px-3 py-1 bg-green-50 text-green-700 text-[10px] font-bold uppercase rounded-full border border-green-100">Listed</span>
+                <% } %>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-3">
+                  <button onclick="openProductModal('<%= product._id %>')"
+                          class="text-teal-600 hover:text-teal-800 text-sm font-bold">Edit</button>
+                  <button onclick="openStatusModal('<%= product._id %>', <%= product.isBlocked %>)"
+                          class="text-gray-500 hover:text-gray-700 text-sm font-bold">
+                    <%= product.isBlocked ? 'List' : 'Unlist' %>
+                  </button>
+                  <button onclick="openDeleteModal('<%= product._id %>')"
+                          class="text-red-600 hover:text-red-800 text-sm font-bold">Delete</button>
+                </div>
+              </td>
+
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <!-- FIX: was hardcoding sortBy=name-asc — now uses current sortBy value -->
+      <% if (totalPages > 1) { %>
+        <div class="px-6 py-6 bg-gray-50 border-t border-gray-200 flex justify-center gap-2">
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <a href="/admin/products?page=<%= i %>&search=<%= encodeURIComponent(search || '') %>&category=<%= category || '' %>&status=<%= status || 'all' %>&stockLevel=<%= stockLevel || 'all' %>&sortBy=<%= sortBy || 'newest' %>"
+               class="w-10 h-10 flex items-center justify-center text-sm font-bold border rounded transition-all
+                      <%= currentPage === i ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-400 hover:bg-gray-100' %>">
+              <%= i %>
+            </a>
+          <% } %>
         </div>
+      <% } %>
+
     </div>
+  </div>
 </div>
 
 
-<!-- STOCK MANAGEMENT MODAL -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- STOCK MODAL                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <div id="stockModal"
      class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-
   <div class="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-8">
 
-    <!-- HEADER -->
     <div class="flex justify-between items-center mb-6">
       <div>
         <h3 class="text-xl font-bold text-gray-900">Manage Stock</h3>
         <p id="stockProductName" class="text-sm text-gray-500 mt-1"></p>
       </div>
       <button onclick="closeStockModal()"
-              class="w-10 h-10 flex items-center justify-center rounded-full
-                     text-gray-400 hover:text-gray-900 hover:bg-gray-200 transition text-2xl">
+              class="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-900 hover:bg-gray-200 transition text-2xl">
         &times;
       </button>
     </div>
 
     <input type="hidden" id="stockProductId">
 
-    <!-- BULK ACTIONS -->
+    <!-- Bulk actions -->
     <div class="bg-gray-50 rounded-xl p-6 mb-6">
       <h4 class="text-sm font-bold text-gray-700 mb-4">Bulk Stock Operations</h4>
-      
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="text-xs text-gray-600 mb-2 block">Add Stock</label>
           <div class="flex gap-2">
-            <input type="number" 
-                   id="bulkAddQuantity" 
-                   min="1" 
-                   placeholder="Quantity"
+            <input type="number" id="bulkAddQuantity" min="1" placeholder="Quantity"
                    class="flex-1 px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
             <button onclick="bulkUpdateStock('add')"
                     class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium">
@@ -312,14 +279,10 @@
             </button>
           </div>
         </div>
-
         <div>
           <label class="text-xs text-gray-600 mb-2 block">Remove Stock</label>
           <div class="flex gap-2">
-            <input type="number" 
-                   id="bulkRemoveQuantity" 
-                   min="1" 
-                   placeholder="Quantity"
+            <input type="number" id="bulkRemoveQuantity" min="1" placeholder="Quantity"
                    class="flex-1 px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
             <button onclick="bulkUpdateStock('remove')"
                     class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-medium">
@@ -330,12 +293,10 @@
       </div>
     </div>
 
-    <!-- VARIANT-WISE STOCK -->
+    <!-- Variant stock -->
     <div>
       <h4 class="text-sm font-bold text-gray-700 mb-4">Stock by Variant</h4>
-      <div id="variantStockList" class="space-y-3">
-        <!-- Populated dynamically -->
-      </div>
+      <div id="variantStockList" class="space-y-3"></div>
     </div>
 
     <div class="mt-6 flex justify-end">
@@ -344,141 +305,112 @@
         Close
       </button>
     </div>
-
   </div>
 </div>
 
 
-<!-- ADD / EDIT PRODUCT MODAL -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ADD / EDIT PRODUCT MODAL                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <div id="productModal"
      class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-
   <div class="bg-gray-50 w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl p-8">
 
-    <!-- HEADER -->
     <div class="flex justify-between items-center mb-10">
       <div>
-        <h3 id="modalTitle" class="text-2xl font-bold text-gray-900 tracking-tight">
-          Add New Product
-        </h3>
-        <p class="text-sm text-gray-500 mt-1">
-          Fill in product details, variants, and images
-        </p>
+        <h3 id="modalTitle" class="text-2xl font-bold text-gray-900 tracking-tight">Add New Product</h3>
+        <p class="text-sm text-gray-500 mt-1">Fill in product details, variants, and images</p>
       </div>
-
       <button onclick="closeProductModal()"
-              class="w-10 h-10 flex items-center justify-center rounded-full
-                     text-gray-400 hover:text-gray-900 hover:bg-gray-200 transition text-2xl">
+              class="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-900 hover:bg-gray-200 transition text-2xl">
         &times;
       </button>
     </div>
 
-    <!-- FORM -->
-    <form id="productForm"
-          method="POST"
-          enctype="multipart/form-data"
+    <form id="productForm" method="POST" enctype="multipart/form-data"
           class="grid grid-cols-1 md:grid-cols-2 gap-10">
 
-      <input type="hidden" name="productId" id="form-productId">
+      <input type="hidden" name="productId"     id="form-productId">
       <input type="hidden" name="removedImages" id="removedImages">
-
 
       <!-- LEFT COLUMN -->
       <div class="space-y-8">
 
-        <!-- BASIC INFO -->
-        <div class="section space-y-6">
-          <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700">
-            Basic Information
-          </h4>
+        <!-- Basic Info -->
+        <div class="space-y-6">
+          <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700">Basic Information</h4>
 
           <div>
-            <label class="label">Product Name</label>
-            <input type="text" name="name" id="form-name" required class="input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Product Name <span class="text-red-500">*</span></label>
+            <input type="text" name="name" id="form-name"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+            <p id="err-name" class="text-xs text-red-500 mt-1 hidden">Product name is required (min 3 characters)</p>
           </div>
 
           <div>
-            <label class="label">Category</label>
-            <select name="category" id="form-category" required class="input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Category <span class="text-red-500">*</span></label>
+            <select name="category" id="form-category"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+              <option value="">— Select a category —</option>
               <% categories.forEach(cat => { %>
                 <option value="<%= cat._id %>"><%= cat.name %></option>
               <% }) %>
             </select>
+            <p id="err-category" class="text-xs text-red-500 mt-1 hidden">Please select a category</p>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="label">Regular Price</label>
-              <input type="number" name="regularPrice" id="form-regularPrice" required class="input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Regular Price <span class="text-red-500">*</span></label>
+              <input type="number" name="regularPrice" id="form-regularPrice" min="1"
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+              <p id="err-regularPrice" class="text-xs text-red-500 mt-1 hidden">Enter a valid regular price</p>
             </div>
             <div>
-              <label class="label">Sale Price</label>
-              <input type="number" name="salePrice" id="form-salePrice" required class="input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Sale Price <span class="text-red-500">*</span></label>
+              <input type="number" name="salePrice" id="form-salePrice" min="1"
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+              <p id="err-salePrice" class="text-xs text-red-500 mt-1 hidden">Sale price must be &gt; 0 and ≤ regular price</p>
             </div>
           </div>
 
           <div>
-            <label class="label">Brand</label>
-            <input type="text" name="brand" id="form-brand" required class="input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Brand <span class="text-red-500">*</span></label>
+            <input type="text" name="brand" id="form-brand"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+            <p id="err-brand" class="text-xs text-red-500 mt-1 hidden">Brand is required</p>
           </div>
         </div>
 
-        <!-- VARIANTS -->
-        <div class="section space-y-4">
-          <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700">
-            Variants & Stock
-          </h4>
-
-          <div id="variantContainer" class="space-y-3">
-            <div class="grid grid-cols-2 gap-3">
-              <input type="text"
-                     placeholder="Color (e.g. Black)"
-                     class="input variant-color px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
-              <input type="number"
-                     placeholder="Stock Qty"
-                     min="0"
-                     class="input variant-qty px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
-            </div>
-          </div>
-
-          <button type="button"
-                  onclick="addVariantRow()"
-                  class="inline-flex items-center gap-2 text-sm font-semibold
-                         text-teal-700 hover:underline">
+        <!-- Variants -->
+        <div class="space-y-4">
+          <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700">Variants &amp; Stock</h4>
+          <div id="variantContainer" class="space-y-3"></div>
+          <button type="button" onclick="addVariantRow()"
+                  class="inline-flex items-center gap-2 text-sm font-semibold text-teal-700 hover:underline">
             + Add another color
           </button>
-
-          <p class="text-xs text-gray-500">
-            Stock is managed per color. Variants with zero stock will be unavailable.
-          </p>
+          <p id="err-variants" class="text-xs text-red-500 hidden">Add at least one color variant</p>
+          <p class="text-xs text-gray-500">Stock is managed per color. Variants with zero stock will be unavailable.</p>
         </div>
 
-        <!-- ✅ NEW: SPECIFICATIONS SECTION -->
-        <div class="section space-y-4">
-          <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700">
-            Product Specifications (Optional)
-          </h4>
-          <p class="text-xs text-gray-500">
-            Add custom specifications like Material, Origin, Dimensions, etc.
-          </p>
-
-          <div id="specifications-container" class="space-y-3">
-            <!-- Populated dynamically -->
-          </div>
-
-          <button type="button" onclick="addSpecRow()" 
+        <!-- Specifications -->
+        <div class="space-y-4">
+          <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700">Specifications <span class="text-gray-400 font-normal normal-case">(Optional)</span></h4>
+          <p class="text-xs text-gray-500">Add custom specs like Material, Origin, Dimensions, etc.</p>
+          <div id="specifications-container" class="space-y-3"></div>
+          <button type="button" onclick="addSpecRow()"
                   class="inline-flex items-center gap-2 text-sm font-semibold text-teal-700 hover:underline">
             + Add Specification
           </button>
         </div>
 
-        <!-- DESCRIPTION -->
-        <div class="section">
-          <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700 mb-4">
-            Description
-          </h4>
-          <textarea name="description" id="form-description" rows="4" required
-                    class="input resize-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"></textarea>
+        <!-- Description -->
+        <div>
+          <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700 mb-4">Description <span class="text-red-500">*</span></h4>
+          <textarea name="description" id="form-description" rows="4"
+                    class="resize-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"></textarea>
+          <p id="err-description" class="text-xs text-red-500 mt-1 hidden">Description is required (min 10 characters)</p>
         </div>
 
       </div>
@@ -486,57 +418,41 @@
       <!-- RIGHT COLUMN -->
       <div class="space-y-8">
 
-        <!-- IMAGES -->
-        <div class="section space-y-4">
+        <!-- Images -->
+        <div class="space-y-4">
           <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700">
-            Product Images
-            <span class="text-red-500">*</span>
+            Product Images <span class="text-red-500">*</span>
           </h4>
+          <p class="text-xs text-gray-500">Upload at least 3 images. Images will be cropped automatically.</p>
 
-          <p class="text-xs text-gray-500">
-            Upload at least 3 images. Images will be cropped automatically.
-          </p>
-
-          <div class="relative border-2 border-dashed border-gray-300 rounded-2xl p-10 text-center
-                      hover:border-teal-500 transition bg-gray-50">
-            <input type="file"
-                   id="imageInput"
-                   multiple
-                   accept="image/*"
+          <div class="relative border-2 border-dashed border-gray-300 rounded-2xl p-10 text-center hover:border-teal-500 transition bg-gray-50">
+            <input type="file" id="imageInput" multiple accept="image/*"
                    class="absolute inset-0 opacity-0 cursor-pointer">
-
             <div class="flex flex-col items-center gap-4 pointer-events-none">
               <div class="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center">
                 <i class="fas fa-cloud-upload-alt text-teal-600 text-2xl"></i>
               </div>
-              <p class="text-sm font-semibold text-gray-700">
-                Drag & drop images here
-              </p>
-              <p class="text-xs text-gray-500">
-                or <span class="text-teal-600 font-bold">click to browse</span>
-              </p>
-              <p class="text-[10px] text-gray-400 uppercase tracking-widest">
-                JPG, PNG, WEBP • 3–5 images
-              </p>
+              <p class="text-sm font-semibold text-gray-700">Drag &amp; drop images here</p>
+              <p class="text-xs text-gray-500">or <span class="text-teal-600 font-bold">click to browse</span></p>
+              <p class="text-[10px] text-gray-400 uppercase tracking-widest">JPG, PNG, WEBP • min 3 images</p>
             </div>
           </div>
 
+          <p id="err-images" class="text-xs text-red-500 hidden">Please upload at least 3 product images</p>
           <div id="imagePreview" class="grid grid-cols-3 gap-4"></div>
         </div>
 
       </div>
 
-      <!-- ACTIONS -->
+      <!-- Actions -->
       <div class="col-span-full flex gap-4 pt-4">
         <button type="submit"
-                class="flex-1 bg-teal-700 text-white py-4 rounded-2xl
-                       font-bold uppercase tracking-widest hover:bg-teal-800 transition">
+                id="submitProductBtn"
+                class="flex-1 bg-teal-700 text-white py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-teal-800 transition">
           Save Product
         </button>
-        <button type="button"
-                onclick="closeProductModal()"
-                class="flex-1 border border-gray-300 py-4 rounded-2xl
-                       font-bold uppercase tracking-widest hover:bg-gray-100 transition">
+        <button type="button" onclick="closeProductModal()"
+                class="flex-1 border border-gray-300 py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-gray-100 transition">
           Cancel
         </button>
       </div>
@@ -546,73 +462,62 @@
 </div>
 
 
-
-<!-- CONFIRMATION MODAL -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CONFIRM MODAL                                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <div id="confirmModal"
      class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-
   <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8">
-
     <div class="text-center mb-6">
       <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
       </div>
-      <h3 id="confirmTitle" class="text-xl font-bold text-gray-900 mb-2">
-        Confirm Action
-      </h3>
-      <p id="confirmMessage" class="text-sm text-gray-600">
-        Are you sure you want to proceed with this action?
-      </p>
+      <h3 id="confirmTitle"   class="text-xl font-bold text-gray-900 mb-2">Confirm Action</h3>
+      <p  id="confirmMessage" class="text-sm text-gray-600">Are you sure you want to proceed?</p>
     </div>
-
     <form id="confirmForm" method="POST">
       <div class="flex gap-3">
-        <button type="submit"
-                id="confirmActionBtn"
+        <button type="submit" id="confirmActionBtn"
                 class="flex-1 bg-teal-700 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition">
           Confirm
         </button>
-        <button type="button"
-                onclick="closeActionModals()"
+        <button type="button" onclick="closeActionModals()"
                 class="flex-1 border border-gray-300 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-50 transition">
           Cancel
         </button>
       </div>
     </form>
-
   </div>
 </div>
 
 
-<!-- NOTIFICATION MODAL (SUCCESS/ERROR) -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- NOTIFICATION MODAL                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <div id="notificationModal"
      class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-
   <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8">
-
     <div class="text-center mb-6">
       <div id="notificationIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
         <i id="notificationIconElement" class="text-2xl"></i>
       </div>
-      <h3 id="notificationTitle" class="text-xl font-bold text-gray-900 mb-2"></h3>
-      <p id="notificationMessage" class="text-sm text-gray-600"></p>
+      <h3 id="notificationTitle"   class="text-xl font-bold text-gray-900 mb-2"></h3>
+      <p  id="notificationMessage" class="text-sm text-gray-600"></p>
     </div>
-
     <button onclick="closeNotificationModal()"
             class="w-full bg-teal-700 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800 transition">
       OK
     </button>
-
   </div>
 </div>
 
 
-<!-- VALIDATION MODAL (FOR INPUT ERRORS) -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- VALIDATION MODAL                                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <div id="validationModal"
      class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-
   <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8">
-
     <div class="text-center mb-6">
       <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-exclamation-circle text-orange-600 text-2xl"></i>
@@ -620,486 +525,431 @@
       <h3 class="text-xl font-bold text-gray-900 mb-2">Validation Error</h3>
       <p id="validationMessage" class="text-sm text-gray-600"></p>
     </div>
-
     <button onclick="closeValidationModal()"
             class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-orange-700 transition">
       OK
     </button>
-
   </div>
 </div>
 
 
-<!-- CROPPER OVERLAY -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CROPPER OVERLAY                                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <div id="cropperOverlay"
      class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
-
   <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
-
     <div class="flex justify-between items-center px-6 py-4 border-b">
-      <h4 class="text-sm font-bold uppercase tracking-widest text-gray-800">
-        Crop Image
-      </h4>
-      <button onclick="cancelCrop()" class="text-2xl text-gray-400 hover:text-gray-700">
-        &times;
-      </button>
+      <h4 class="text-sm font-bold uppercase tracking-widest text-gray-800">Crop Image</h4>
+      <button onclick="cancelCrop()" class="text-2xl text-gray-400 hover:text-gray-700">&times;</button>
     </div>
-
     <div class="bg-gray-100 flex items-center justify-center h-[500px]">
       <img id="cropperImage" class="max-w-full max-h-full">
     </div>
-
     <div class="flex gap-4 px-6 py-4 border-t">
       <button onclick="applyCrop()"
               class="flex-1 bg-teal-700 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-teal-800">
-        Crop & Continue
+        Crop &amp; Continue
       </button>
       <button onclick="cancelCrop()"
               class="flex-1 border py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-50">
         Skip
       </button>
     </div>
-
   </div>
 </div>
 
 
-
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <script>
-/* ---------------- IMAGE CROPPER STATE ---------------- */
-let cropper = null;
-let pendingFiles = [];
+/* ── State ──────────────────────────────────────────────────── */
+let cropper        = null;
+let pendingFiles   = [];
 let processedImages = [];
+let removedOldImages = [];
 
-/* ---------------- NOTIFICATION MODAL FUNCTIONS ---------------- */
+/* ── Notification modal ─────────────────────────────────────── */
 function showNotificationModal(title, message, isSuccess = true) {
-  const modal = document.getElementById("notificationModal");
-  const icon = document.getElementById("notificationIcon");
-  const iconElement = document.getElementById("notificationIconElement");
-  
-  document.getElementById("notificationTitle").textContent = title;
+  document.getElementById("notificationTitle").textContent   = title;
   document.getElementById("notificationMessage").textContent = message;
-  
+  const icon    = document.getElementById("notificationIcon");
+  const iconEl  = document.getElementById("notificationIconElement");
   if (isSuccess) {
-    icon.className = "w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4";
-    iconElement.className = "fas fa-check-circle text-green-600 text-2xl";
+    icon.className  = "w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4";
+    iconEl.className = "fas fa-check-circle text-green-600 text-2xl";
   } else {
-    icon.className = "w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4";
-    iconElement.className = "fas fa-times-circle text-red-600 text-2xl";
+    icon.className  = "w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4";
+    iconEl.className = "fas fa-times-circle text-red-600 text-2xl";
   }
-  
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
+  const modal = document.getElementById("notificationModal");
+  modal.classList.remove("hidden"); modal.classList.add("flex");
 }
-
 function closeNotificationModal() {
   const modal = document.getElementById("notificationModal");
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
+  modal.classList.add("hidden"); modal.classList.remove("flex");
 }
 
+/* ── Validation modal ───────────────────────────────────────── */
 function showValidationModal(message) {
-  const modal = document.getElementById("validationModal");
   document.getElementById("validationMessage").textContent = message;
-  
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
+  const modal = document.getElementById("validationModal");
+  modal.classList.remove("hidden"); modal.classList.add("flex");
 }
-
 function closeValidationModal() {
   const modal = document.getElementById("validationModal");
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
+  modal.classList.add("hidden"); modal.classList.remove("flex");
 }
 
-/* ---------------- STOCK MANAGEMENT ---------------- */
+/* ── Field-level inline error helpers ──────────────────────── */
+function showFieldErr(id, show) {
+  const el = document.getElementById("err-" + id);
+  if (el) el.classList.toggle("hidden", !show);
+  const input = document.getElementById("form-" + id);
+  if (input) input.classList.toggle("border-red-400", show);
+}
+function clearAllErrors() {
+  ["name","category","regularPrice","salePrice","brand","description","variants","images"]
+    .forEach(id => showFieldErr(id, false));
+}
+
+/* ── Stock modal ────────────────────────────────────────────── */
 function openStockModal(productId, productName, variants) {
-  const modal = document.getElementById("stockModal");
-  document.getElementById("stockProductId").value = productId;
+  document.getElementById("stockProductId").value   = productId;
   document.getElementById("stockProductName").textContent = productName;
-  
-  const variantList = document.getElementById("variantStockList");
-  variantList.innerHTML = "";
-  
+
+  const list = document.getElementById("variantStockList");
+  list.innerHTML = "";
+
   if (variants && variants.length > 0) {
-    variants.forEach(variant => {
+    variants.forEach(v => {
       const div = document.createElement("div");
       div.className = "flex items-center justify-between bg-gray-50 p-4 rounded-lg";
       div.innerHTML = `
         <div class="flex-1">
-          <p class="font-bold text-gray-800">${variant.color}</p>
-          <p class="text-xs text-gray-500">Current Stock: ${variant.quantity} items</p>
+          <p class="font-bold text-gray-800">${v.color}</p>
+          <p class="text-xs text-gray-500">Current Stock: ${v.quantity} items</p>
         </div>
         <div class="flex items-center gap-2">
-          <input type="number" 
-                 min="0" 
-                 value="${variant.quantity}"
-                 data-color="${variant.color}"
+          <input type="number" min="0" value="${v.quantity}" data-color="${v.color}"
                  class="variant-stock-input w-20 px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
-          <button onclick="updateVariantStock('${productId}', '${variant.color}', this.previousElementSibling.value)"
+          <button onclick="updateVariantStock('${productId}', '${v.color}', this.previousElementSibling.value)"
                   class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 text-sm font-medium">
             Update
           </button>
-        </div>
-      `;
-      variantList.appendChild(div);
+        </div>`;
+      list.appendChild(div);
     });
   } else {
-    variantList.innerHTML = `
-      <p class="text-center text-gray-500 py-4">No variants found for this product</p>
-    `;
+    list.innerHTML = `<p class="text-center text-gray-500 py-4">No variants found for this product</p>`;
   }
-  
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
+
+  const modal = document.getElementById("stockModal");
+  modal.classList.remove("hidden"); modal.classList.add("flex");
 }
 
 function closeStockModal() {
   const modal = document.getElementById("stockModal");
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
+  modal.classList.add("hidden"); modal.classList.remove("flex");
 }
 
 async function updateVariantStock(productId, color, quantity) {
   try {
-    const res = await fetch("/admin/products/update-stock", {
+    const res  = await fetch("/admin/products/update-stock", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productId,
-        action: "set",
-        color,
-        quantity: parseInt(quantity)
-      })
+      body: JSON.stringify({ productId, action: "set", color, quantity: parseInt(quantity) })
     });
-    
     const data = await res.json();
-    
     if (data.success) {
       showNotificationModal("Success!", "Stock updated successfully", true);
-      setTimeout(() => {
-        closeNotificationModal();
-        location.reload();
-      }, 1500);
+      setTimeout(() => { closeNotificationModal(); location.reload(); }, 1500);
     } else {
-      showNotificationModal("Error", "Failed to update stock", false);
+      showNotificationModal("Error", data.message || "Failed to update stock", false);
     }
-  } catch (error) {
-    console.error("Error updating stock:", error);
+  } catch {
     showNotificationModal("Error", "Something went wrong", false);
   }
 }
 
 async function bulkUpdateStock(action) {
   const productId = document.getElementById("stockProductId").value;
-  const quantityInput = action === "add" 
+  const input     = action === "add"
     ? document.getElementById("bulkAddQuantity")
     : document.getElementById("bulkRemoveQuantity");
-  
-  const quantity = parseInt(quantityInput.value);
-  
+  const quantity  = parseInt(input.value);
+
   if (!quantity || quantity <= 0) {
-    showValidationModal("Please enter a valid quantity");
+    showValidationModal("Please enter a valid quantity greater than 0");
     return;
   }
-  
+
   try {
-    const res = await fetch("/admin/products/update-stock", {
+    const res  = await fetch("/admin/products/update-stock", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productId,
-        action,
-        quantity
-      })
+      body: JSON.stringify({ productId, action, quantity })
     });
-    
     const data = await res.json();
-    
     if (data.success) {
-      const actionText = action === 'add' ? 'added' : 'removed';
-      showNotificationModal("Success!", `Stock ${actionText} successfully!`, true);
-      setTimeout(() => {
-        closeNotificationModal();
-        location.reload();
-      }, 1500);
+      showNotificationModal("Success!", `Stock ${action === 'add' ? 'added' : 'removed'} successfully!`, true);
+      setTimeout(() => { closeNotificationModal(); location.reload(); }, 1500);
     } else {
       showNotificationModal("Error", "Failed to update stock", false);
     }
-  } catch (error) {
-    console.error("Error updating stock:", error);
+  } catch {
     showNotificationModal("Error", "Something went wrong", false);
   }
 }
 
-/* ---------------- STATUS & DELETE MODALS ---------------- */
+/* ── Status / Delete modals ─────────────────────────────────── */
 function openStatusModal(productId, isBlocked) {
-  const modal = document.getElementById("confirmModal");
-  const form = document.getElementById("confirmForm");
-  const title = document.getElementById("confirmTitle");
+  const modal   = document.getElementById("confirmModal");
+  const form    = document.getElementById("confirmForm");
+  const title   = document.getElementById("confirmTitle");
   const message = document.getElementById("confirmMessage");
-  const btn = document.getElementById("confirmActionBtn");
-  
+  const btn     = document.getElementById("confirmActionBtn");
+
+  // Reset any previous onclick from delete
+  btn.onclick = null;
+
   if (isBlocked) {
-    title.textContent = "List Product";
+    title.textContent   = "List Product";
     message.textContent = "Are you sure you want to list this product?";
-    form.action = `/admin/products/unblock/${productId}`;
-    btn.textContent = "List Product";
-    btn.className = "flex-1 bg-green-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-green-700 transition";
+    form.action         = `/admin/products/unblock/${productId}`;
+    btn.textContent     = "List Product";
+    btn.className       = "flex-1 bg-green-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-green-700 transition";
   } else {
-    title.textContent = "Unlist Product";
+    title.textContent   = "Unlist Product";
     message.textContent = "Are you sure you want to unlist this product?";
-    form.action = `/admin/products/block/${productId}`;
-    btn.textContent = "Unlist Product";
-    btn.className = "flex-1 bg-orange-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-orange-700 transition";
+    form.action         = `/admin/products/block/${productId}`;
+    btn.textContent     = "Unlist Product";
+    btn.className       = "flex-1 bg-orange-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-orange-700 transition";
   }
-  
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
+
+  modal.classList.remove("hidden"); modal.classList.add("flex");
 }
 
 function openDeleteModal(productId) {
-  const modal = document.getElementById("confirmModal");
-  const form = document.getElementById("confirmForm");
-  const title = document.getElementById("confirmTitle");
+  const modal   = document.getElementById("confirmModal");
+  const title   = document.getElementById("confirmTitle");
   const message = document.getElementById("confirmMessage");
-  const btn = document.getElementById("confirmActionBtn");
-  
-  title.textContent = "Delete Product";
+  const btn     = document.getElementById("confirmActionBtn");
+
+  title.textContent   = "Delete Product";
   message.textContent = "Are you sure you want to delete this product? This action cannot be undone.";
-  form.action = `/admin/products/delete/${productId}`;
-  btn.textContent = "Delete";
-  btn.className = "flex-1 bg-red-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-red-700 transition";
-  
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
+  btn.textContent     = "Delete";
+  btn.className       = "flex-1 bg-red-600 text-white py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-red-700 transition";
+
+  btn.onclick = async () => {
+    try {
+      btn.disabled    = true;
+      btn.textContent = "Deleting...";
+      const res  = await fetch(`/admin/products/delete/${productId}`, { method: "DELETE" });
+      const data = await res.json();
+      closeActionModals();
+      if (data.success) {
+        showNotificationModal("Deleted!", "Product deleted successfully.", true);
+        setTimeout(() => { closeNotificationModal(); location.reload(); }, 1500);
+      } else {
+        showNotificationModal("Error", data.message || "Failed to delete product.", false);
+      }
+    } catch {
+      closeActionModals();
+      showNotificationModal("Error", "Something went wrong.", false);
+    }
+  };
+
+  modal.classList.remove("hidden"); modal.classList.add("flex");
 }
 
 function closeActionModals() {
-  const confirmModal = document.getElementById("confirmModal");
-  confirmModal.classList.add("hidden");
-  confirmModal.classList.remove("flex");
+  const modal = document.getElementById("confirmModal");
+  modal.classList.add("hidden"); modal.classList.remove("flex");
 }
 
-let removedOldImages = [];
-
+/* ── Remove old image ───────────────────────────────────────── */
 function removeOldImage(index, btn) {
   removedOldImages.push(index);
-
-  document.getElementById("removedImages").value =
-    JSON.stringify(removedOldImages);
-
+  document.getElementById("removedImages").value = JSON.stringify(removedOldImages);
   btn.parentElement.remove();
 }
 
-
-/* ---------------- OPEN PRODUCT MODAL ---------------- */
+/* ── Open product modal ─────────────────────────────────────── */
 async function openProductModal(productId = null) {
-  const modal = document.getElementById("productModal");
-  const form = document.getElementById("productForm");
-  const preview = document.getElementById("imagePreview");
+  const modal          = document.getElementById("productModal");
+  const form           = document.getElementById("productForm");
+  const preview        = document.getElementById("imagePreview");
   const variantContainer = document.getElementById("variantContainer");
-  const specsContainer = document.getElementById("specifications-container"); // ✅ NEW
+  const specsContainer = document.getElementById("specifications-container");
+  const modalTitle     = document.getElementById("modalTitle");
 
-  // Reset UI
+  // Reset everything
   form.reset();
-  preview.innerHTML = "";
+  preview.innerHTML         = "";
   variantContainer.innerHTML = "";
-  specsContainer.innerHTML = ""; // ✅ NEW
-  processedImages = [];
-  pendingFiles = [];
-  removedOldImages = []; // ✅ Reset removed images
+  specsContainer.innerHTML  = "";
+  processedImages  = [];
+  pendingFiles     = [];
+  removedOldImages = [];
+  document.getElementById("removedImages").value = "";
+  clearAllErrors();
 
   if (productId) {
-    /* ---------- EDIT MODE ---------- */
-    form.action = "/admin/products/edit";
+    /* EDIT MODE */
+    modalTitle.textContent = "Edit Product";
+    form.action            = "/admin/products/edit";
     document.getElementById("form-productId").value = productId;
 
-    const res = await fetch(`/admin/products/${productId}`);
-    const product = await res.json();
+    try {
+      const res     = await fetch(`/admin/products/${productId}`);
+      const product = await res.json();
 
-    // Basic fields
-    document.getElementById("form-name").value = product.name || "";
-    document.getElementById("form-regularPrice").value = product.regularPrice || "";
-    document.getElementById("form-salePrice").value = product.salePrice || "";
-    document.getElementById("form-brand").value = product.brand || "";
-    document.getElementById("form-description").value = product.description || "";
+      document.getElementById("form-name").value         = product.name         || "";
+      document.getElementById("form-regularPrice").value = product.regularPrice || "";
+      document.getElementById("form-salePrice").value    = product.salePrice    || "";
+      document.getElementById("form-brand").value        = product.brand        || "";
+      document.getElementById("form-description").value  = product.description  || "";
 
-    // Category
-    if (product.category) {
-      document.getElementById("form-category").value =
-        typeof product.category === "object"
-          ? product.category._id
-          : product.category;
-    }
+      if (product.category) {
+        document.getElementById("form-category").value =
+          typeof product.category === "object" ? product.category._id : product.category;
+      }
 
-    // Existing images preview
-    if (Array.isArray(product.productImage)) {
-      product.productImage.forEach((img, index) => {
-        const div = document.createElement("div");
-        div.className = "relative aspect-[3/4] border rounded-xl overflow-hidden";
+      // Existing images
+      if (Array.isArray(product.productImage)) {
+        product.productImage.forEach((img, index) => {
+          const div = document.createElement("div");
+          div.className = "relative aspect-[3/4] border rounded-xl overflow-hidden";
+          div.setAttribute("data-old", "true");
+          div.innerHTML = `
+            <img src="${img.url}" class="w-full h-full object-cover">
+            <div class="absolute top-2 left-2 bg-black/50 text-white text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Existing</div>
+            <button type="button" onclick="removeOldImage(${index}, this)"
+                    class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm">&times;</button>`;
+          preview.appendChild(div);
+        });
+      }
 
-        div.innerHTML = `
-          <img src="${img.url}" class="w-full h-full object-cover">
-          <button
-            type="button"
-            onclick="removeOldImage(${index}, this)"
-            class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm">
-            &times;
-          </button>
-        `;
+      // Variants
+      if (Array.isArray(product.variants)) {
+        product.variants.forEach(v => addVariantRow(v.color, v.quantity));
+      }
 
-        preview.appendChild(div);
-      });
-    }
+      // Specifications
+      if (product.specifications) {
+        const specs = product.specifications instanceof Map
+          ? Object.fromEntries(product.specifications)
+          : product.specifications;
+        Object.entries(specs).forEach(([k, v]) => addSpecRow(k, v));
+      }
 
-    // Variants
-    if (Array.isArray(product.variants)) {
-      product.variants.forEach(v => {
-        addVariantRow(v.color, v.quantity);
-      });
-    }
-
-    // ✅ NEW: Load existing specifications
-    if (product.specifications) {
-      const specs = product.specifications instanceof Map 
-        ? Object.fromEntries(product.specifications) 
-        : product.specifications;
-      
-      Object.entries(specs).forEach(([key, value]) => {
-        addSpecRow(key, value);
-      });
+    } catch {
+      showNotificationModal("Error", "Failed to load product data", false);
+      return;
     }
 
   } else {
-    /* ---------- ADD MODE ---------- */
-    form.action = "/admin/products/add";
+    /* ADD MODE */
+    modalTitle.textContent = "Add New Product";
+    form.action            = "/admin/products/add";
     document.getElementById("form-productId").value = "";
     addVariantRow();
   }
 
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
+  modal.classList.remove("hidden"); modal.classList.add("flex");
 }
 
-/* ---------------- CLOSE PRODUCT MODAL ---------------- */
 function closeProductModal() {
   const modal = document.getElementById("productModal");
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
+  modal.classList.add("hidden"); modal.classList.remove("flex");
 }
 
-/* ---------------- VARIANT ROW ---------------- */
+/* ── Variant row ────────────────────────────────────────────── */
 function addVariantRow(color = "", qty = "") {
   const container = document.getElementById("variantContainer");
-
-  const row = document.createElement("div");
-  row.className = "grid grid-cols-2 gap-3";
-
-  row.innerHTML = `
-    <input type="text"
-      placeholder="Color (e.g. Black)"
-      value="${color}"
-      class="variant-color px-4 py-2 border rounded-lg outline-none">
-    <input type="number"
-      placeholder="Stock Qty"
-      min="0"
-      value="${qty}"
-      class="variant-qty px-4 py-2 border rounded-lg outline-none">
-  `;
-
-  container.appendChild(row);
-}
-
-/* ---------------- ✅ NEW: SPECIFICATION ROW ---------------- */
-function addSpecRow(key = "", value = "") {
-  const container = document.getElementById("specifications-container");
-  
   const row = document.createElement("div");
   row.className = "grid grid-cols-2 gap-3 items-center";
   row.innerHTML = `
-    <input type="text" 
-           placeholder="Key (e.g., Material)" 
-           value="${key}"
-           class="spec-key px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+    <input type="text" placeholder="Color (e.g. Black)" value="${color}"
+           class="variant-color px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
     <div class="flex gap-2">
-      <input type="text" 
-             placeholder="Value (e.g., Leather)" 
-             value="${value}"
-             class="spec-value flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
-      <button type="button" onclick="this.parentElement.parentElement.remove()" 
-              class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+      <input type="number" placeholder="Stock Qty" min="0" value="${qty}"
+             class="variant-qty flex-1 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+      <button type="button" onclick="this.parentElement.parentElement.remove()"
+              class="px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg transition text-sm">
         <i class="fas fa-times"></i>
       </button>
-    </div>
-  `;
+    </div>`;
   container.appendChild(row);
 }
 
-/* ---------------- IMAGE CROPPING ---------------- */
+/* ── Spec row ───────────────────────────────────────────────── */
+function addSpecRow(key = "", value = "") {
+  const container = document.getElementById("specifications-container");
+  const row = document.createElement("div");
+  row.className = "grid grid-cols-2 gap-3 items-center";
+  row.innerHTML = `
+    <input type="text" placeholder="Key (e.g., Material)" value="${key}"
+           class="spec-key px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+    <div class="flex gap-2">
+      <input type="text" placeholder="Value (e.g., Leather)" value="${value}"
+             class="spec-value flex-1 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+      <button type="button" onclick="this.parentElement.parentElement.remove()"
+              class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>`;
+  container.appendChild(row);
+}
+
+/* ── Image cropping ─────────────────────────────────────────── */
 const cropperOverlay = document.getElementById("cropperOverlay");
-const cropperImage = document.getElementById("cropperImage");
+const cropperImage   = document.getElementById("cropperImage");
 
 function startCroppingProcess() {
   if (!pendingFiles.length) return;
-
-  const file = pendingFiles.shift();
+  const file   = pendingFiles.shift();
   const reader = new FileReader();
-
   reader.onload = e => {
     cropperImage.src = e.target.result;
-    cropperOverlay.classList.remove("hidden");
-    cropperOverlay.classList.add("flex");
-
+    cropperOverlay.classList.remove("hidden"); cropperOverlay.classList.add("flex");
     if (cropper) cropper.destroy();
-    cropper = new Cropper(cropperImage, {
-      aspectRatio: 3 / 4,
-      viewMode: 2,
-      autoCropArea: 1
-    });
+    cropper = new Cropper(cropperImage, { aspectRatio: 3/4, viewMode: 2, autoCropArea: 1 });
   };
-
   reader.readAsDataURL(file);
 }
 
 function applyCrop() {
   const canvas = cropper.getCroppedCanvas({ width: 800, height: 1067 });
-
   canvas.toBlob(blob => {
     processedImages.push(blob);
     updatePreview();
-
-    cropperOverlay.classList.add("hidden");
-    cropperOverlay.classList.remove("flex");
-
+    cropperOverlay.classList.add("hidden"); cropperOverlay.classList.remove("flex");
     if (pendingFiles.length) startCroppingProcess();
   }, "image/jpeg", 0.85);
 }
 
 function cancelCrop() {
-  cropperOverlay.classList.add("hidden");
-  cropperOverlay.classList.remove("flex");
-
+  cropperOverlay.classList.add("hidden"); cropperOverlay.classList.remove("flex");
   if (pendingFiles.length) startCroppingProcess();
 }
 
 function updatePreview() {
   const preview = document.getElementById("imagePreview");
-  preview.innerHTML = "";
-
+  preview.querySelectorAll('[data-new="true"]').forEach(el => el.remove());
   processedImages.forEach((blob, i) => {
     const url = URL.createObjectURL(blob);
     const div = document.createElement("div");
     div.className = "relative aspect-[3/4] border rounded overflow-hidden";
-
+    div.setAttribute("data-new", "true");
     div.innerHTML = `
       <img src="${url}" class="w-full h-full object-cover">
-      <button type="button"
-        onclick="removeProcessedImage(${i})"
-        class="absolute top-1 right-1 bg-white text-red-600 w-6 h-6 rounded-full">
+      <button type="button" onclick="removeProcessedImage(${i})"
+              class="absolute top-1 right-1 bg-white text-red-600 w-6 h-6 rounded-full text-sm font-bold">
         &times;
-      </button>
-    `;
+      </button>`;
     preview.appendChild(div);
   });
 }
@@ -1109,84 +959,140 @@ function removeProcessedImage(index) {
   updatePreview();
 }
 
-/* ---------------- IMAGE INPUT ---------------- */
 document.getElementById("imageInput").addEventListener("change", e => {
   pendingFiles = Array.from(e.target.files);
   if (pendingFiles.length) startCroppingProcess();
 });
 
-/* ---------------- FORM SUBMIT ---------------- */
-document.getElementById("productForm").addEventListener("submit", e => {
+/* ── Form submit with full validation ───────────────────────── */
+document.getElementById("productForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  clearAllErrors();
 
-  const formData = new FormData(e.target);
-  const isEdit = document.getElementById("form-productId").value;
+  const isEdit       = !!document.getElementById("form-productId").value;
+  const name         = document.getElementById("form-name").value.trim();
+  const category     = document.getElementById("form-category").value;
+  const brand        = document.getElementById("form-brand").value.trim();
+  const description  = document.getElementById("form-description").value.trim();
+  const regularPrice = Number(document.getElementById("form-regularPrice").value);
+  const salePrice    = Number(document.getElementById("form-salePrice").value);
 
-  if (!isEdit && processedImages.length < 3) {
-    showValidationModal("Minimum 3 images required");
-    return;
+  let valid = true;
+
+  // Name
+  if (!name || name.length < 3) {
+    showFieldErr("name", true); valid = false;
+  }
+  // Category
+  if (!category) {
+    showFieldErr("category", true); valid = false;
+  }
+  // Brand
+  if (!brand) {
+    showFieldErr("brand", true); valid = false;
+  }
+  // Description
+  if (!description || description.length < 10) {
+    showFieldErr("description", true); valid = false;
+  }
+  // Regular price
+  if (!regularPrice || regularPrice <= 0) {
+    showFieldErr("regularPrice", true); valid = false;
+  }
+  // Sale price
+  if (!salePrice || salePrice <= 0 || salePrice > regularPrice) {
+    showFieldErr("salePrice", true); valid = false;
   }
 
-  // Attach images
-  processedImages.forEach((blob, i) => {
-    formData.append(
-      "productImages",
-      new File([blob], `product_${Date.now()}_${i}.jpg`, { type: "image/jpeg" })
-    );
-  });
+  // Images
+  const oldImageCount = document.querySelectorAll('[data-old="true"]').length;
+  const newImageCount = processedImages.length;
+  if (!isEdit && newImageCount < 3) {
+    showFieldErr("images", true); valid = false;
+  }
+  if (isEdit && (oldImageCount + newImageCount) < 3) {
+    showFieldErr("images", true);
+    showValidationModal("Product must have at least 3 images. Add more or keep existing ones.");
+    return;
+  }
 
   // Variants
-  const colors = document.querySelectorAll(".variant-color");
-  const qtys = document.querySelectorAll(".variant-qty");
-  const variants = [];
+  const colorInputs = document.querySelectorAll(".variant-color");
+  const qtyInputs   = document.querySelectorAll(".variant-qty");
+  const variants    = [];
 
-  colors.forEach((input, i) => {
-    const color = input.value.trim();
-    const quantity = Number(qtys[i].value);
-    if (color && quantity >= 0) variants.push({ color, quantity });
-  });
+  for (let i = 0; i < colorInputs.length; i++) {
+    const color    = colorInputs[i].value.trim();
+    const quantity = Number(qtyInputs[i].value);
+    if (color && quantity < 0) {
+      showValidationModal(`Quantity for "${color}" cannot be negative.`);
+      qtyInputs[i].focus();
+      return;
+    }
+    if (color) variants.push({ color, quantity: quantity || 0 });
+  }
 
   if (!variants.length) {
-    showValidationModal("Add at least one color with stock");
+    showFieldErr("variants", true); valid = false;
+  }
+
+  // Duplicate color check
+  const colorNames = variants.map(v => v.color.toLowerCase());
+  if (new Set(colorNames).size !== colorNames.length) {
+    showValidationModal("Duplicate color names found. Each variant must have a unique color.");
     return;
   }
+
+  if (!valid) {
+    showValidationModal("Please fix the highlighted errors before saving.");
+    return;
+  }
+
+  // Build FormData
+  const formData = new FormData(e.target);
+
+  processedImages.forEach((blob, i) => {
+    formData.append("productImages",
+      new File([blob], `product_${Date.now()}_${i}.jpg`, { type: "image/jpeg" }));
+  });
 
   formData.append("variants", JSON.stringify(variants));
 
-  // ✅ NEW: Collect specifications
-  const specs = {};
-  const keys = document.querySelectorAll(".spec-key");
+  // Specifications
+  const specs  = {};
+  const keys   = document.querySelectorAll(".spec-key");
   const values = document.querySelectorAll(".spec-value");
-
   keys.forEach((input, i) => {
-    const key = input.value.trim();
-    const value = values[i].value.trim();
-    if (key && value) {
-      specs[key] = value;
-    }
+    const k = input.value.trim();
+    const v = values[i]?.value.trim();
+    if (k && v) specs[k] = v;
   });
-
   if (Object.keys(specs).length > 0) {
     formData.append("specifications", JSON.stringify(specs));
   }
 
-  fetch(e.target.action, { method: "POST", body: formData })
-    .then(res => {
-      if (res.ok) {
-        showNotificationModal("Success!", "Product saved successfully", true);
-        setTimeout(() => {
-          closeNotificationModal();
-          location.reload();
-        }, 1500);
-      } else {
-        showNotificationModal("Error", "Failed to save product", false);
-      }
-    })
-    .catch(() => showNotificationModal("Error", "Something went wrong", false));
+  // Submit
+  const submitBtn = document.getElementById("submitProductBtn");
+  submitBtn.disabled    = true;
+  submitBtn.textContent = "Saving...";
+
+  try {
+    const res  = await fetch(e.target.action, { method: "POST", body: formData });
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && data.success) {
+      showNotificationModal("Success!", "Product saved successfully", true);
+      setTimeout(() => { closeNotificationModal(); location.reload(); }, 1500);
+    } else {
+      showNotificationModal("Error", data.message || "Failed to save product", false);
+    }
+  } catch {
+    showNotificationModal("Error", "Something went wrong. Please try again.", false);
+  } finally {
+    submitBtn.disabled    = false;
+    submitBtn.textContent = "Save Product";
+  }
 });
-
 </script>
-
-
 
 <%- include("../partials/admin/footer") %>

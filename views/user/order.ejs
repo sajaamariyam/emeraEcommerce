@@ -396,22 +396,50 @@
         let returnProductColor = '';
 
         // ── Search / filter ───────────────────────────────────────────────
-        document.getElementById('searchOrders').addEventListener('input', filterOrders);
-        document.getElementById('statusFilter').addEventListener('change', filterOrders);
 
-        function filterOrders() {
-            const searchTerm = document.getElementById('searchOrders').value.toLowerCase();
-            const selectedStatus = document.getElementById('statusFilter').value.toLowerCase();
-            document.querySelectorAll('.order-card').forEach(card => {
-                const orderId = card.dataset.orderId.toLowerCase();
-                const cardStatus = card.dataset.status.toLowerCase();
-                const productNames = Array.from(card.querySelectorAll('.order-item a'))
-                    .map(a => a.textContent.toLowerCase()).join(' ');
-                const matchesSearch = orderId.includes(searchTerm) || productNames.includes(searchTerm);
-                const matchesStatus = !selectedStatus || cardStatus === selectedStatus;
-                card.style.display = matchesSearch && matchesStatus ? 'block' : 'none';
-            });
-        }
+        let searchTimeout;
+
+        document.getElementById('searchOrders').addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+
+            searchTimeout = setTimeout(() => {
+                const search = this.value;
+                const status = document.getElementById('statusFilter').value;
+
+                const params = new URLSearchParams();
+
+                if (search) params.append('search', search);
+                if (status) params.append('status', status);
+
+                window.location.href = `/orders?${params.toString()}`;
+            }, 500);
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', function () {
+            const status = this.value;
+            const search = document.getElementById('searchOrders').value;
+
+            const params = new URLSearchParams();
+
+            if (status) params.append('status', status);
+            if (search) params.append('search', search);
+
+            window.location.href = `/orders?${params.toString()}`;
+        });
+
+        // function filterOrders() {
+        //     const searchTerm = document.getElementById('searchOrders').value.toLowerCase();
+        //     const selectedStatus = document.getElementById('statusFilter').value.toLowerCase();
+        //     document.querySelectorAll('.order-card').forEach(card => {
+        //         const orderId = card.dataset.orderId.toLowerCase();
+        //         const cardStatus = card.dataset.status.toLowerCase();
+        //         const productNames = Array.from(card.querySelectorAll('.order-item a'))
+        //             .map(a => a.textContent.toLowerCase()).join(' ');
+        //         const matchesSearch = orderId.includes(searchTerm) || productNames.includes(searchTerm);
+        //         const matchesStatus = !selectedStatus || cardStatus === selectedStatus;
+        //         card.style.display = matchesSearch && matchesStatus ? 'block' : 'none';
+        //     });
+        // }
 
         // ── Modal helpers ─────────────────────────────────────────────────
         function showSuccessModal(message) {

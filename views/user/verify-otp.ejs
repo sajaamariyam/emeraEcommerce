@@ -204,7 +204,10 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    window.location.href = data.redirectTo;
+                    showToast(data.message || "Account created successfully ! Welcome to Emera");
+                    setTimeout( () => {
+                        window.location.href = data.redirectTo;
+                    }, 2000);
                 } else {
                     errorMsg.textContent = data.message || "Invalid OTP";
                     errorMsg.classList.remove("hidden");
@@ -259,6 +262,31 @@
 
         startResendTimer();
         otpInputs[0].focus();
+
+        function showToast(message) {
+            const toast = document.createElement("div");
+            toast.style.cssText = `
+                position: fixed; top: 24px; right: 24px; z-index: 9999;
+                background: #0d7c66; color: white;
+                padding: 14px 20px; border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                display: flex; align-items: center; gap: 10px;
+                font-size: 14px; font-weight: 500;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.innerHTML = `
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transition = "opacity 0.4s";
+                setTimeout(() => toast.remove(), 400);
+            }, 2000);
+        }
     </script>
 </body>
 </html>

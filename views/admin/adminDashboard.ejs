@@ -3,10 +3,7 @@
 <div class="ml-52 flex-1 overflow-auto bg-gray-50">
 
     <div class="bg-white border-b px-6 py-4 flex justify-between items-center">
-        <h1 class="text-xl font-semibold text-teal-700">
-            Dashboard
-        </h1>
-
+        <h1 class="text-xl font-semibold text-teal-700">Dashboard</h1>
         <div class="flex items-center gap-2">
             <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-700 font-semibold">
                 <%= admin.name.charAt(0).toUpperCase() %>
@@ -16,7 +13,6 @@
         </div>
     </div>
 
-    <!-- Dashboard Content -->
     <div class="p-6">
 
         <div class="mb-6">
@@ -24,7 +20,7 @@
             <p class="text-gray-500 text-sm">Overview of store performance.</p>
         </div>
 
-        <!-- Stats Cards -->
+        <!-- ── Stats Cards ──────────────────────────────────────── -->
         <div class="grid grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex justify-between items-start">
@@ -79,31 +75,45 @@
             </div>
         </div>
 
-        <!-- Chart and Alerts -->
+        <!-- ── Chart + Side Panel ───────────────────────────────── -->
         <div class="grid grid-cols-3 gap-6 mb-6">
-            <!-- Monthly Sales Chart -->
+
+            <!-- Sales Chart with filter buttons -->
             <div class="col-span-2 bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly Sales Overview</h3>
-                <div class="w-full h-1 bg-yellow-400 mb-4" style="width: 60px;"></div>
-                <canvas id="salesChart" height="80"></canvas>
+                <div class="flex items-center justify-between mb-1">
+                    <h3 class="text-lg font-semibold text-gray-800">Sales Overview</h3>
+                    <div class="flex gap-1" id="chart-filters">
+                        <% ['daily','weekly','monthly','yearly'].forEach(function(f) { %>
+                            <button
+                                onclick="fetchChartData('<%= f %>')"
+                                id="filter-<%= f %>"
+                                class="filter-btn px-3 py-1 rounded-full text-xs font-medium border transition-all
+                                    <%= f === 'monthly' ? 'bg-teal-600 text-white border-teal-600' : 'text-gray-500 border-gray-300 hover:border-teal-400 hover:text-teal-600' %>">
+                                <%= f.charAt(0).toUpperCase() + f.slice(1) %>
+                            </button>
+                        <% }) %>
+                    </div>
+                </div>
+                <div class="w-12 h-1 bg-yellow-400 mb-4"></div>
+                <canvas id="salesChart" height="90"></canvas>
             </div>
 
-            <!-- Low Stock Alerts + Quick Actions -->
+            <!-- Low Stock + Quick Actions -->
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center gap-2 mb-4">
                     <i class="fas fa-exclamation-triangle text-red-500"></i>
                     <h3 class="text-lg font-semibold text-gray-800">Low Stock Alerts</h3>
                 </div>
-                <div class="w-full h-1 bg-yellow-400 mb-4" style="width: 60px;"></div>
-                
+                <div class="w-12 h-1 bg-yellow-400 mb-4"></div>
+
                 <div class="space-y-4 mb-6">
                     <% if (lowStockProducts.length === 0) { %>
                         <p class="text-sm text-gray-400 text-center py-4">No low stock items</p>
                     <% } else { %>
-                        <% lowStockProducts.forEach(product => { %>
+                        <% lowStockProducts.forEach(function(product) { %>
                             <div class="flex items-center gap-3">
-                                <img src="<%= product.productImage?.[0]?.url || 'https://via.placeholder.com/100' %>" 
-                                     alt="<%= product.name %>" 
+                                <img src="<%= product.productImage && product.productImage[0] ? product.productImage[0].url : 'https://via.placeholder.com/100' %>"
+                                     alt="<%= product.name %>"
                                      class="w-12 h-12 rounded object-cover">
                                 <div class="flex-1">
                                     <p class="text-sm font-medium text-gray-800 line-clamp-1"><%= product.name %></p>
@@ -115,37 +125,143 @@
                     <% } %>
                 </div>
 
-                <div class="mt-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
-                    <div class="w-full h-1 bg-yellow-400 mb-4" style="width: 60px;"></div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <a href="/admin/products" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition">
-                            <i class="fas fa-plus text-teal-600 text-xl mb-2"></i>
-                            <span class="text-sm text-gray-700">Add Product</span>
-                        </a>
-                        <a href="/admin/categories" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition">
-                            <i class="fas fa-tags text-teal-600 text-xl mb-2"></i>
-                            <span class="text-sm text-gray-700">Add Category</span>
-                        </a>
-                        <a href="/admin/coupons" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition">
-                            <i class="fas fa-ticket-alt text-teal-600 text-xl mb-2"></i>
-                            <span class="text-sm text-gray-700">Create Coupon</span>
-                        </a>
-                        <a href="/admin/orders" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition">
-                            <i class="fas fa-shopping-cart text-teal-600 text-xl mb-2"></i>
-                            <span class="text-sm text-gray-700">View Orders</span>
-                        </a>
-                    </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-1">Quick Actions</h3>
+                <div class="w-12 h-1 bg-yellow-400 mb-4"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="/admin/products" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition">
+                        <i class="fas fa-plus text-teal-600 text-xl mb-2"></i>
+                        <span class="text-sm text-gray-700">Add Product</span>
+                    </a>
+                    <a href="/admin/categories" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition">
+                        <i class="fas fa-tags text-teal-600 text-xl mb-2"></i>
+                        <span class="text-sm text-gray-700">Add Category</span>
+                    </a>
+                    <a href="/admin/coupons" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition">
+                        <i class="fas fa-ticket-alt text-teal-600 text-xl mb-2"></i>
+                        <span class="text-sm text-gray-700">Create Coupon</span>
+                    </a>
+                    <a href="/admin/orders" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition">
+                        <i class="fas fa-shopping-cart text-teal-600 text-xl mb-2"></i>
+                        <span class="text-sm text-gray-700">View Orders</span>
+                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Orders -->
+        <!-- ── Best Selling Section ─────────────────────────────── -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-1">Best Selling — Top 10</h3>
+            <div class="w-12 h-1 bg-yellow-400 mb-4"></div>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-5">
+                <button onclick="loadBestSelling('products')"
+                    id="tab-products"
+                    class="best-tab active-best-tab px-4 py-1.5 rounded-full text-xs font-medium border transition-all">
+                    <i class="fas fa-box mr-1"></i> Products
+                </button>
+                <button onclick="loadBestSelling('categories')"
+                    id="tab-categories"
+                    class="best-tab px-4 py-1.5 rounded-full text-xs font-medium border border-gray-300 text-gray-500 hover:border-teal-400 hover:text-teal-600 transition-all">
+                    <i class="fas fa-tags mr-1"></i> Categories
+                </button>
+                <button onclick="loadBestSelling('brands')"
+                    id="tab-brands"
+                    class="best-tab px-4 py-1.5 rounded-full text-xs font-medium border border-gray-300 text-gray-500 hover:border-teal-400 hover:text-teal-600 transition-all">
+                    <i class="fas fa-trademark mr-1"></i> Brands
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div id="best-selling-container">
+                <div class="flex items-center justify-center py-10 text-gray-400">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> Loading...
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Ledger Book ──────────────────────────────────────── -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-book text-teal-600"></i>
+                    <h3 class="text-lg font-semibold text-gray-800">Ledger Book</h3>
+                </div>
+                <a href="/admin/ledger?format=pdf"
+                   class="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-xs rounded-lg hover:bg-teal-700 transition">
+                    <i class="fas fa-download"></i> Download Full Ledger
+                </a>
+            </div>
+            <div class="w-12 h-1 bg-yellow-400 mb-5"></div>
+
+            <!-- Date filter -->
+            <div class="flex flex-wrap gap-3 items-end mb-5">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">From</label>
+                    <input type="date" id="ledger-from"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">To</label>
+                    <input type="date" id="ledger-to"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500">
+                </div>
+                <button onclick="previewLedger()"
+                    class="px-4 py-2 bg-teal-600 text-white text-xs rounded-lg hover:bg-teal-700 transition">
+                    <i class="fas fa-eye mr-1"></i> Preview
+                </button>
+                <button onclick="downloadLedger()"
+                    class="px-4 py-2 border border-teal-600 text-teal-600 text-xs rounded-lg hover:bg-teal-50 transition">
+                    <i class="fas fa-file-pdf mr-1"></i> Download PDF
+                </button>
+            </div>
+
+            <!-- Summary cards -->
+            <div id="ledger-summary" class="hidden grid grid-cols-3 gap-4 mb-5">
+                <div class="bg-green-50 rounded-lg p-4 text-center">
+                    <p class="text-xs text-gray-500 mb-1">Total Credits</p>
+                    <p class="text-xl font-bold text-green-600" id="sum-credit">—</p>
+                </div>
+                <div class="bg-red-50 rounded-lg p-4 text-center">
+                    <p class="text-xs text-gray-500 mb-1">Total Debits</p>
+                    <p class="text-xl font-bold text-red-500" id="sum-debit">—</p>
+                </div>
+                <div class="bg-teal-50 rounded-lg p-4 text-center">
+                    <p class="text-xs text-gray-500 mb-1">Net Balance</p>
+                    <p class="text-xl font-bold text-teal-700" id="sum-net">—</p>
+                </div>
+            </div>
+
+            <!-- Ledger table -->
+            <div id="ledger-table-container" class="hidden overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-3 px-4 text-xs font-medium text-gray-600">Date</th>
+                            <th class="text-left py-3 px-4 text-xs font-medium text-gray-600">Order ID</th>
+                            <th class="text-left py-3 px-4 text-xs font-medium text-gray-600">Customer</th>
+                            <th class="text-left py-3 px-4 text-xs font-medium text-gray-600">Method</th>
+                            <th class="text-right py-3 px-4 text-xs font-medium text-gray-600">Credit</th>
+                            <th class="text-right py-3 px-4 text-xs font-medium text-gray-600">Debit</th>
+                            <th class="text-right py-3 px-4 text-xs font-medium text-gray-600">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledger-tbody"></tbody>
+                </table>
+                <div id="ledger-load-more" class="mt-4 text-center hidden">
+                    <button onclick="loadMoreLedger()"
+                        class="text-sm text-teal-600 hover:text-teal-700 font-medium border border-teal-300 px-4 py-2 rounded-lg hover:bg-teal-50">
+                        Load More
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Recent Orders ────────────────────────────────────── -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Orders</h3>
-            <div class="w-full h-1 bg-yellow-400 mb-4" style="width: 60px;"></div>
-            
+            <h3 class="text-lg font-semibold text-gray-800 mb-1">Recent Orders</h3>
+            <div class="w-12 h-1 bg-yellow-400 mb-4"></div>
+
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
@@ -166,8 +282,8 @@
                                 </td>
                             </tr>
                         <% } else { %>
-                            <% recentOrders.forEach(order => { 
-                                let statusClass = 'bg-gray-100 text-gray-700';
+                            <% recentOrders.forEach(function(order) {
+                                var statusClass = 'bg-gray-100 text-gray-700';
                                 if (order.status === 'delivered') statusClass = 'bg-green-100 text-green-700';
                                 else if (order.status === 'shipped' || order.status === 'out-for-delivery') statusClass = 'bg-blue-100 text-blue-700';
                                 else if (order.status === 'pending' || order.status === 'processing') statusClass = 'bg-yellow-100 text-yellow-700';
@@ -202,79 +318,279 @@
                 </div>
             <% } %>
         </div>
+
     </div>
 </div>
 
-<!-- Chart.js Script -->
+<!-- ── Chart.js ─────────────────────────────────────────────── -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    
-    const salesData = <%- JSON.stringify(salesByMonth) %>;
-    
-    new Chart(ctx, {
+// ═══════════════════════════════════════════
+//  CHART
+// ═══════════════════════════════════════════
+var salesChart;
+var initialChartData = <%- JSON.stringify(chartData) %>;
+
+function buildChart(data) {
+    var ctx = document.getElementById('salesChart').getContext('2d');
+    if (salesChart) salesChart.destroy();
+    salesChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [{
-                label: 'Monthly Sales (₹)',
-                data: salesData,
-                borderColor: '#0d9488',
-                backgroundColor: 'rgba(13, 148, 136, 0.1)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true,
-                pointBackgroundColor: '#0d9488',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
+            labels: data.labels,
+            datasets: [
+                {
+                    label: 'Revenue (₹)',
+                    data: data.revenue,
+                    borderColor: '#0d9488',
+                    backgroundColor: 'rgba(13,148,136,0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#0d9488',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Orders',
+                    data: data.orders,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245,158,11,0.05)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false,
+                    pointBackgroundColor: '#f59e0b',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y1',
+                },
+            ],
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: {
-                    display: false
-                },
+                legend: { display: true, position: 'top' },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
-                            return '₹' + context.parsed.y.toLocaleString('en-IN');
+                        label: function(ctx) {
+                            return ctx.dataset.label.includes('Revenue')
+                                ? '₹' + ctx.parsed.y.toLocaleString('en-IN')
+                                : 'Orders: ' + ctx.parsed.y;
                         }
                     }
                 }
             },
             scales: {
                 y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₹' + (value / 1000).toFixed(0) + 'k';
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
+                    type: 'linear', position: 'left', beginAtZero: true,
+                    ticks: { callback: function(v) { return '₹' + (v/1000).toFixed(0) + 'k'; } },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
                 },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
+                y1: {
+                    type: 'linear', position: 'right', beginAtZero: true,
+                    ticks: { stepSize: 1 },
+                    grid: { drawOnChartArea: false }
+                },
+                x: { grid: { display: false } }
             }
         }
     });
+}
+
+async function fetchChartData(filter) {
+    // Button states
+    document.querySelectorAll('.filter-btn').forEach(function(btn) {
+        btn.classList.remove('bg-teal-600','text-white','border-teal-600');
+        btn.classList.add('text-gray-500','border-gray-300');
+    });
+    var active = document.getElementById('filter-' + filter);
+    active.classList.add('bg-teal-600','text-white','border-teal-600');
+    active.classList.remove('text-gray-500','border-gray-300');
+
+    try {
+        var res  = await fetch('/admin/dashboard/chart-data?filter=' + filter);
+        var json = await res.json();
+        if (json.success) buildChart(json.data);
+    } catch(e) { console.error('Chart error', e); }
+}
+
+buildChart(initialChartData);
+
+// ═══════════════════════════════════════════
+//  BEST SELLING TABS
+// ═══════════════════════════════════════════
+var currentBestTab = '';
+
+async function loadBestSelling(type) {
+    if (currentBestTab === type) return;
+    currentBestTab = type;
+
+    document.querySelectorAll('.best-tab').forEach(function(btn) {
+        btn.classList.remove('bg-teal-600','text-white','border-teal-600');
+        btn.classList.add('text-gray-500','border-gray-300');
+    });
+    var activeTab = document.getElementById('tab-' + type);
+    activeTab.classList.add('bg-teal-600','text-white','border-teal-600');
+    activeTab.classList.remove('text-gray-500','border-gray-300');
+
+    var container = document.getElementById('best-selling-container');
+    container.innerHTML = '<div class="flex items-center justify-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i> Loading...</div>';
+
+    try {
+        var res  = await fetch('/admin/best-selling/' + type + '?json=1');
+        var json = await res.json();
+
+        if (!json.success || !json.data.length) {
+            container.innerHTML = '<p class="text-center text-gray-400 py-8 text-sm">No data available.</p>';
+            return;
+        }
+
+        var extraHeader = type === 'products'
+            ? '<th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Brand</th>'
+            : '';
+
+        var rows = json.data.map(function(item, i) {
+            var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
+            var extraCell = type === 'products'
+                ? '<td class="py-3 px-4 text-sm text-gray-500">' + (item.brand || '—') + '</td>'
+                : '';
+            var barW = Math.round((item.totalSold / json.data[0].totalSold) * 100);
+            return '<tr class="border-b hover:bg-gray-50">' +
+                '<td class="py-3 px-4 text-sm font-semibold text-gray-700">' + medal + '</td>' +
+                '<td class="py-3 px-4 text-sm text-gray-800 font-medium">' + (item.name || item._id) + '</td>' +
+                extraCell +
+                '<td class="py-3 px-4"><span class="px-2 py-1 bg-teal-50 text-teal-700 text-xs rounded-full font-medium">' + item.totalSold.toLocaleString('en-IN') + ' units</span></td>' +
+                '<td class="py-3 px-4 text-sm font-semibold text-gray-800">₹' + Number(item.totalRevenue).toLocaleString('en-IN') + '</td>' +
+                '<td class="py-3 px-4"><div class="w-full bg-gray-100 rounded-full h-1.5" style="min-width:80px;"><div class="bg-teal-500 h-1.5 rounded-full" style="width:' + barW + '%"></div></div></td>' +
+                '</tr>';
+        }).join('');
+
+        container.innerHTML =
+            '<div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b">' +
+            '<th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Rank</th>' +
+            '<th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Name</th>' +
+            extraHeader +
+            '<th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Units Sold</th>' +
+            '<th class="text-left py-3 px-4 text-sm font-medium text-gray-600">Revenue</th>' +
+            '<th class="text-left py-3 px-4 text-sm font-medium text-gray-600 w-32">Share</th>' +
+            '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    } catch(e) {
+        container.innerHTML = '<p class="text-center text-red-400 py-8 text-sm">Failed to load data.</p>';
+    }
+}
+
+loadBestSelling('products');
+
+// ═══════════════════════════════════════════
+//  LEDGER
+// ═══════════════════════════════════════════
+var ledgerPage  = 1;
+var ledgerFrom  = '';
+var ledgerTo    = '';
+var ledgerTotal = 0;
+
+function fmtRs(n) {
+    return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+}
+function fmtDate(d) {
+    return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function downloadLedger() {
+    var from   = document.getElementById('ledger-from').value;
+    var to     = document.getElementById('ledger-to').value;
+    var params = new URLSearchParams({ format: 'pdf' });
+    if (from) params.append('from', from);
+    if (to)   params.append('to', to);
+    window.open('/admin/ledger?' + params.toString(), '_blank');
+}
+
+async function previewLedger() {
+    ledgerPage = 1;
+    ledgerFrom = document.getElementById('ledger-from').value;
+    ledgerTo   = document.getElementById('ledger-to').value;
+    document.getElementById('ledger-tbody').innerHTML = '';
+    document.getElementById('ledger-summary').classList.add('hidden');
+    document.getElementById('ledger-table-container').classList.add('hidden');
+    document.getElementById('ledger-load-more').classList.add('hidden');
+    await fetchLedgerPage(true);
+}
+
+async function loadMoreLedger() {
+    ledgerPage++;
+    await fetchLedgerPage(false);
+}
+
+async function fetchLedgerPage(isFirst) {
+    try {
+        var params = new URLSearchParams({ format: 'json', page: ledgerPage, limit: 20 });
+        if (ledgerFrom) params.append('from', ledgerFrom);
+        if (ledgerTo)   params.append('to', ledgerTo);
+
+        var res  = await fetch('/admin/ledger?' + params.toString());
+        var json = await res.json();
+        if (!json.success) return;
+
+        ledgerTotal = json.summary.totalEntries;
+
+        if (isFirst) {
+            document.getElementById('sum-credit').textContent = fmtRs(json.summary.totalCredit);
+            document.getElementById('sum-debit').textContent  = fmtRs(json.summary.totalDebit);
+            document.getElementById('sum-net').textContent    = fmtRs(json.summary.netBalance);
+            document.getElementById('ledger-summary').classList.remove('hidden');
+            document.getElementById('ledger-table-container').classList.remove('hidden');
+        }
+
+        var tbody = document.getElementById('ledger-tbody');
+        json.entries.forEach(function(e) {
+            var methodClass = e.paymentMethod === 'COD'
+                ? 'bg-yellow-100 text-yellow-700'
+                : e.paymentMethod === 'WALLET'
+                ? 'bg-purple-100 text-purple-700'
+                : 'bg-blue-100 text-blue-700';
+
+            var tr = document.createElement('tr');
+            tr.className = 'border-b hover:bg-gray-50';
+            tr.innerHTML =
+                '<td class="py-3 px-4 text-sm text-gray-600">' + fmtDate(e.date) + '</td>' +
+                '<td class="py-3 px-4 text-sm font-mono text-gray-800">' + e.orderId + '</td>' +
+                '<td class="py-3 px-4 text-sm text-gray-700">' + e.customer + '</td>' +
+                '<td class="py-3 px-4"><span class="px-2 py-0.5 text-xs rounded-full ' + methodClass + '">' + e.paymentMethod + '</span></td>' +
+                '<td class="py-3 px-4 text-sm text-right font-medium ' + (e.credit > 0 ? 'text-green-600' : 'text-gray-300') + '">' + (e.credit > 0 ? fmtRs(e.credit) : '—') + '</td>' +
+                '<td class="py-3 px-4 text-sm text-right font-medium ' + (e.debit > 0 ? 'text-red-500' : 'text-gray-300') + '">' + (e.debit > 0 ? fmtRs(e.debit) : '—') + '</td>' +
+                '<td class="py-3 px-4 text-sm text-right font-bold ' + (e.balance >= 0 ? 'text-teal-700' : 'text-red-600') + '">' + fmtRs(e.balance) + '</td>';
+            tbody.appendChild(tr);
+        });
+
+        var loaded = (ledgerPage - 1) * 20 + json.entries.length;
+        if (loaded < ledgerTotal) {
+            document.getElementById('ledger-load-more').classList.remove('hidden');
+        } else {
+            document.getElementById('ledger-load-more').classList.add('hidden');
+        }
+    } catch(err) { console.error('Ledger error', err); }
+}
 </script>
 
 <style>
-    .line-clamp-1 {
-        display: -webkit-box;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.active-best-tab {
+    background-color: #0d9488;
+    color: #ffffff;
+    border-color: #0d9488;
+}
 </style>
 
 <%- include("../partials/admin/footer") %>

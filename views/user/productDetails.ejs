@@ -425,13 +425,15 @@ const effectiveStock = (product.variants && product.variants.length > 0)
           </a>
         <% } else { %>
           <button id="add-btn" onclick="addToCart('<%= product._id %>')"
-            class="bg-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:bg-emera-700 transition-all duration-100">
-            Add to Cart
+              class="bg-emera-950 text-white w-full py-5 text-[11px] uppercase tracking-[0.4em] font-bold rounded-sm shadow-lg hover:bg-emera-700 transition-all duration-100
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emera-950">
+              Add to Cart
           </button>
         <% } %>
-        <button onclick="buyNow('<%= product._id %>')"
-          class="flex-1 border-2 border-emera-950 text-emera-950 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-300 rounded-sm">
-          Buy Now
+        <button id="buy-now-btn" onclick="buyNow('<%= product._id %>')"
+            class="flex-1 border-2 border-emera-950 text-emera-950 py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-300 rounded-sm
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-emera-950">
+            Buy Now
         </button>
         <div class="flex gap-4">
           <button onclick="addToWishlist('<%= product._id %>')"
@@ -812,7 +814,6 @@ const effectiveStock = (product.variants && product.variants.length > 0)
 
 
 <script>
-// ── Block check ──
 if (<%= !!product.isBlocked %>) location.href = "/products";
 
 const variants = <%- JSON.stringify(product.variants) %>;
@@ -833,7 +834,6 @@ function selectVariant(i) {
   
   const qty = variants[i].quantity;
   
-  // Update stock pill
   document.getElementById('stock-status-pill').innerHTML = stockPillHTML(qty);
   
   if (qty > 0) {
@@ -843,7 +843,9 @@ function selectVariant(i) {
   }
 
   const btn = document.getElementById('add-btn');
+  const buyBtn = document.getElementById('buy-now-btn');
   if (btn) btn.disabled = qty <= 0;
+  if (buyBtn) buyBtn.disabled = qty <= 0;
 }
 
 function changeImage(i) {
@@ -968,16 +970,16 @@ function buyNow(productId) {
   }).catch(()=>showErrorModal('An error occurred. Please try again.'));
 }
 
-// ── Init: select first variant that actually has stock ──
 if (variants.length) {
   const firstAvailable = variants.findIndex(v => v.quantity > 0);
   if (firstAvailable !== -1) {
     selectVariant(firstAvailable);
   } else {
-    // All variants out of stock — disable the add button
     const btn = document.getElementById('add-btn');
+    const buyBtn = document.getElementById('buy-now-btn');
     if (btn) btn.disabled = true;
-    document.getElementById('stock-text').textContent = '';
+    if (buyBtn) buyBtn.disabled = true;
+    document.getElementById('stock-text').textContent = 'This product is currently unavailable';
   }
 }
 </script>

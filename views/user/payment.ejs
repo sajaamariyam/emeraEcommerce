@@ -204,123 +204,140 @@
   <!-- Razorpay SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-  <script>
-    const orderId = "<%= order.orderId %>";
+ <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-    const modal        = document.getElementById('paymentModal');
-    const modalTitle   = document.getElementById('modalTitle');
-    const modalMessage = document.getElementById('modalMessage');
-    const modalClose   = document.getElementById('modalClose');
-    const loading      = document.getElementById('loadingOverlay');
+<script>
+  const orderId = "<%= order.orderId %>";
 
-    function showModal(title, message, onClose) {
-      modalTitle.textContent   = title;
-      modalMessage.textContent = message;
-      modal.classList.remove('hidden');
-      modalClose.onclick = () => {
-        modal.classList.add('hidden');
-        if (typeof onClose === 'function') onClose();
-      };
-    }
+  const modal        = document.getElementById('paymentModal');
+  const modalTitle   = document.getElementById('modalTitle');
+  const modalMessage = document.getElementById('modalMessage');
+  const modalClose   = document.getElementById('modalClose');
+  const loading      = document.getElementById('loadingOverlay');
 
-    function showLoading() { loading.classList.remove('hidden'); }
-    function hideLoading() { loading.classList.add('hidden'); }
+  function showModal(title, message, onClose) {
+    modalTitle.textContent   = title;
+    modalMessage.textContent = message;
+    modal.classList.remove('hidden');
+    modalClose.onclick = () => {
+      modal.classList.add('hidden');
+      if (typeof onClose === 'function') onClose();
+    };
+  }
 
-    /* ── Wallet Payment ─────────────────────────────────────────── */
-    const walletBtn = document.getElementById('wallet-pay-btn');
-    if (walletBtn) {
-      walletBtn.addEventListener('click', async () => {
-        showLoading();
-        try {
-          const res  = await fetch(`/payment/wallet/${orderId}`, { method: 'POST' });
-          const data = await res.json();
-          hideLoading();
+  function showLoading() { loading.classList.remove('hidden'); }
+  function hideLoading() { loading.classList.add('hidden'); }
 
-          if (data.success) {
-            window.location.href = data.redirectUrl;
-          } else {
-            showModal('Payment Failed', data.message || 'Wallet payment could not be processed.');
-          }
-        } catch (err) {
-          hideLoading();
-          showModal('Error', 'Something went wrong. Please try again.');
-        }
+  // ── Mark order as failed on server then redirect ─────────
+  async function handleFailure(reason) {
+    try {
+      await fetch('/payment/failure-notify', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ orderId, reason }),
       });
+    } catch (e) {
+      // best-effort — still redirect even if notify fails
     }
+    window.location.href = `/payment-failed/${orderId}`;
+  }
 
-    /* ── Razorpay Payment ───────────────────────────────────────── */
-    document.getElementById('razorpay-pay-btn').addEventListener('click', async () => {
+  /* ── Wallet Payment ─────────────────────────────────────── */
+  const walletBtn = document.getElementById('wallet-pay-btn');
+  if (walletBtn) {
+    walletBtn.addEventListener('click', async () => {
       showLoading();
       try {
-        const res  = await fetch(`/payment/create-order/${orderId}`);
+        const res  = await fetch(`/payment/wallet/${orderId}`, { method: 'POST' });
         const data = await res.json();
         hideLoading();
-
-        if (!data.success) {
-          showModal('Initialization Failed', data.message || 'Could not initialize payment. Please try again.');
-          return;
+        if (data.success) {
+          window.location.href = data.redirectUrl;
+        } else {
+          showModal('Payment Failed', data.message || 'Wallet payment could not be processed.');
         }
-
-        const options = {
-          key:       data.key,
-          amount:    data.amount,
-          currency:  data.currency,
-          order_id:  data.order_id,
-          name:      'Emera',
-          description: `Order #${orderId}`,
-          theme: { color: '#0d0d0d' },
-
-          handler: async function (response) {
-            showLoading();
-            try {
-              const verifyRes  = await fetch('/payment/verify', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_order_id:   response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature:  response.razorpay_signature,
-                  orderId,
-                }),
-              });
-              const verifyData = await verifyRes.json();
-              hideLoading();
-
-              if (verifyData.success) {
-                window.location.href = verifyData.redirectUrl;
-              } else {
-                window.location.href = verifyData.redirectUrl || `/payment-failed/${orderId}`;
-              }
-            } catch (err) {
-              hideLoading();
-              window.location.href = `/payment-failed/${orderId}`;
-            }
-          },
-
-          modal: {
-            ondismiss: function () {
-              showModal(
-                'Payment Cancelled',
-                'You closed the payment window. Your order is saved — you can retry payment anytime.',
-                () => {}
-              );
-            },
-          },
-        };
-
-        const rzp = new Razorpay(options);
-
-        rzp.on('payment.failed', function () {
-          window.location.href = `/payment-failed/${orderId}`;
-        });
-
-        rzp.open();
-
       } catch (err) {
         hideLoading();
-        showModal('Error', 'Something went wrong. Please refresh and try again.');
+        showModal('Error', 'Something went wrong. Please try again.');
       }
     });
-  </script>
+  }
+
+  /* ── Razorpay Payment ───────────────────────────────────── */
+  document.getElementById('razorpay-pay-btn').addEventListener('click', async () => {
+    showLoading();
+    try {
+      const res  = await fetch(`/payment/create-order/${orderId}`);
+      const data = await res.json();
+      hideLoading();
+
+      if (!data.success) {
+        showModal('Initialization Failed', data.message || 'Could not initialize payment.');
+        return;
+      }
+
+      const options = {
+        key:         data.key,
+        amount:      data.amount,
+        currency:    data.currency,
+        order_id:    data.order_id,
+        name:        'Emera',
+        description: `Order #${orderId}`,
+        theme:       { color: '#0d0d0d' },
+
+        handler: async function (response) {
+          // ── Payment SUCCESS ──────────────────────────────
+          showLoading();
+          try {
+            const verifyRes  = await fetch('/payment/verify', {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature:  response.razorpay_signature,
+                orderId,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            hideLoading();
+
+            if (verifyData.success) {
+              window.location.href = verifyData.redirectUrl;
+            } else {
+              window.location.href = `/payment-failed/${orderId}`;
+            }
+          } catch (err) {
+            hideLoading();
+            window.location.href = `/payment-failed/${orderId}`;
+          }
+        },
+
+        modal: {
+          // ── User CLOSED the Razorpay modal ───────────────
+          // This fires when user clicks X or presses back
+          ondismiss: function () {
+            window.location.href = `/payment-failed/${orderId}`;
+          },
+        },
+      };
+
+      const rzp = new Razorpay(options);
+
+      // ── Payment FAILED event (card declined, UPI failure etc.) ──
+      rzp.on('payment.failed', function (response) {
+        console.error('Payment failed:', response.error);
+        window.location.href = `/payment-failed/${orderId}`;
+      });
+
+      rzp.open();
+
+    } catch (err) {
+      hideLoading();
+      showModal('Error', 'Something went wrong. Please refresh and try again.');
+    }
+  });
+</script>
+
 
 <%- include('../partials/user/footer') %>
