@@ -3,265 +3,239 @@
 <main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-20">
     <!-- Breadcrumbs -->
     <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-400 mb-10">
-    <a href="/" class="hover:text-black">Home</a>
-    <span class="mx-2">/</span>
-
-    <% if (typeof categoryName !== 'undefined' && categoryName) { %>
-        <span class="text-black font-bold"><%= categoryName %></span>
-    <% } else { %>
-        <span class="text-black font-bold">Products</span>
-    <% } %>
+        <a href="/" class="hover:text-black">Home</a>
+        <span class="mx-2">/</span>
+        <% if (typeof categoryName !== 'undefined' && categoryName) { %>
+            <span class="text-black font-bold"><%= categoryName %></span>
+        <% } else { %>
+            <span class="text-black font-bold">Products</span>
+        <% } %>
     </nav>
 
+    <div class="flex flex-col lg:flex-row gap-24">
+        <!-- Filtering Sidebar -->
+        <aside class="w-full lg:w-72 space-y-16 flex-shrink-0">
+            <%
+              const _selCats = (typeof selectedCategories !== 'undefined' ? selectedCategories : [])
+                .map(String);
+            %>
+            <form action="/products" method="GET" id="filter-form">
+                <input type="hidden" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>">
 
-        <div class="flex flex-col lg:flex-row gap-24">
-            <!-- Filtering Sidebar -->
-            <aside class="w-full lg:w-72 space-y-16 flex-shrink-0">
-                <%
-                  /* FIX: normalise selectedCategories to a plain string array so
-                     .includes() works regardless of whether it came as a string or array */
-                  const _selCats = (typeof selectedCategories !== 'undefined' ? selectedCategories : [])
-                    .map(String);
-                %>
-                <form action="/products" method="GET" id="filter-form">
-                    <input type="hidden" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>">
-                    <!-- FIX: removed hidden sort input — sort is now handled exclusively
-                         via handleSortChange() so the two mechanisms don't conflict -->
-
-                    <!-- Category Filter -->
-                    <div class="space-y-10 mb-16">
-                        <h4 class="text-[10px] uppercase tracking-[0.5em] font-bold text-gray-900 border-b border-stone-100 pb-4">Category</h4>
-                        <div class="space-y-5">
-                            <% categories.forEach(cat => { %>
+                <!-- Category Filter -->
+                <div class="space-y-10 mb-16">
+                    <h4 class="text-[10px] uppercase tracking-[0.5em] font-bold text-gray-900 border-b border-stone-100 pb-4">Category</h4>
+                    <div class="space-y-5">
+                        <% categories.forEach(cat => { %>
                             <label class="flex items-center group cursor-pointer">
-                                <input 
-                                type="checkbox" 
-                                name="category" 
-                                value="<%= cat._id %>"
-                                class="w-4 h-4 accent-emera-950"
-                                <!-- FIX: compare against array of selected ids, not single string -->
-                                <%= _selCats.includes(String(cat._id)) ? 'checked' : '' %>>
+                                <input
+                                    type="checkbox"
+                                    name="category"
+                                    value="<%= cat._id %>"
+                                    class="w-4 h-4 accent-emera-950"
+                                    <%= _selCats.includes(String(cat._id)) ? 'checked' : '' %>
+                                >
                                 <span class="ml-5 text-[11px] uppercase tracking-[0.2em] text-gray-400">
-                                <%= cat.name %>
+                                    <%= cat.name %>
                                 </span>
                             </label>
-                            <% }) %>
-                        </div>
-                    </div>
-
-                    <!-- Price Slider -->
-                    <div class="space-y-10 mb-16">
-                        <h4 class="text-[10px] uppercase tracking-[0.5em] font-bold text-gray-900 border-b border-stone-100 pb-4">Price Range</h4>
-                        <div class="space-y-8 px-1">
-                            <input type="range" name="maxPrice" min="0" max="100000" value="<%= maxPrice || 100000 %>" step="500" class="w-full h-1 bg-stone-100 appearance-none cursor-pointer" oninput="updatePriceLabel(this.value)">
-                            <div class="flex justify-between text-[11px] uppercase tracking-widest font-bold text-emera-950">
-                                <span>₹0</span>
-                                <span id="price-label">UP TO ₹<%= (maxPrice || 100000).toLocaleString() %></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button 
-                        type="submit"
-                        class="block w-full py-5 bg-emera-950 text-white text-center text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-black transition-all duration-500 mb-4">
-                        Apply Filters
-                    </button>
-                    <a href="/products" class="block w-full py-5 border border-emera-950 text-center text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500">Clear Filters</a>
-                </form>
-            </aside>
-
-            <!-- Listing View -->
-            <div class="flex-1">
-                <!-- Toolbar: Sorting & Grid Layout -->
-                <div class="flex flex-col sm:flex-row items-center justify-between mb-16 gap-10 border-b border-stone-50 pb-12">
-                    <div class="flex items-center space-x-12">
-                        <span class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Sort By</span>
-                        <!-- FIX: onchange now calls handleSortChange which preserves all
-                             current filter params (categories, maxPrice, search) in the URL -->
-                        <select onchange="handleSortChange(this.value)" class="bg-transparent text-[10px] uppercase tracking-[0.3em] font-bold outline-none cursor-pointer hover:text-emera-950 transition-colors">
-                            <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>Newest</option>
-                            <option value="price-asc" <%= sort === 'price-asc' ? 'selected' : '' %>>Price: Low to High</option>
-                            <option value="price-desc" <%= sort === 'price-desc' ? 'selected' : '' %>>Price: High to Low</option>
-                            <option value="name-asc" <%= sort === 'name-asc' ? 'selected' : '' %>>Name: A-Z</option>
-                            <option value="name-desc" <%= sort === 'name-desc' ? 'selected' : '' %>>Name: Z-A</option>
-                        </select>
-                    </div>
-
-                    <div class="flex items-center space-x-8">
-                        <button onclick="adjustGrid(2)" class="p-2 text-gray-300 hover:text-emera-950" id="grid-btn-2"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="18"/><rect x="13" y="3" width="8" height="18"/></svg></button>
-                        <button onclick="adjustGrid(3)" class="p-2 text-gray-300 hover:text-emera-950" id="grid-btn-3"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="2" y="3" width="6" height="18"/><rect x="9" y="3" width="6" height="18"/><rect x="16" y="3" width="6" height="18"/></svg></button>
-                        <button onclick="adjustGrid(4)" class="p-2 text-emera-950" id="grid-btn-4"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="2" y="3" width="4" height="18"/><rect x="7" y="3" width="4" height="18"/><rect x="12" y="3" width="4" height="18"/><rect x="17" y="3" width="4" height="18"/></svg></button>
-                    </div>
-                </div>
-
-                <!-- Product Grid -->
-                <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-24">
-                    <% if (products.length === 0) { %>
-                        <div class="col-span-full text-center py-40 space-y-8 animate-reveal">
-                            <h3 class="text-3xl font-serif text-stone-300 italic">No pieces matching your criteria.</h3>
-                            <a href="/products" class="inline-block text-[11px] uppercase tracking-[0.4em] border-b border-emera-950 pb-2 font-bold">Refresh Collection</a>
-                        </div>
-                    <% } else { %>
-                        <% products.forEach(p => { %>
-                            <div class="group animate-reveal">
-                                <a href="/products/<%= p._id %>" class="block relative aspect-[4/5] bg-stone-50 overflow-hidden mb-6">
-                                    <img 
-                                    src="<%= p.productImage?.[0]?.url || '/images/placeholder.png' %>" 
-                                    alt="<%= p.name %>" 
-                                    class="zoom-img w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out">
-
-                                    <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                                        <button class="w-full bg-emera-950 text-white py-5 text-[9px] uppercase tracking-[0.4em] font-bold hover:bg-black transition-colors">View Product</button>
-                                    </div>
-
-                                    <% if (p.quantity === 0) { %>
-                                        <div class="absolute top-5 left-5"><span class="bg-red-600 text-white text-[9px] font-bold px-4 py-2 uppercase tracking-widest shadow-sm">Sold Out</span></div>
-                                    <% } else if (p.discount > 0) { %>
-                                        <div class="absolute top-5 left-5"><span class="bg-emera-950 text-white text-[9px] font-bold px-4 py-2 uppercase tracking-widest shadow-sm"><%= p.discount %>% OFF</span></div>
-                                    <% } else if (p.isFeatured) { %>
-                                        <div class="absolute top-5 right-5"><span class="bg-white text-emera-950 text-[9px] font-bold px-4 py-2 uppercase tracking-widest shadow-sm">Featured</span></div>
-                                    <% } %>
-                                </a>
-
-                                <div class="space-y-4 px-1">
-                                    <div class="flex justify-between items-start">
-                                        <h3 class="text-sm font-serif text-gray-900 group-hover:text-emera-950 transition-colors"><%= p.name %></h3>
-                                        <div class="text-right">
-                                            <% if (p.discount > 0) { %>
-                                                <p class="text-xs font-bold text-gray-900 tracking-widest">₹<%= Math.round(p.finalPrice).toLocaleString() %></p>
-                                                <p class="text-[9px] text-gray-400 line-through">₹<%= p.salePrice.toLocaleString() %></p>
-                                            <% } else { %>
-                                                <p class="text-xs font-bold text-gray-900 tracking-widest">₹<%= p.salePrice.toLocaleString() %></p>
-                                                <% if (p.salePrice < p.regularPrice) { %>
-                                                    <p class="text-[9px] text-gray-400 line-through">₹<%= p.regularPrice.toLocaleString() %></p>
-                                                <% } %>
-                                            <% } %>
-                                        </div>
-                                    </div>
-                                    <p class="text-[9px] uppercase tracking-widest text-gray-300 font-bold tracking-[0.2em]">
-                                        <%= p.category?.name || 'Uncategorized' %> &bull; Premium Leather
-                                    </p>
-                                </div>
-                            </div>
                         <% }) %>
-                    <% } %>
+                    </div>
                 </div>
 
-                <!-- Pagination -->
-                <%
-                  /* FIX: build a base query string with all current filter params
-                     so page links never lose search/category/sort/maxPrice state */
-                  const _searchParam   = encodeURIComponent(search || '');
-                  const _sortParam     = encodeURIComponent(sort || 'newest');
-                  const _maxPriceParam = encodeURIComponent(maxPrice || 100000);
-                  /* Build repeated category params e.g. &category=X&category=Y */
-                  const _catParams = _selCats.map(c => `&category=${encodeURIComponent(c)}`).join('');
-                  const _baseQuery = `search=${_searchParam}&sort=${_sortParam}&maxPrice=${_maxPriceParam}${_catParams}`;
-                %>
-                <% if (totalPages > 1) { %>
-                    <div class="mt-40 flex justify-center items-center space-x-12 border-t border-stone-50 pt-20">
-                        <% if (currentPage > 1) { %>
-                            <a href="/products?page=<%= currentPage - 1 %>&<%= _baseQuery %>" class="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-black transition-colors">Previous</a>
-                        <% } %>
-
-                        <div class="flex space-x-6">
-                            <% for(let i = 1; i <= totalPages; i++) { %>
-                                <a href="/products?page=<%= i %>&<%= _baseQuery %>" 
-                                   class="text-[10px] uppercase tracking-[0.3em] font-bold <%= currentPage === i ? 'text-emera-950 border-b border-emera-950' : 'text-gray-300 hover:text-black' %>">
-                                    <%= i %>
-                                </a>
-                            <% } %>
+                <!-- Price Slider -->
+                <div class="space-y-10 mb-16">
+                    <h4 class="text-[10px] uppercase tracking-[0.5em] font-bold text-gray-900 border-b border-stone-100 pb-4">Price Range</h4>
+                    <div class="space-y-8 px-1">
+                        <input
+                            type="range"
+                            name="maxPrice"
+                            min="0"
+                            max="100000"
+                            value="<%= maxPrice || 100000 %>"
+                            step="500"
+                            class="w-full h-1 bg-stone-100 appearance-none cursor-pointer"
+                            oninput="updatePriceLabel(this.value)"
+                        >
+                        <div class="flex justify-between text-[11px] uppercase tracking-widest font-bold text-emera-950">
+                            <span>₹0</span>
+                            <span id="price-label">UP TO ₹<%= (maxPrice || 100000).toLocaleString() %></span>
                         </div>
-
-                        <% if (currentPage < totalPages) { %>
-                            <a href="/products?page=<%= currentPage + 1 %>&<%= _baseQuery %>" class="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-black transition-colors">Next</a>
-                        <% } %>
                     </div>
+                </div>
+
+                <button
+                    type="submit"
+                    class="block w-full py-5 bg-emera-950 text-white text-center text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-black transition-all duration-500 mb-4">
+                    Apply Filters
+                </button>
+                <a href="/products" class="block w-full py-5 border border-emera-950 text-center text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500">
+                    Clear Filters
+                </a>
+            </form>
+        </aside>
+
+        <!-- Listing View -->
+        <div class="flex-1">
+            <!-- Toolbar: Sorting & Grid Layout -->
+            <div class="flex flex-col sm:flex-row items-center justify-between mb-16 gap-10 border-b border-stone-50 pb-12">
+                <div class="flex items-center space-x-12">
+                    <span class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Sort By</span>
+                    <select onchange="handleSortChange(this.value)" class="bg-transparent text-[10px] uppercase tracking-[0.3em] font-bold outline-none cursor-pointer hover:text-emera-950 transition-colors">
+                        <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>Newest</option>
+                        <option value="price-asc" <%= sort === 'price-asc' ? 'selected' : '' %>>Price: Low to High</option>
+                        <option value="price-desc" <%= sort === 'price-desc' ? 'selected' : '' %>>Price: High to Low</option>
+                        <option value="name-asc" <%= sort === 'name-asc' ? 'selected' : '' %>>Name: A-Z</option>
+                        <option value="name-desc" <%= sort === 'name-desc' ? 'selected' : '' %>>Name: Z-A</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center space-x-8">
+                    <button onclick="adjustGrid(2)" class="p-2 text-gray-300 hover:text-emera-950" id="grid-btn-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="18"/><rect x="13" y="3" width="8" height="18"/></svg>
+                    </button>
+                    <button onclick="adjustGrid(3)" class="p-2 text-gray-300 hover:text-emera-950" id="grid-btn-3">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="2" y="3" width="6" height="18"/><rect x="9" y="3" width="6" height="18"/><rect x="16" y="3" width="6" height="18"/></svg>
+                    </button>
+                    <button onclick="adjustGrid(4)" class="p-2 text-emera-950" id="grid-btn-4">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="2" y="3" width="4" height="18"/><rect x="7" y="3" width="4" height="18"/><rect x="12" y="3" width="4" height="18"/><rect x="17" y="3" width="4" height="18"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Product Grid -->
+            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-24">
+                <% if (products.length === 0) { %>
+                    <div class="col-span-full text-center py-40 space-y-8 animate-reveal">
+                        <h3 class="text-3xl font-serif text-stone-300 italic">No pieces matching your criteria.</h3>
+                        <a href="/products" class="inline-block text-[11px] uppercase tracking-[0.4em] border-b border-emera-950 pb-2 font-bold">Refresh Collection</a>
+                    </div>
+                <% } else { %>
+                    <% products.forEach(p => { %>
+                        <div class="group animate-reveal">
+                            <a href="/products/<%= p._id %>" class="block relative aspect-[4/5] bg-stone-50 overflow-hidden mb-6">
+                                <img
+                                    src="<%= p.productImage?.[0]?.url || '/images/placeholder.png' %>"
+                                    alt="<%= p.name %>"
+                                    class="zoom-img w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
+                                >
+
+                                <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                                    <button class="w-full bg-emera-950 text-white py-5 text-[9px] uppercase tracking-[0.4em] font-bold hover:bg-black transition-colors">View Product</button>
+                                </div>
+
+                                <% if (p.quantity === 0) { %>
+                                    <div class="absolute top-5 left-5">
+                                        <span class="bg-red-600 text-white text-[9px] font-bold px-4 py-2 uppercase tracking-widest shadow-sm">Sold Out</span>
+                                    </div>
+                                <% } else if (p.discount > 0) { %>
+                                    <div class="absolute top-5 left-5">
+                                        <span class="bg-emera-950 text-white text-[9px] font-bold px-4 py-2 uppercase tracking-widest shadow-sm"><%= p.discount %>% OFF</span>
+                                    </div>
+                                <% } else if (p.isFeatured) { %>
+                                    <div class="absolute top-5 right-5">
+                                        <span class="bg-white text-emera-950 text-[9px] font-bold px-4 py-2 uppercase tracking-widest shadow-sm">Featured</span>
+                                    </div>
+                                <% } %>
+                            </a>
+
+                            <div class="space-y-4 px-1">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="text-sm font-serif text-gray-900 group-hover:text-emera-950 transition-colors"><%= p.name %></h3>
+                                    <div class="text-right">
+                                        <% if (p.discount > 0) { %>
+                                            <p class="text-xs font-bold text-gray-900 tracking-widest">₹<%= Math.round(p.finalPrice).toLocaleString() %></p>
+                                            <p class="text-[9px] text-gray-400 line-through">₹<%= p.salePrice.toLocaleString() %></p>
+                                        <% } else { %>
+                                            <p class="text-xs font-bold text-gray-900 tracking-widest">₹<%= p.salePrice.toLocaleString() %></p>
+                                            <% if (p.salePrice < p.regularPrice) { %>
+                                                <p class="text-[9px] text-gray-400 line-through">₹<%= p.regularPrice.toLocaleString() %></p>
+                                            <% } %>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <p class="text-[9px] uppercase tracking-widest text-gray-300 font-bold tracking-[0.2em]">
+                                    <%= p.category?.name || 'Uncategorized' %> &bull; Premium Leather
+                                </p>
+                            </div>
+                        </div>
+                    <% }) %>
                 <% } %>
             </div>
+
+            <!-- Pagination -->
+            <%
+              const _searchParam   = encodeURIComponent(search || '');
+              const _sortParam     = encodeURIComponent(sort || 'newest');
+              const _maxPriceParam = encodeURIComponent(maxPrice || 100000);
+              const _catParams     = _selCats.map(c => `&category=${encodeURIComponent(c)}`).join('');
+              const _baseQuery     = `search=${_searchParam}&sort=${_sortParam}&maxPrice=${_maxPriceParam}${_catParams}`;
+            %>
+            <% if (totalPages > 1) { %>
+                <div class="mt-40 flex justify-center items-center space-x-12 border-t border-stone-50 pt-20">
+                    <% if (currentPage > 1) { %>
+                        <a href="/products?page=<%= currentPage - 1 %>&<%= _baseQuery %>" class="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-black transition-colors">Previous</a>
+                    <% } %>
+
+                    <div class="flex space-x-6">
+                        <% for(let i = 1; i <= totalPages; i++) { %>
+                            <a href="/products?page=<%= i %>&<%= _baseQuery %>"
+                               class="text-[10px] uppercase tracking-[0.3em] font-bold <%= currentPage === i ? 'text-emera-950 border-b border-emera-950' : 'text-gray-300 hover:text-black' %>">
+                                <%= i %>
+                            </a>
+                        <% } %>
+                    </div>
+
+                    <% if (currentPage < totalPages) { %>
+                        <a href="/products?page=<%= currentPage + 1 %>&<%= _baseQuery %>" class="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-black transition-colors">Next</a>
+                    <% } %>
+                </div>
+            <% } %>
         </div>
+    </div>
 </main>
 
+<script>
+    function updatePriceLabel(val) {
+        document.getElementById('price-label').textContent = `UP TO ₹${Number(val).toLocaleString()}`;
+    }
 
+    function handleSortChange(val) {
+        const url = new URL(window.location.href);
+        const form = document.getElementById('filter-form');
 
-    <script>
-        function updatePriceLabel(val) {
-            document.getElementById('price-label').textContent = `UP TO ₹${Number(val).toLocaleString()}`;
-        }
+        const searchVal = form.querySelector('[name="search"]').value;
+        url.searchParams.set('search', searchVal);
 
-        /*
-         * FIX: handleSortChange now collects ALL active filter state from the
-         * current form/URL before navigating, so changing sort never loses the
-         * selected categories, maxPrice or search term.
-         */
-        function handleSortChange(val) {
-            const url = new URL(window.location.href);
-            const form = document.getElementById('filter-form');
+        const maxPriceVal = form.querySelector('[name="maxPrice"]').value;
+        url.searchParams.set('maxPrice', maxPriceVal);
 
-            // Preserve search term from the hidden input in the form
-            const searchVal = form.querySelector('[name="search"]').value;
-            url.searchParams.set('search', searchVal);
-
-            // Preserve maxPrice from the range slider
-            const maxPriceVal = form.querySelector('[name="maxPrice"]').value;
-            url.searchParams.set('maxPrice', maxPriceVal);
-
-            // Preserve checked categories (replace any stale ones in the URL)
-            url.searchParams.delete('category');
-            form.querySelectorAll('[name="category"]:checked').forEach(el => {
-                url.searchParams.append('category', el.value);
-            });
-
-            // Set new sort and reset to page 1
-            url.searchParams.set('sort', val);
-            url.searchParams.set('page', '1');
-
-            window.location.href = url.toString();
-        }
-
-
-        function adjustGrid(n) {
-            const grid = document.getElementById('product-grid');
-            grid.className = `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${n} gap-x-12 gap-y-24`;
-            [2,3,4].forEach(i => {
-                const b = document.getElementById(`grid-btn-${i}`);
-                if (i === n) b.classList.add('text-emera-950');
-                else b.classList.remove('text-emera-950');
-            });
-        }
-
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        function switchAuth(mode) {
-            const lV = document.getElementById('view-login'), sV = document.getElementById('view-signup');
-            const lB = document.getElementById('btn-login'), sB = document.getElementById('btn-signup');
-            if(mode === 'login') {
-                lV.classList.remove('hidden'); sV.classList.add('hidden');
-                lB.className = 'flex-1 py-4 text-[10px] uppercase tracking-widest font-bold border-b-2 border-emera-950 text-emera-950';
-                sB.className = 'flex-1 py-4 text-[10px] uppercase tracking-widest font-medium text-gray-400';
-            } else {
-                sV.classList.remove('hidden'); lV.classList.add('hidden');
-                sB.className = 'flex-1 py-4 text-[10px] uppercase tracking-widest font-bold border-b-2 border-emera-950 text-emera-950';
-                lB.className = 'flex-1 py-4 text-[10px] uppercase tracking-widest font-medium text-gray-400';
-            }
-        }
-
-        function triggerOTP() {
-            document.getElementById('view-signup').classList.add('hidden');
-            document.getElementById('view-otp').classList.remove('hidden');
-            document.getElementById('otp-display-mail').textContent = document.getElementById('target-email').value || 'guest@emera.com';
-        }
-
-        function moveFocus(i, idx) {
-            if(i.value.length === 1 && idx < 3) document.querySelectorAll('.otp-box')[idx+1].focus();
-        }
-
-        window.addEventListener('scroll', () => {
-            const nav = document.getElementById('navbar');
-            if (window.scrollY > 50) nav.classList.add('shadow-xl', 'bg-emera-950');
-            else nav.classList.remove('shadow-xl', 'bg-emera-950');
+        url.searchParams.delete('category');
+        form.querySelectorAll('[name="category"]:checked').forEach(el => {
+            url.searchParams.append('category', el.value);
         });
-    </script>
+
+        url.searchParams.set('sort', val);
+        url.searchParams.set('page', '1');
+
+        window.location.href = url.toString();
+    }
+
+    function adjustGrid(n) {
+        const grid = document.getElementById('product-grid');
+        grid.className = `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${n} gap-x-12 gap-y-24`;
+        [2, 3, 4].forEach(i => {
+            const b = document.getElementById(`grid-btn-${i}`);
+            if (i === n) b.classList.add('text-emera-950');
+            else b.classList.remove('text-emera-950');
+        });
+    }
+
+    window.addEventListener('scroll', () => {
+        const nav = document.getElementById('navbar');
+        if (window.scrollY > 50) nav.classList.add('shadow-xl', 'bg-emera-950');
+        else nav.classList.remove('shadow-xl', 'bg-emera-950');
+    });
+</script>
 
 <%- include('../partials/user/footer') %>
