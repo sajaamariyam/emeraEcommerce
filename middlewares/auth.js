@@ -1,13 +1,12 @@
 const User = require("../models/userSchema");
 
-
 const userAuth = async (req, res, next) => {
   try {
-    console.log("SESSION USER ID:", req.session.user);
-
     if (!req.session.user) {
-      console.log("NOT LOGGED IN");
-      return res.redirect("/login");
+      req.session.redirectTo = req.originalUrl;
+      return req.session.save(() => {
+        res.redirect("/login");
+      });
     }
 
     const user = await User.findById(req.session.user);
@@ -28,12 +27,10 @@ const userAuth = async (req, res, next) => {
   }
 };
 
-
 const saveRedirect = (req, res, next) => {
   if (
     !req.session.user &&
     req.method === "GET" &&
-    !req.session.redirectTo &&
     !req.originalUrl.startsWith("/login") &&
     !req.originalUrl.startsWith("/signup") &&
     !req.originalUrl.startsWith("/auth")
@@ -45,18 +42,22 @@ const saveRedirect = (req, res, next) => {
   next();
 };
 
-
-
+const requireLogin = (req, res, next) => {
+  if (!req.session.user) {
+    req.session.redirectTo = req.originalUrl;
+    return req.session.save(() => {
+      res.redirect("/login");
+    });
+  }
+  next();
+};
 
 const noCache = (req, res, next) => {
-
   res.set("Cache-control", "no-store, no-cache, must-revalidate, private");
   res.set("Pragma", "no-cache");
   res.set("Expires", "0");
-  next()
+  next();
 };
-
-
 
 const adminAuth = async (req, res, next) => {
   try {
@@ -67,8 +68,17 @@ const adminAuth = async (req, res, next) => {
     const admin = await User.findById(req.session.admin);
 
     if (!admin || !admin.isAdmin) {
-      req.session.destroy();
-      return res.redirect("/admin/adminLogin");
+      return req.session.destroy((err) => {
+        res.clearCookie("connect.sid");
+        return res.redirect("/admin/adminLogin");
+      });
+    }
+
+    if (admin.isBlocked) {
+      return req.session.destroy((err) => {
+        res.clearCookie("connect.sid");
+        return res.redirect("/admin/adminLogin");
+      });
     }
 
     res.locals.admin = admin;
@@ -80,12 +90,10 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
-
-
-
 module.exports = {
-    userAuth,
-    adminAuth,
-    noCache,
-    saveRedirect
-}
+  userAuth,
+  adminAuth,
+  noCache,
+  saveRedirect,
+  requireLogin,
+};

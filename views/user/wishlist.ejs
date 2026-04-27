@@ -1,0 +1,317 @@
+<%- include('../partials/user/header', { user, cartCount }) %>
+
+
+<body class="bg-white text-gray-900 selection:bg-emera-950 selection:text-white">
+
+
+    <!-- Header Spacer -->
+    <div class="h-24 bg-emera-950"></div>
+    
+    <main class="max-w-[1440px] mx-auto px-6 lg:px-12 py-20 animate-reveal">
+        
+        <!-- Breadcrumb & Header -->
+        <div class="mb-24 space-y-6">
+            <nav class="text-[9px] uppercase tracking-[0.4em] text-gray-400">
+                <a href="/" class="hover:text-black transition-colors">Home</a> / <span class="text-black">Wishlist</span>
+            </nav>
+            <h1 class="text-6xl md:text-7xl font-serif text-gray-900 leading-none">My <span class="italic font-light">Wishlist</span></h1>
+            <p class="text-[11px] uppercase tracking-[0.3em] text-gray-400 font-bold"><%= wishlistItems.length %> Items Saved</p>
+        </div>
+        
+        <% if (wishlistItems.length === 0) { %>
+            <!-- Empty Wishlist -->
+            <div class="text-center py-20">
+                <h2 class="text-3xl font-serif text-gray-900 mb-6">Your wishlist is empty</h2>
+                <a href="/products" class="inline-block border border-emera-950 px-10 py-5 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500">Discover Products</a>
+            </div>
+        <% } else { %>
+        
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-24">
+            
+            <!-- Wishlist Items -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <% wishlistItems.forEach((item, index) => { %>
+                <!-- Wishlist Item <%= index + 1 %> -->
+                <div class="bg-stone-50 p-8 border border-stone-100 wishlist-item" id="wishlist-<%= item._id %>">
+                    <div class="flex flex-col sm:flex-row gap-8">
+                    
+                        <div class="w-full sm:w-48 h-48 bg-stone-200 overflow-hidden flex-shrink-0">
+                            <img 
+                                src="<%= item.productImage?.[0]?.url || '/images/placeholder.png' %>"
+                                alt="<%= item.name %>"
+                                class="w-full h-full object-cover"
+                            >
+                        </div>
+
+                        
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+
+                                <h3 class="text-2xl font-serif text-gray-900 mb-2">
+                                    <%= item.name %>
+                                </h3>
+
+                                <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-6 font-bold">
+                                    <%= item.material || 'Premium Leather' %>
+                                </p>
+
+                                
+                                <p class="text-lg font-bold text-gray-900 tracking-widest mb-1">₹<%= item.salePrice ? item.salePrice.toLocaleString('en-IN') : '0' %></p>
+                                
+                                <% if (item.stock === 0) { %>
+                                <p class="text-red-500 text-[10px] uppercase tracking-widest mt-2">
+                                    Out of stock
+                                </p>
+                                <% } else if (item.stock < 5) { %>
+                                <p class="text-amber-600 text-[10px] uppercase tracking-widest mt-2">
+                                    Only <%= item.stock %> left in stock
+                                </p>
+                                <% } else { %>
+                                <p class="text-emera-700 text-[10px] uppercase tracking-widest mt-2">
+                                    In Stock
+                                </p>
+                                <% } %>
+                            </div>
+
+                            
+                            <div class="flex items-center justify-between mt-8">
+                                <% if (item.stock > 0) { %>
+                                <% if (cartProductIds.includes(item._id.toString())) { %>
+                                <button disabled class="border border-stone-300 px-8 py-3 text-[10px] uppercase tracking-[0.4em] font-bold text-stone-400 cursor-not-allowed">
+                                    Already in Cart
+                                </button>
+                            <% } else { %>
+                                <button class="add-to-cart-btn border border-emera-950 px-8 py-3 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500"
+                                    data-product-id="<%= item._id %>">
+                                    Add to Cart
+                                </button>
+                            <% } %>
+                                <% } else { %>
+                                <button
+                                    class="border border-stone-300 px-8 py-3 text-[10px] uppercase tracking-[0.4em] font-bold text-gray-400 cursor-not-allowed"
+                                    disabled
+                                >
+                                    Out of Stock
+                                </button>
+                                <% } %>
+                            
+                                <button
+                                    class="remove-wishlist-btn text-[10px] tracking-[0.3em] uppercase text-gray-400 font-bold hover:text-gray-900 transition-colors"
+                                    data-product-id="<%= item._id %>"
+                                >
+                                    Remove
+                                </button>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+                
+                <!-- Continue Shopping -->
+                <div class="pt-8">
+                    <a href="/products" class="inline-block border border-emera-950 px-10 py-5 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500">Continue Shopping</a>
+                </div>
+                
+            </div>
+            
+            <!-- Wishlist Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-stone-50 p-10 border border-stone-100 sticky top-32">
+                    <h2 class="text-3xl font-serif text-gray-900 mb-12">Wishlist Summary</h2>
+                    
+                    <div class="space-y-6 mb-8 pb-8 border-b border-stone-200">
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Total Items</span>
+                            <span class="font-bold text-gray-900"><%= wishlistItems.length %></span>
+                        </div>
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">In Stock</span>
+                            <span class="font-bold text-emera-700"><%= inStockCount %></span>
+                        </div>
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
+                            <span class="text-gray-400 font-bold">Total Value</span>
+                            <span class="font-bold text-gray-900">₹<%= totalValue.toLocaleString('en-IN') %></span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between mb-12 pb-8 border-b border-stone-200">
+                        <span class="text-xl font-serif text-gray-900">Estimated Total</span>
+                        <span class="text-2xl font-serif text-gray-900">₹<%= totalValue.toLocaleString('en-IN') %></span>
+                    </div>
+                    
+                    <% if (inStockCount > 0) { %>
+                    <button
+                        type="button"
+                        id="add-all-to-cart"
+                        class="block text-center btn-hover w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold mb-4"
+                    >
+                        Add All to Cart
+                    </button>
+                    <% } %>
+
+                    <a 
+                        href="/products"
+                        class="block text-center w-full border border-emera-950 py-6 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-950 hover:text-white transition-all duration-500"
+                    >
+                        Continue Shopping
+                    </a>
+                    
+                    <div class="mt-8 space-y-4 text-center">
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Save your favorites</p>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-widest">Get notified when items go on sale</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <% } %>
+        
+    </main>
+
+    <!-- Modal -->
+    <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white max-w-md w-full p-8 relative">
+            <button id="modal-close" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 text-2xl">&times;</button>
+            <h3 id="modal-title" class="text-2xl font-serif text-gray-900 mb-4"></h3>
+            <p id="modal-message" class="text-sm text-gray-600 mb-6"></p>
+            <button id="modal-ok" class="w-full bg-emera-950 text-white py-4 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-800 transition-all duration-500">OK</button>
+        </div>
+    </div>
+
+
+<script>
+  // Modal functions
+  function showModal(title, message) {
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalMessage = document.getElementById('modal-message');
+    
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modal.classList.remove('hidden');
+  }
+
+  function hideModal() {
+    const modal = document.getElementById('modal');
+    modal.classList.add('hidden');
+  }
+
+  document.getElementById('modal-close').addEventListener('click', hideModal);
+  document.getElementById('modal-ok').addEventListener('click', hideModal);
+  
+  document.getElementById('modal').addEventListener('click', (e) => {
+    if (e.target.id === 'modal') {
+      hideModal();
+    }
+  });
+
+  // Add to Cart buttons
+
+  document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
+  btn.addEventListener("click", async () => {
+
+    const productId = btn.dataset.productId;
+
+    const res = await fetch("/cart/add", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        productId
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+
+    showModal("Success", "Product added to cart!");
+
+    // update cart badge
+    const cartBadge = document.getElementById("cart-count-badge");
+    if (cartBadge) {
+        cartBadge.textContent = data.cartCount;
+    }
+
+    // remove wishlist item from page
+    const wishlistItem = document.getElementById(`wishlist-${productId}`);
+    if (wishlistItem) {
+        wishlistItem.remove();
+    }
+
+    // update wishlist badge
+    const wishlistBadge = document.getElementById("wishlist-count-badge");
+
+    if (wishlistBadge) {
+        let count = parseInt(wishlistBadge.textContent) || 0;
+
+        if (count > 1) {
+        wishlistBadge.textContent = count - 1;
+        } else {
+        wishlistBadge.remove(); // vanish if last item
+        }
+    }
+
+    }
+    });
+    });
+
+  // Remove from Wishlist buttons
+  document.querySelectorAll(".remove-wishlist-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const productId = btn.dataset.productId;
+
+      const res = await fetch(`/wishlist/remove/${productId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        showModal('Error', 'Try again, error occurred');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        location.reload();
+      } else {
+        showModal('Error', data.message || 'Failed to remove from wishlist');
+      }
+    });
+  });
+
+  // Add All to Cart button
+  const addAllBtn = document.getElementById("add-all-to-cart");
+  if (addAllBtn) {
+    addAllBtn.addEventListener("click", async () => {
+      const res = await fetch("/wishlist/add-all-to-cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        showModal('Error', 'Try again, error occurred');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        showModal('Success', 'All items added to cart!');
+        setTimeout(() => {
+          location.reload();
+        }, 1500);
+      } else {
+        showModal('Error', data.message || 'Failed to add items to cart');
+      }
+    });
+  }
+</script>
+
+
+<%- include('../partials/user/footer') %>

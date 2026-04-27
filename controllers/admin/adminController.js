@@ -5,334 +5,344 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
 const pageerror = async (req, res) => {
-    res.render("pageerror");
-}
+  res.render("pageerror");
+};
 
 const loadLogin = (req, res) => {
-
-    if(req.session.admin){
-
-        return res.redirect("/admin/adminDashboard");
-
-    }
-    res.render("admin/adminLogin", {message: null})
-}
+  if (req.session.admin) {
+    return res.redirect("/admin/adminDashboard");
+  }
+  res.render("admin/adminLogin", { message: null });
+};
 
 const login = async (req, res) => {
-    try {
-        
-        const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        console.log(req.body);
+    console.log(req.body);
 
-        const admin = await User.findOne({ email, isAdmin: true });
+    const admin = await User.findOne({ email, isAdmin: true });
 
-        if (!admin) {
-            return res.render("admin/adminLogin", { message: "Admin not found" });
-        }
-
-        const passwordMatch = await bcrypt.compare(password, admin.password);
-
-        if (!passwordMatch) {
-            return res.render("admin/adminLogin", { message: "Invalid password" });
-        }
-
-        req.session.admin = admin._id;
-
-        return res.redirect("/admin/adminDashboard");
-
-    } catch (error) {
-        
-        console.log("Login error",error);
-        return res.redirect("/admin/pageerror");
-
+    if (!admin) {
+      return res.render("admin/adminLogin", { message: "Admin not found" });
     }
-}
 
-const loadDashboard = async (req, res) => {
-    try {
-        if (!req.session.admin) {
-            return res.redirect("/admin/adminLogin");
-        }
+    const passwordMatch = await bcrypt.compare(password, admin.password);
 
-        const admin = await User.findById(req.session.admin);
-
-
-        res.render("admin/adminDashboard", {admin, activePage: "dashboard"});
-    } catch (error) {
-        console.log("Dashboard error:", error);
-        res.redirect("/admin/pageerror");
+    if (!passwordMatch) {
+      return res.render("admin/adminLogin", { message: "Invalid password" });
     }
+
+    req.session.admin = admin._id;
+
+    return res.redirect("/admin/adminDashboard");
+  } catch (error) {
+    console.log("Login error", error);
+    return res.redirect("/admin/pageerror");
+  }
 };
 
 const loadUsers = async (req, res) => {
-    try {
-        const search = req.query.search?.trim();
-        const status = req.query.status || "all";
+  try {
+    const search = req.query.search?.trim();
+    const status = req.query.status || "all";
 
-        const page = parseInt(req.query.page) || 1;
-        const limit = 5;
-        const skip = (page - 1) * limit;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+    const skip = (page - 1) * limit;
 
+    let filter = { isAdmin: false };
 
-        let filter = { isAdmin: false };
-
-        if (search) {
-            filter.$or = [
-                { name: { $regex: search, $options: "i" } },
-                { email: { $regex: search, $options: "i" } }
-            ];
-        }
-
-        if(status === "active"){
-            filter.isBlocked = false;
-        }else if(status === "blocked"){
-            filter.isBlocked = true;
-        }
-
-
-        const users = await User.find(filter)
-            .sort({createdAt: -1})
-            .skip(skip)
-            .limit(limit);
-
-        
-        const totalFilteredUsers = await User.countDocuments(filter);
-        const totalPages = Math.ceil(totalFilteredUsers / limit);
-
-
-        const totalUsers = await User.countDocuments({ isAdmin: false });
-        const blockedUsers = await User.countDocuments({ isAdmin: false, isBlocked: true });
-        const activeUsers = totalUsers - blockedUsers;
-
-        const admin = await User.findById(req.session.admin);
-
-
-        res.render("admin/users", {
-            admin,
-            users,
-            totalUsers,
-            activeUsers,
-            blockedUsers,
-            currentPage: page,
-            totalPages,
-            search: search || "",
-            status,
-            activePage: "users"
-        });
-
-    } catch (error) {
-        console.log("Load users error:", error);
-        res.redirect("/admin/pageerror");
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
     }
+
+    if (status === "active") {
+      filter.isBlocked = false;
+    } else if (status === "blocked") {
+      filter.isBlocked = true;
+    }
+
+    const users = await User.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalFilteredUsers = await User.countDocuments(filter);
+    const totalPages = Math.ceil(totalFilteredUsers / limit);
+
+    const totalUsers = await User.countDocuments({ isAdmin: false });
+    const blockedUsers = await User.countDocuments({
+      isAdmin: false,
+      isBlocked: true,
+    });
+    const activeUsers = totalUsers - blockedUsers;
+
+    const admin = await User.findById(req.session.admin);
+
+    res.render("admin/users", {
+      admin,
+      users,
+      totalUsers,
+      activeUsers,
+      blockedUsers,
+      currentPage: page,
+      totalPages,
+      search: search || "",
+      status,
+      activePage: "users",
+    });
+  } catch (error) {
+    console.log("Load users error:", error);
+    res.redirect("/admin/pageerror");
+  }
 };
 
-
-
-
 const blockUser = async (req, res) => {
-    try {
-        const userId = req.params.id;
+  try {
+    const userId = req.params.id;
 
-        await User.findByIdAndUpdate(userId, { isBlocked: true });
+    await User.findByIdAndUpdate(userId, { isBlocked: true });
 
-        res.redirect("/admin/users");
-    } catch (error) {
-        console.log("Block user error:", error);
-        res.redirect("/admin/pageerror");
-    }
+    res.redirect("/admin/users");
+  } catch (error) {
+    console.log("Block user error:", error);
+    res.redirect("/admin/pageerror");
+  }
 };
 
 const unblockUser = async (req, res) => {
-    try {
-        const userId = req.params.id;
+  try {
+    const userId = req.params.id;
 
-        await User.findByIdAndUpdate(userId, { isBlocked: false });
+    await User.findByIdAndUpdate(userId, { isBlocked: false });
 
-        res.redirect("/admin/users");
-    } catch (error) {
-        console.log("Unblock user error:", error);
-        res.redirect("/admin/pageerror");
-    }
+    res.redirect("/admin/users");
+  } catch (error) {
+    console.log("Unblock user error:", error);
+    res.redirect("/admin/pageerror");
+  }
+};
+
+const escapeRegex = (text) => {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+const extractFileData = (file) => {
+  return {
+    url: file.path,
+    public_id: file.filename,
+  };
 };
 
 const loadCategories = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+    const skip = (page - 1) * limit;
 
-    try {
-       
-        const page = parseInt(req.query.page) || 1;
-        const limit = 5;
-        const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+    const status = req.query.status || "all";
 
-        const search = req.query.search || "";
-        const status = req.query.status || "all";
+    let filter = {};
 
-        let filter = {};
-
-        if(search){
-            filter.name = {$regex: search, $options: "i"};
-        }
-
-    if(status === "listed"){
-        filter.isListed = true;
-    }else if(status === "unlisted"){
-        filter.isListed = false;
+    if (search) {
+      filter.name = { $regex: escapeRegex(search), $options: "i" };
     }
+
+    if (status === "listed") filter.isListed = true;
+    if (status === "unlisted") filter.isListed = false;
 
     const totalCategories = await Category.countDocuments(filter);
 
     const categories = await Category.find(filter)
-    .sort({createdAt: -1})
-    .skip(skip)
-    .limit(limit);
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     const totalPages = Math.ceil(totalCategories / limit);
 
     const admin = await User.findById(req.session.admin);
 
-
     res.render("admin/categories", {
-        admin,
-        categories,
-        currentPage: page,
-        totalPages,
-        search,
-        status,
-        activePage: "categories"
+      admin,
+      categories,
+      currentPage: page,
+      totalPages,
+      search,
+      status,
+      activePage: "categories",
     });
-        
-    } catch (error) {
-        
-        console.log("Load categories error :", error);
-        res.redirect("/admin/pageerror");
-        
-    }
-
-}
-
-
-const addCategory = async (req, res) => {
-  try {
-
-
-    const { name } = req.body;
-
-    if (!name || !req.file) {
-      return res.status(400).json({ message: "Name and image required" });
-    }
-
-    const newCategory = new Category({
-    name: name.trim(),
-    image: {
-      url: req.file.path,           
-      public_id: req.file.public_id 
-    }
-  });
-
-
-    await newCategory.save();
-
-    res.status(201).json({ message: "Category added successfully" });
   } catch (error) {
-    console.error("Add category error:", error);
-    res.status(500).json({ message: "Failed to add category" });
+    console.log("Load categories error :", error);
+    res.redirect("/admin/pageerror");
   }
 };
 
+const addCategory = async (req, res) => {
+  try {
+    let { name } = req.body;
 
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Category name required" });
+    }
 
+    if (!req.file) {
+      return res.status(400).json({ message: "Category image required" });
+    }
+
+    name = name.trim();
+
+    const existingCategory = await Category.findOne({
+      name: { $regex: `^${escapeRegex(name)}$`, $options: "i" },
+    });
+
+    if (existingCategory) {
+      return res.status(409).json({ message: "Category already exists" });
+    }
+
+    const newCategory = new Category({
+      name,
+      image: extractFileData(req.file),
+    });
+
+    await newCategory.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Category added successfully",
+    });
+  } catch (error) {
+    console.error("Add category error:", error);
+    res.status(500).json({
+      message: error.message || "Failed to add category",
+    });
+  }
+};
 
 const editCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, isListed } = req.body;
+    let { name, isListed } = req.body;
 
-    const updateData = {
-      name,
-      isListed: isListed === "true"
-    };
+    if (!id) {
+      return res.status(400).json({ message: "Invalid category id" });
+    }
 
-    if (req.file) {
-    updateData.image = {
-      url: req.file.path,
-      public_id: req.file.public_id
-    };
-  }
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Category name required" });
+    }
 
+    name = name.trim();
 
-    await Category.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true
+    const existingCategory = await Category.findOne({
+      _id: { $ne: id },
+      name: { $regex: `^${escapeRegex(name)}$`, $options: "i" },
     });
 
-    res.status(200).json({ message: "Category updated" });
+    if (existingCategory) {
+      return res.status(409).json({ message: "Category name already exists" });
+    }
+
+    const category = await Category.findById(id);
+
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    category.name = name;
+    category.isListed = isListed === "true";
+
+    if (req.file) {
+      category.image = extractFileData(req.file);
+    }
+
+    await category.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+    });
   } catch (error) {
     console.error("Edit category error:", error);
-    res.status(500).json({ message: "Failed to update category" });
+    res.status(500).json({
+      message: error.message || "Failed to update category",
+    });
   }
 };
-
-
 
 const toggleCategoryStatus = async (req, res) => {
   try {
     const { id } = req.params;
 
     const category = await Category.findById(id);
+
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    await Category.findByIdAndUpdate(
-      id,
-      { $set: { isListed: !category.isListed } },
-      { runValidators: false }
-    );
+    category.isListed = !category.isListed;
 
-    res.status(200).json({ message: "Category status updated" });
+    await category.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Category status updated",
+    });
   } catch (error) {
     console.error("Toggle status error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      message: error.message || "Internal server error",
+    });
   }
 };
-
 
 const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await Category.findByIdAndUpdate(
-      id,
-      { $set: { isListed: false } },
-      { runValidators: false }
-    );
+    const category = await Category.findById(id);
 
-    res.status(200).json({ message: "Category soft deleted" });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    category.isListed = false;
+
+    await category.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Category deleted successfully",
+    });
   } catch (error) {
-    console.error("Soft delete category error:", error);
-    res.status(500).json({ message: "Soft delete failed" });
+    console.error("Delete category error:", error);
+    res.status(500).json({
+      message: error.message || "Delete failed",
+    });
   }
 };
 
-
 const logout = (req, res) => {
-    req.session.destroy( () => {
-        res.redirect("/admin/adminLogin");
-    })
-}
+  req.session.destroy(() => {
+    res.redirect("/admin/adminLogin");
+  });
+};
 
 module.exports = {
-    loadLogin,
-    login,
-    loadDashboard,
-    pageerror,
-    loadUsers,
-    blockUser,
-    unblockUser,
-    loadCategories,
-    addCategory,
-    editCategory,
-    toggleCategoryStatus,
-    deleteCategory,
-    logout
-}
+  loadLogin,
+  login,
+  pageerror,
+  loadUsers,
+  blockUser,
+  unblockUser,
+  loadCategories,
+  addCategory,
+  editCategory,
+  toggleCategoryStatus,
+  deleteCategory,
+  logout,
+};

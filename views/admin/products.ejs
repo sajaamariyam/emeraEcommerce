@@ -380,6 +380,8 @@
           class="grid grid-cols-1 md:grid-cols-2 gap-10">
 
       <input type="hidden" name="productId" id="form-productId">
+      <input type="hidden" name="removedImages" id="removedImages">
+
 
       <!-- LEFT COLUMN -->
       <div class="space-y-8">
@@ -449,6 +451,25 @@
           <p class="text-xs text-gray-500">
             Stock is managed per color. Variants with zero stock will be unavailable.
           </p>
+        </div>
+
+        <!-- ✅ NEW: SPECIFICATIONS SECTION -->
+        <div class="section space-y-4">
+          <h4 class="text-sm font-bold uppercase tracking-widest text-gray-700">
+            Product Specifications (Optional)
+          </h4>
+          <p class="text-xs text-gray-500">
+            Add custom specifications like Material, Origin, Dimensions, etc.
+          </p>
+
+          <div id="specifications-container" class="space-y-3">
+            <!-- Populated dynamically -->
+          </div>
+
+          <button type="button" onclick="addSpecRow()" 
+                  class="inline-flex items-center gap-2 text-sm font-semibold text-teal-700 hover:underline">
+            + Add Specification
+          </button>
         </div>
 
         <!-- DESCRIPTION -->
@@ -860,19 +881,34 @@ function closeActionModals() {
   confirmModal.classList.remove("flex");
 }
 
+let removedOldImages = [];
+
+function removeOldImage(index, btn) {
+  removedOldImages.push(index);
+
+  document.getElementById("removedImages").value =
+    JSON.stringify(removedOldImages);
+
+  btn.parentElement.remove();
+}
+
+
 /* ---------------- OPEN PRODUCT MODAL ---------------- */
 async function openProductModal(productId = null) {
   const modal = document.getElementById("productModal");
   const form = document.getElementById("productForm");
   const preview = document.getElementById("imagePreview");
   const variantContainer = document.getElementById("variantContainer");
+  const specsContainer = document.getElementById("specifications-container"); // ✅ NEW
 
   // Reset UI
   form.reset();
   preview.innerHTML = "";
   variantContainer.innerHTML = "";
+  specsContainer.innerHTML = ""; // ✅ NEW
   processedImages = [];
   pendingFiles = [];
+  removedOldImages = []; // ✅ Reset removed images
 
   if (productId) {
     /* ---------- EDIT MODE ---------- */
@@ -899,10 +935,20 @@ async function openProductModal(productId = null) {
 
     // Existing images preview
     if (Array.isArray(product.productImage)) {
-      product.productImage.forEach(img => {
+      product.productImage.forEach((img, index) => {
         const div = document.createElement("div");
-        div.className = "aspect-[3/4] border rounded-xl overflow-hidden";
-        div.innerHTML = `<img src="${img.url}" class="w-full h-full object-cover">`;
+        div.className = "relative aspect-[3/4] border rounded-xl overflow-hidden";
+
+        div.innerHTML = `
+          <img src="${img.url}" class="w-full h-full object-cover">
+          <button
+            type="button"
+            onclick="removeOldImage(${index}, this)"
+            class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm">
+            &times;
+          </button>
+        `;
+
         preview.appendChild(div);
       });
     }
@@ -911,6 +957,17 @@ async function openProductModal(productId = null) {
     if (Array.isArray(product.variants)) {
       product.variants.forEach(v => {
         addVariantRow(v.color, v.quantity);
+      });
+    }
+
+    // ✅ NEW: Load existing specifications
+    if (product.specifications) {
+      const specs = product.specifications instanceof Map 
+        ? Object.fromEntries(product.specifications) 
+        : product.specifications;
+      
+      Object.entries(specs).forEach(([key, value]) => {
+        addSpecRow(key, value);
       });
     }
 
@@ -951,6 +1008,31 @@ function addVariantRow(color = "", qty = "") {
       class="variant-qty px-4 py-2 border rounded-lg outline-none">
   `;
 
+  container.appendChild(row);
+}
+
+/* ---------------- ✅ NEW: SPECIFICATION ROW ---------------- */
+function addSpecRow(key = "", value = "") {
+  const container = document.getElementById("specifications-container");
+  
+  const row = document.createElement("div");
+  row.className = "grid grid-cols-2 gap-3 items-center";
+  row.innerHTML = `
+    <input type="text" 
+           placeholder="Key (e.g., Material)" 
+           value="${key}"
+           class="spec-key px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+    <div class="flex gap-2">
+      <input type="text" 
+             placeholder="Value (e.g., Leather)" 
+             value="${value}"
+             class="spec-value flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+      <button type="button" onclick="this.parentElement.parentElement.remove()" 
+              class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `;
   container.appendChild(row);
 }
 
@@ -1071,6 +1153,23 @@ document.getElementById("productForm").addEventListener("submit", e => {
 
   formData.append("variants", JSON.stringify(variants));
 
+  // ✅ NEW: Collect specifications
+  const specs = {};
+  const keys = document.querySelectorAll(".spec-key");
+  const values = document.querySelectorAll(".spec-value");
+
+  keys.forEach((input, i) => {
+    const key = input.value.trim();
+    const value = values[i].value.trim();
+    if (key && value) {
+      specs[key] = value;
+    }
+  });
+
+  if (Object.keys(specs).length > 0) {
+    formData.append("specifications", JSON.stringify(specs));
+  }
+
   fetch(e.target.action, { method: "POST", body: formData })
     .then(res => {
       if (res.ok) {
@@ -1085,6 +1184,7 @@ document.getElementById("productForm").addEventListener("submit", e => {
     })
     .catch(() => showNotificationModal("Error", "Something went wrong", false));
 });
+
 </script>
 
 

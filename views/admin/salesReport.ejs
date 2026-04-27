@@ -1,0 +1,245 @@
+<%- include("../partials/admin/header") %>
+
+<div class="ml-52 h-screen overflow-y-auto bg-gray-50">
+
+    <!-- Top Navigation Bar -->
+    <div class="bg-white border-b sticky top-0 z-10">
+        <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-teal-700">Sales Report</h1>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    <%= admin.name.charAt(0) %>
+                </div>
+                <span class="text-sm text-gray-700"><%= admin.name %></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="p-8 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Sales Overview</h2>
+                <p class="text-gray-600 mt-1">View and analyse delivered order sales data.</p>
+            </div>
+
+            <!--
+                ✅ Download buttons hit server routes with current query params
+                   so the PDF/Excel match exactly what's on screen
+            -->
+            <div class="flex gap-3">
+                <a href="/admin/sales-report/pdf?filter=<%= filter || '' %>&from=<%= from || '' %>&to=<%= to || '' %>"
+                   class="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 font-medium shadow-sm">
+                    <i class="fas fa-file-pdf text-red-500"></i> PDF
+                </a>
+                <a href="/admin/sales-report/excel?filter=<%= filter || '' %>&from=<%= from || '' %>&to=<%= to || '' %>"
+                   class="bg-teal-700 text-white px-5 py-2.5 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium shadow-md">
+                    <i class="fas fa-file-excel"></i> Excel
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 mb-8">
+            <form method="GET" action="/admin/sales-report" class="flex flex-wrap items-end gap-4">
+
+                <!-- Quick filters -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Filter By</label>
+                    <div class="flex gap-2">
+                        <% ['daily','weekly','monthly'].forEach(f => { %>
+                            <button type="submit" name="filter" value="<%= f %>"
+                                class="px-4 py-2 rounded-lg text-sm font-semibold border transition
+                                    <%= filter === f
+                                        ? 'bg-teal-700 text-white border-teal-700'
+                                        : 'bg-white text-gray-600 border-gray-300 hover:border-teal-500 hover:text-teal-700' %>">
+                                <%= f.charAt(0).toUpperCase() + f.slice(1) %>
+                            </button>
+                        <% }) %>
+                    </div>
+                </div>
+
+                <div class="h-10 w-px bg-gray-200 self-end mb-0.5"></div>
+
+                <!-- Custom date range -->
+                <div class="flex items-end gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">From</label>
+                        <input type="date" name="from" value="<%= from || '' %>"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">To</label>
+                        <input type="date" name="to" value="<%= to || '' %>"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none transition">
+                    </div>
+                    <button type="submit" name="filter" value="custom"
+                        class="px-5 py-2 rounded-lg text-sm font-semibold border transition
+                            <%= filter === 'custom'
+                                ? 'bg-teal-700 text-white border-teal-700'
+                                : 'bg-white text-gray-600 border-gray-300 hover:border-teal-500 hover:text-teal-700' %>">
+                        Apply
+                    </button>
+                </div>
+
+                <% if (filter) { %>
+                    <a href="/admin/sales-report"
+                       class="self-end px-4 py-2 text-sm text-gray-500 hover:text-gray-800 font-medium transition flex items-center gap-1">
+                        <i class="fas fa-times text-xs"></i> Clear
+                    </a>
+                <% } %>
+
+            </form>
+        </div>
+
+        <script>
+            const fromInput = document.querySelector('input[name="from"]');
+            const toInput   = document.querySelector('input[name="to"]');
+            const applyBtn  = document.querySelector('button[value="custom"]');
+            const today     = new Date().toISOString().split('T')[0];
+
+            fromInput.setAttribute('max', today);
+            toInput.setAttribute('max', today);
+
+            fromInput.addEventListener('change', function() {
+                toInput.setAttribute('min', this.value);
+                if (toInput.value && toInput.value < this.value) toInput.value = this.value;
+            });
+            toInput.addEventListener('change', function() {
+                fromInput.setAttribute('max', this.value);
+            });
+            applyBtn.addEventListener('click', function(e) {
+                if (!fromInput.value || !toInput.value) {
+                    e.preventDefault();
+                    alert('Please select both From and To dates.');
+                    return;
+                }
+                if (fromInput.value > toInput.value) {
+                    e.preventDefault();
+                    alert('From date cannot be after To date.');
+                }
+            });
+        </script>     
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+                <div class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center">
+                    <i class="fas fa-shopping-bag text-teal-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total Orders</p>
+                    <p class="text-2xl font-bold text-gray-800"><%= summary.totalOrders %></p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+                <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
+                    <i class="fas fa-rupee-sign text-green-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total Revenue</p>
+                    <p class="text-2xl font-bold text-gray-800">₹<%= summary.totalSales.toLocaleString('en-IN') %></p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+                <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center">
+                    <i class="fas fa-tag text-orange-500 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total Discount Given</p>
+                    <p class="text-2xl font-bold text-gray-800">₹<%= summary.totalDiscount.toLocaleString('en-IN') %></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Order ID</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Items</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Payment</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Discount</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Final Amount</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+
+                    <% if (orders.length === 0) { %>
+                        <tr>
+                            <td colspan="7" class="px-6 py-16 text-center text-gray-400">
+                                <i class="fas fa-chart-bar text-4xl mb-3 block opacity-30"></i>
+                                <p class="font-medium">No delivered orders found for this period.</p>
+                            </td>
+                        </tr>
+                    <% } %>
+
+                    <% orders.forEach(order => { %>
+                        <tr class="hover:bg-gray-50 transition-colors">
+
+                            <td class="px-6 py-4">
+                                <p class="font-semibold text-gray-800 text-sm"><%= order.orderId %></p>
+                            </td>
+
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <%= new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <span class="px-2.5 py-1 bg-teal-50 text-teal-700 text-xs font-bold rounded-full border border-teal-100">
+                                    <%= order.orderedItems.length %> item<%= order.orderedItems.length !== 1 ? 's' : '' %>
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <%
+                                  const pm = (order.paymentMethod || '').toLowerCase();
+                                  let pmClass = 'bg-gray-50 text-gray-600 border-gray-100';
+                                  if (pm === 'cod')         pmClass = 'bg-yellow-50 text-yellow-700 border-yellow-100';
+                                  else if (pm === 'upi')    pmClass = 'bg-blue-50 text-blue-700 border-blue-100';
+                                  else if (pm === 'card')   pmClass = 'bg-purple-50 text-purple-700 border-purple-100';
+                                  else if (pm === 'netbanking') pmClass = 'bg-indigo-50 text-indigo-700 border-indigo-100';
+                                %>
+                                <span class="px-3 py-1 text-xs font-bold rounded-full border <%= pmClass %>">
+                                    <%= (order.paymentMethod || 'N/A').toUpperCase() %>
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <% if (order.discount > 0) { %>
+                                    <span class="text-orange-600 font-semibold text-sm">
+                                        -₹<%= order.discount.toLocaleString('en-IN') %>
+                                    </span>
+                                <% } else { %>
+                                    <span class="text-gray-400 text-sm">—</span>
+                                <% } %>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <span class="text-lg font-bold text-teal-700">
+                                    ₹<%= order.finalAmount.toLocaleString('en-IN') %>
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100">
+                                    Delivered
+                                </span>
+                            </td>
+
+                        </tr>
+                    <% }) %>
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<%- include("../partials/admin/footer") %>

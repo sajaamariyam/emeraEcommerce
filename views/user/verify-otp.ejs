@@ -6,9 +6,8 @@
     <title>Verify Email - Emera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #f5f1ed;
-        }
+        body { background-color: #f5f1ed; }
+
         .otp-input {
             width: 50px;
             height: 56px;
@@ -27,17 +26,14 @@
             background-color: #0d7c66;
             transition: all 0.3s;
         }
-        .primary-btn:hover {
-            background-color: #0a6353;
-        }
+        .primary-btn:hover { background-color: #0a6353; }
+
         .resend-link {
             color: #c89d5c;
             cursor: pointer;
             transition: color 0.3s;
         }
-        .resend-link:hover {
-            color: #b08a4a;
-        }
+        .resend-link:hover { color: #b08a4a; }
         .resend-link.disabled {
             color: #d1d5db;
             cursor: not-allowed;
@@ -64,24 +60,23 @@
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-3">Enter 6-digit code</label>
                 <div class="flex justify-center gap-2 mb-2">
-                    <input type="text" maxlength="1" class="otp-input" id="otp1" />
-                    <input type="text" maxlength="1" class="otp-input" id="otp2" />
-                    <input type="text" maxlength="1" class="otp-input" id="otp3" />
-                    <input type="text" maxlength="1" class="otp-input" id="otp4" />
-                    <input type="text" maxlength="1" class="otp-input" id="otp5" />
-                    <input type="text" maxlength="1" class="otp-input" id="otp6" />
+                    <input type="text" inputmode="numeric" maxlength="1" class="otp-input" id="otp1" autocomplete="off" />
+                    <input type="text" inputmode="numeric" maxlength="1" class="otp-input" id="otp2" autocomplete="off" />
+                    <input type="text" inputmode="numeric" maxlength="1" class="otp-input" id="otp3" autocomplete="off" />
+                    <input type="text" inputmode="numeric" maxlength="1" class="otp-input" id="otp4" autocomplete="off" />
+                    <input type="text" inputmode="numeric" maxlength="1" class="otp-input" id="otp5" autocomplete="off" />
+                    <input type="text" inputmode="numeric" maxlength="1" class="otp-input" id="otp6" autocomplete="off" />
                 </div>
                 <p class="text-xs text-red-500 mt-2 hidden" id="errorMsg">Invalid code. Please try again.</p>
             </div>
 
             <!-- Verify Button -->
-            <form method="POST" action="<%= otpMode === 'signup' ? '/verify-otp' : '/verify-forgot-otp' %>">
+            <form method="POST" action="<%= otpMode === 'signup' ? '/verify-otp' : '/verify-forgot-otp' %>" id="otpForm">
                 <input type="hidden" name="otp" id="otpHidden">
-                <button type="submit" class="w-full primary-btn text-white py-3.5 rounded-lg">
+                <button type="submit" class="w-full primary-btn text-white py-3.5 rounded-lg font-medium">
                     Verify Email
                 </button>
             </form>
-
 
             <!-- Divider -->
             <div class="relative my-6">
@@ -103,7 +98,7 @@
             <div class="text-center mt-6">
                 <p class="text-sm text-gray-600">
                     Want to use a different email? 
-                    <a href="#" class="resend-link font-medium">Change Email</a>
+                    <a href="/signup" class="resend-link font-medium">Change Email</a>
                 </p>
             </div>
         </div>
@@ -118,101 +113,152 @@
         </div>
     </div>
 
-   <script>
-    const OTP_MODE = "<%= otpMode %>";
-    const USER_EMAIL = "<%= userEmail %>";
+    <script>
+        const OTP_MODE = "<%= otpMode %>";
+        const otpInputs = document.querySelectorAll('.otp-input');
+        const resendBtn = document.getElementById('resendBtn');
+        const timerEl = document.getElementById('timer');
+        const errorMsg = document.getElementById('errorMsg');
+        const otpForm = document.getElementById('otpForm');
+        const otpHidden = document.getElementById('otpHidden');
 
-    const otpInputs = document.querySelectorAll('.otp-input');
-    const verifyBtn = document.getElementById('verifyBtn');
-    const resendBtn = document.getElementById('resendBtn');
-    const timer = document.getElementById('timer');
-    const errorMsg = document.getElementById('errorMsg');
+        let resendTimeout;
+        let countdown = 60;
 
-    let resendTimeout;
-    let countdown = 60;
+        // ── Typing: move forward on digit, back on Backspace ──────────────
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                const val = e.target.value;
 
-    
-    otpInputs.forEach((input, index) => {
-        input.addEventListener('input', (e) => {
-            if (!/^\d$/.test(e.target.value)) {
-                e.target.value = "";
+                // Allow only digits
+                if (!/^\d$/.test(val)) {
+                    e.target.value = "";
+                    return;
+                }
+
+                errorMsg.classList.add('hidden');
+
+                // Move focus to next box
+                if (index < otpInputs.length - 1) {
+                    otpInputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace') {
+                    if (!e.target.value && index > 0) {
+                        otpInputs[index - 1].focus();
+                    } else {
+                        e.target.value = "";
+                    }
+                }
+            });
+
+            // ✅ FIX: paste handler — distribute digits across all boxes
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pasted = (e.clipboardData || window.clipboardData)
+                    .getData('text')
+                    .replace(/\D/g, '')   // keep digits only
+                    .slice(0, 6);         // max 6 chars
+
+                if (!pasted) return;
+
+                // Fill from the current input's position onward
+                pasted.split('').forEach((digit, i) => {
+                    const targetIndex = index + i;
+                    if (otpInputs[targetIndex]) {
+                        otpInputs[targetIndex].value = digit;
+                    }
+                });
+
+                // Focus the box after the last filled one, or last box
+                const nextFocus = Math.min(index + pasted.length, otpInputs.length - 1);
+                otpInputs[nextFocus].focus();
+
+                errorMsg.classList.add('hidden');
+            });
+        });
+
+        // ── Form submit ────────────────────────────────────────────────────
+        otpForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const otp = Array.from(otpInputs).map(i => i.value).join("");
+
+            if (otp.length !== 6) {
+                errorMsg.textContent = "Please enter all 6 digits.";
+                errorMsg.classList.remove("hidden");
                 return;
             }
-            if (index < otpInputs.length - 1) {
-                otpInputs[index + 1].focus();
+
+            try {
+                const verifyUrl = OTP_MODE === "signup" ? "/verify-otp" : "/verify-forgot-otp";
+
+                const res = await fetch(verifyUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ otp }),
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    window.location.href = data.redirectTo;
+                } else {
+                    errorMsg.textContent = data.message || "Invalid OTP";
+                    errorMsg.classList.remove("hidden");
+                    // Clear boxes and re-focus on wrong OTP
+                    otpInputs.forEach(i => i.value = "");
+                    otpInputs[0].focus();
+                }
+            } catch (error) {
+                errorMsg.textContent = "Server error. Try again.";
+                errorMsg.classList.remove("hidden");
             }
-            errorMsg.classList.add('hidden');
         });
 
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && !e.target.value && index > 0) {
-                otpInputs[index - 1].focus();
+        // ── Resend ─────────────────────────────────────────────────────────
+        resendBtn.addEventListener("click", async () => {
+            if (resendBtn.classList.contains("disabled")) return;
+
+            try {
+                const resendUrl = OTP_MODE === "signup" ? "/resend-otp" : "/forgot-resend-otp";
+                const res = await fetch(resendUrl, { method: "POST" });
+                const data = await res.json();
+
+                if (data.success) {
+                    otpInputs.forEach(i => i.value = "");
+                    otpInputs[0].focus();
+                    errorMsg.classList.add("hidden");
+                    startResendTimer();
+                } else {
+                    alert("Failed to resend OTP.");
+                }
+            } catch (err) {
+                alert("Server error");
             }
         });
-    });
 
+        function startResendTimer() {
+            countdown = 60;
+            resendBtn.classList.add("disabled");
+            timerEl.classList.remove("hidden");
 
-const otpHidden = document.getElementById("otpHidden");
-const otpForm = document.querySelector("form");
+            resendTimeout = setInterval(() => {
+                countdown--;
+                timerEl.textContent = `(${countdown}s)`;
 
-otpForm.addEventListener("submit", (e) => {
-    const otp = Array.from(otpInputs).map(input => input.value).join("");
-
-    if (otp.length !== 6) {
-        e.preventDefault();
-        errorMsg.textContent = "Please enter all 6 digits.";
-        errorMsg.classList.remove("hidden");
-        return;
-    }
-
-    otpHidden.value = otp;
-});
-
-
-
-    resendBtn.addEventListener("click", async () => {
-        if (resendBtn.classList.contains("disabled")) return;
-
-        try {
-            const resendUrl = OTP_MODE === "signup" ? "/resend-otp" : "/forgot-resend-otp";
-
-            const res = await fetch(resendUrl, { method: "POST" });
-            const data = await res.json();
-
-            if (data.success) {
-                otpInputs.forEach(i => i.value = "");
-                otpInputs[0].focus();
-                errorMsg.classList.add("hidden");
-                startResendTimer();
-            } else {
-                alert("Failed to resend OTP.");
-            }
-        } catch (err) {
-            alert("Server error");
+                if (countdown <= 0) {
+                    clearInterval(resendTimeout);
+                    resendBtn.classList.remove("disabled");
+                    timerEl.classList.add("hidden");
+                }
+            }, 1000);
         }
-    });
 
-
-    function startResendTimer() {
-        countdown = 60;
-        resendBtn.classList.add("disabled");
-        timer.classList.remove("hidden");
-
-        resendTimeout = setInterval(() => {
-            countdown--;
-            timer.textContent = `(${countdown}s)`;
-
-            if (countdown <= 0) {
-                clearInterval(resendTimeout);
-                resendBtn.classList.remove("disabled");
-                timer.classList.add("hidden");
-            }
-        }, 1000);
-    }
-
-    startResendTimer();
-    otpInputs[0].focus();
-</script>
-
+        startResendTimer();
+        otpInputs[0].focus();
+    </script>
 </body>
 </html>

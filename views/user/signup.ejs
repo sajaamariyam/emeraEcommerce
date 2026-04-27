@@ -6,6 +6,14 @@
     <title>Sign Up - Emera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .error-message {
+            display: none;
+            color: #dc2626;
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+    </style>
 </head>
 <body class="bg-stone-100 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md">
@@ -24,11 +32,11 @@
 
             <% if (locals.message && message.length > 0) { %>
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <%= message %>
+                    <%= message %>
                 </div>
             <% } %>
 
-            <form method="post" action="/signup" id="signupForm" >
+            <form method="post" action="/signup" id="signupForm">
                 <!-- Full Name -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
@@ -59,14 +67,15 @@
 
                 <!-- Phone Number -->
                 <div class="mb-4">
-                     <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label> 
-                     <input type="tel"
-                    id="phone"
-                    name="phone"
-                    placeholder="+91 8943220832"
-                    required 
-                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition" 
-                    > 
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <input 
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        placeholder="+91 8943220832"
+                        required 
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                    >
                     <div id="error3" class="error-message"></div>
                 </div>
 
@@ -80,9 +89,8 @@
                             name="password"
                             placeholder="••••••••"
                             required
-                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition pr-10"
                         >
-                        <div id="error4" class="error-message"></div>
                         <button 
                             type="button"
                             onclick="togglePassword('password', 'passwordIcon')"
@@ -91,6 +99,7 @@
                             <i class="far fa-eye" id="passwordIcon"></i>
                         </button>
                     </div>
+                    <div id="error4" class="error-message"></div>
                 </div>
 
                 <!-- Confirm Password -->
@@ -103,9 +112,8 @@
                             name="cPassword"
                             placeholder="••••••••"
                             required
-                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition pr-10"
                         >
-                        <div id="error5" class="error-message"></div>
                         <button 
                             type="button"
                             onclick="togglePassword('confirmPassword', 'confirmPasswordIcon')"
@@ -114,6 +122,7 @@
                             <i class="far fa-eye" id="confirmPasswordIcon"></i>
                         </button>
                     </div>
+                    <div id="error5" class="error-message"></div>
                 </div>
 
                 <!-- Password Requirements -->
@@ -135,13 +144,22 @@
                 <!-- Referral Code -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Have a referral code?</label>
-                    <input 
+                   <input 
                         type="text" 
                         id="referralCode"
+                        name="referralCode"
                         placeholder="Enter referral code (optional)"
+                        value="<%= refToken ? 'Referral Applied' : '' %>"
+                        <%= refToken ? 'readonly' : '' %>
                         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
-                    >
+                    />
+
                 </div>
+
+                    <% if (refToken) { %>
+                    <input type="hidden" name="referralToken" value="<%= refToken %>">
+                    <% } %>
+
 
                 <!-- Submit Button -->
                 <button 
@@ -165,7 +183,6 @@
             <!-- Google Sign Up -->
             <a 
                 href="/auth/google"
-                onclick="handleGoogleSignup()"
                 class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
             >
                 <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24">
@@ -196,132 +213,131 @@
     </div>
 
     <script>
-
         const nameid = document.getElementById("fullName");
-        const emailid = document.getElementById("email")
-        const phoneid = document.getElementById("phone")
-        const passid = document.getElementById("password")
-        const cpassid = document.getElementById("confirmPassword")
-        const error1 = document.getElementById("error1")
-        const error2 = document.getElementById("error2")
-        const error3 = document.getElementById("error3")
-        const error4 = document.getElementById("error4")
-        const error5 = document.getElementById("error5")
+        const emailid = document.getElementById("email");
+        const phoneid = document.getElementById("phone");
+        const passid = document.getElementById("password");
+        const cpassid = document.getElementById("confirmPassword");
+        const error1 = document.getElementById("error1");
+        const error2 = document.getElementById("error2");
+        const error3 = document.getElementById("error3");
+        const error4 = document.getElementById("error4");
+        const error5 = document.getElementById("error5");
         const signupform = document.getElementById("signupForm");
 
-        function nameValidateChecking(e){
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+
+        // Live password requirement indicators
+        passid.addEventListener("input", function () {
+            const val = passid.value;
+            const minOk = val.length >= 8;
+            const upperOk = /[A-Z]/.test(val);
+            const numOk = /\d/.test(val);
+
+            document.getElementById("minChars").className = `w-2 h-2 rounded-full mr-2 ${minOk ? 'bg-emerald-500' : 'bg-yellow-500'}`;
+            document.getElementById("upperCase").className = `w-2 h-2 rounded-full mr-2 ${upperOk ? 'bg-emerald-500' : 'bg-yellow-500'}`;
+            document.getElementById("number").className = `w-2 h-2 rounded-full mr-2 ${numOk ? 'bg-emerald-500' : 'bg-yellow-500'}`;
+        });
+
+        function nameValidateChecking() {
             const nameval = nameid.value;
             const namepattern = /^[A-Za-z\s]+$/;
-
-            if(nameval.trim() === ""){
-                error1.style.display="block";
-                error1.innerHTML="Please enter a valid name";
-            }else if(!namepattern.test(nameval)){
-                error1.style.display="block";
-                error1.innerHTML="Name can only contain alphabets and spaces"
-            }else{
-                error1.style.display="none";
-                error1.innerHTML = ""
+            if (nameval.trim() === "") {
+                error1.style.display = "block";
+                error1.innerHTML = "Please enter a valid name";
+            } else if (!namepattern.test(nameval)) {
+                error1.style.display = "block";
+                error1.innerHTML = "Name can only contain alphabets and spaces";
+            } else {
+                error1.style.display = "none";
+                error1.innerHTML = "";
             }
         }
 
-        function emailValidateChecking(e){
+        function emailValidateChecking() {
             const emailval = emailid.value;
             const emailpattern = /^[A-Za-z0-9._-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,4}$/;
-
-
-            if(!emailpattern.test(emailval)){
-                error2.style.display="block";
-                error2.innerHTML="Invalid Format";
-            }else{
-                error2.style.display="none";
-                error2.innerHTML = ""
-            }
-        } 
-
-        function phoneValidateChecking(e){
-            const phoneval = phoneid.value;
-
-            if(phoneval.trim() === ""){
-                error3.style.display="block";
-                error3.innerHTML="Enter valid phone number";
-            }else if(phoneval.length<10 || phoneval.length>10){
-                error3.style.display="block";
-                error3.innerHTML="Enter 10 digit";
-            }else{
-                error3.style.display="none";
-                error3.innerHTML=""
+            if (!emailpattern.test(emailval)) {
+                error2.style.display = "block";
+                error2.innerHTML = "Invalid Format";
+            } else {
+                error2.style.display = "none";
+                error2.innerHTML = "";
             }
         }
 
-        function passwordValidateChecking(e){
+        function phoneValidateChecking() {
+            const phoneval = phoneid.value.replace(/\D/g, ""); // strip non-digits
+            if (phoneval.trim() === "") {
+                error3.style.display = "block";
+                error3.innerHTML = "Enter valid phone number";
+            } else if (phoneval.length !== 10) {
+                error3.style.display = "block";
+                error3.innerHTML = "Enter 10 digit number";
+            } else {
+                error3.style.display = "none";
+                error3.innerHTML = "";
+            }
+        }
+
+        function passwordValidateChecking() {
             const passval = passid.value;
             const cpassval = cpassid.value;
             const alpha = /[a-zA-Z]/;
             const digit = /\d/;
 
-            if(passval.length<8){
-                error4.style.display="block";
-                error4.innerHTML="Should contain atleast 8 characters";
-            }else if(!alpha.test(passval) || !digit.test(passval)){
-                error4.style.display="block";
-                error4.innerHTML="Should contain numbers and alphabets"
-            }else{
-                error4.style.display="none";
-                error4.innerHTML="";
+            if (passval.length < 8) {
+                error4.style.display = "block";
+                error4.innerHTML = "Should contain at least 8 characters";
+            } else if (!alpha.test(passval) || !digit.test(passval)) {
+                error4.style.display = "block";
+                error4.innerHTML = "Should contain numbers and alphabets";
+            } else {
+                error4.style.display = "none";
+                error4.innerHTML = "";
             }
 
-            if(passval !== cpassval){
-                error5.style.display="block";
-                error5.innerHTML="Passwords do not match";
-            }else{
-                error5.style.display="none";
-                error5.innerHTML="";
+            if (cpassval && passval !== cpassval) {
+                error5.style.display = "block";
+                error5.innerHTML = "Passwords do not match";
+            } else {
+                error5.style.display = "none";
+                error5.innerHTML = "";
             }
         }
 
-
-
-        
-
-        document.addEventListener("DOMContentLoaded", function (){
-            signupform.addEventListener("submit", function(e){
-
+        document.addEventListener("DOMContentLoaded", function () {
+            signupform.addEventListener("submit", function (e) {
                 nameValidateChecking();
                 emailValidateChecking();
                 phoneValidateChecking();
                 passwordValidateChecking();
 
-                if(
-                    !nameid ||
-                    !emailid ||
-                    !phoneid ||
-                    !passid ||
-                    !cpassid ||
-                    !error1 ||
-                    !error2 ||
-                    !error3 ||
-                    !error4 ||
-                    !error5 ||
-                    !signupform
-                ){
-                    console.error("One or more element not found")
+                const hasError =
+                error1.style.display === "block" ||
+                error2.style.display === "block" ||
+                error3.style.display === "block" ||
+                error4.style.display === "block" ||
+                error5.style.display === "block";
+
+
+                if (hasError) {
+                    e.preventDefault();
                 }
-
-                if(
-                    error1.innerHTML ||
-                    error2.innerHTML ||
-                    error3.innerHTML ||
-                    error4.innerHTML ||
-                    error5.innerHTML
-                ){
-                    e.preventDefault()
-                }
-            })
-        })
-
-
-
+            });
+        });
     </script>
 </body>
 </html>

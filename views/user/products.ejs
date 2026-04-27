@@ -6,7 +6,7 @@
     <a href="/" class="hover:text-black">Home</a>
     <span class="mx-2">/</span>
 
-    <% if (categoryName) { %>
+    <% if (typeof categoryName !== 'undefined' && categoryName) { %>
         <span class="text-black font-bold"><%= categoryName %></span>
     <% } else { %>
         <span class="text-black font-bold">Products</span>
@@ -18,8 +18,8 @@
             <!-- Filtering Sidebar -->
             <aside class="w-full lg:w-72 space-y-16 flex-shrink-0">
                 <form action="/products" method="GET" id="filter-form">
-                    <input type="hidden" name="search" value="<%= search || '' %>">
-                    <input type="hidden" name="sort" value="<%= sort || 'newest' %>">
+                    <input type="hidden" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>">
+                    <input type="hidden" name="sort" value="<%= typeof sort !== 'undefined' ? sort : 'newest' %>">
                     
                     <!-- Category Filter -->
                     <div class="space-y-10 mb-16">
@@ -102,6 +102,8 @@
 
                                     <% if (p.quantity === 0) { %>
                                         <div class="absolute top-5 left-5"><span class="bg-red-600 text-white text-[9px] font-bold px-4 py-2 uppercase tracking-widest shadow-sm">Sold Out</span></div>
+                                    <% } else if (p.discount > 0) { %>
+                                        <div class="absolute top-5 left-5"><span class="bg-emera-950 text-white text-[9px] font-bold px-4 py-2 uppercase tracking-widest shadow-sm"><%= p.discount %>% OFF</span></div>
                                     <% } else if (p.isFeatured) { %>
                                         <div class="absolute top-5 right-5"><span class="bg-white text-emera-950 text-[9px] font-bold px-4 py-2 uppercase tracking-widest shadow-sm">Featured</span></div>
                                     <% } %>
@@ -111,16 +113,20 @@
                                     <div class="flex justify-between items-start">
                                         <h3 class="text-sm font-serif text-gray-900 group-hover:text-emera-950 transition-colors"><%= p.name %></h3>
                                         <div class="text-right">
-                                            <p class="text-xs font-bold text-gray-900 tracking-widest">₹<%= p.salePrice.toLocaleString() %></p>
-                                            <% if (p.salePrice < p.regularPrice) { %>
-                                                <p class="text-[9px] text-gray-400 line-through">₹<%= p.regularPrice.toLocaleString() %></p>
+                                            <% if (p.discount > 0) { %>
+                                                <p class="text-xs font-bold text-gray-900 tracking-widest">₹<%= Math.round(p.finalPrice).toLocaleString() %></p>
+                                                <p class="text-[9px] text-gray-400 line-through">₹<%= p.salePrice.toLocaleString() %></p>
+                                            <% } else { %>
+                                                <p class="text-xs font-bold text-gray-900 tracking-widest">₹<%= p.salePrice.toLocaleString() %></p>
+                                                <% if (p.salePrice < p.regularPrice) { %>
+                                                    <p class="text-[9px] text-gray-400 line-through">₹<%= p.regularPrice.toLocaleString() %></p>
+                                                <% } %>
                                             <% } %>
                                         </div>
                                     </div>
                                     <p class="text-[9px] uppercase tracking-widest text-gray-300 font-bold tracking-[0.2em]">
                                         <%= p.category?.name || 'Uncategorized' %> &bull; Premium Leather
                                     </p>
-
                                 </div>
                             </div>
                         <% }) %>

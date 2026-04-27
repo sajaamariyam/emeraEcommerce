@@ -12,12 +12,11 @@ const loadProducts = async (req, res) => {
       status = "all",
       stockLevel = "all",
       sortBy = "name-asc",
-      page = 1
+      page = 1,
     } = req.query;
 
     const limit = 5;
     const skip = (page - 1) * limit;
-
 
     let filter = {};
 
@@ -39,53 +38,49 @@ const loadProducts = async (req, res) => {
     }
 
     let sortQuery = {};
-    switch(sortBy){
-        case "name-desc":
-            sortQuery.name = -1;
-            break;
-        case "stock-asc":
-            sortQuery.createdAt = 1;
-            break;
-        case "stock-desc":
-            sortQuery.createdAt = -1;
-            break;
-        default:
-            sortQuery.name = 1;
+    switch (sortBy) {
+      case "name-desc":
+        sortQuery.name = -1;
+        break;
+      case "stock-asc":
+        sortQuery.createdAt = 1;
+        break;
+      case "stock-desc":
+        sortQuery.createdAt = -1;
+        break;
+      default:
+        sortQuery.name = 1;
     }
-
 
     let products = await Product.find(filter)
       .populate("category")
       .sort(sortQuery)
       .lean();
 
-    if(stockLevel !== "all"){
-        products = products.filter(product => {
-            const totalStock = product.variants?.reduce(
-                (sum, v) => sum + (v.quantity || 0),
-                0
-            ) || 0;
+    if (stockLevel !== "all") {
+      products = products.filter((product) => {
+        const totalStock =
+          product.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0;
 
-            if(stockLevel === "in-stock"){
-                return totalStock >= 5;
-            }
+        if (stockLevel === "in-stock") {
+          return totalStock >= 5;
+        }
 
-            if(stockLevel === "low"){
-                return totalStock > 0 && totalStock < 5;
-            }
+        if (stockLevel === "low") {
+          return totalStock > 0 && totalStock < 5;
+        }
 
-            if(stockLevel === "out"){
-                return totalStock === 0;
-            }
+        if (stockLevel === "out") {
+          return totalStock === 0;
+        }
 
-            return true;
-        });
+        return true;
+      });
     }
 
     const totalFiltered = products.length;
     const paginatedProducts = products.slice(skip, skip + limit);
     const totalPages = Math.ceil(totalFiltered / limit);
-
 
     const totalProducts = await Product.countDocuments();
 
@@ -95,29 +90,28 @@ const loadProducts = async (req, res) => {
     });
 
     const unlistedProducts = await Product.countDocuments({
-      isBlocked: true
+      isBlocked: true,
     });
-
 
     const outOfStockCount = await Product.countDocuments({
       isListed: true,
       isBlocked: false,
       variants: {
         $not: {
-          $elemMatch: {quantity: {$gt: 0}}
-        }
-      }
+          $elemMatch: { quantity: { $gt: 0 } },
+        },
+      },
     });
 
-    const allProducts = await Product.find({isListed: true, isBlocked: false}).lean();
-    const lowStockCount = allProducts.filter(product => {
-      const totalStock = product.variants?.reduce(
-          (sum, v) => sum + (v.quantity || 0),
-          0
-      ) || 0;
+    const allProducts = await Product.find({
+      isListed: true,
+      isBlocked: false,
+    }).lean();
+    const lowStockCount = allProducts.filter((product) => {
+      const totalStock =
+        product.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0;
       return totalStock > 0 && totalStock < 5;
     }).length;
-
 
     const categories = await Category.find({ isListed: true });
 
@@ -137,20 +131,16 @@ const loadProducts = async (req, res) => {
       status,
       stockLevel,
       sortBy,
-      activePage: "products"
+      activePage: "products",
     });
-
   } catch (error) {
     console.log("Load products error:", error);
     res.redirect("/admin/pageerror");
   }
 };
 
-
-
 const addProduct = async (req, res) => {
   try {
-
     const {
       name,
       description,
@@ -158,24 +148,36 @@ const addProduct = async (req, res) => {
       regularPrice,
       salePrice,
       brand,
-      variants
+      variants,
     } = req.body;
 
     if (!req.files || req.files.length < 3) {
-      return res.status(400).json({ success: false, message: "Minimum 3 images required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Minimum 3 images required" });
     }
 
     const parsedVariants = JSON.parse(variants || "[]");
 
     if (!parsedVariants.length) {
-      return res.status(400).json({success: false, message: "At least one variant required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "At least one variant required" });
     }
 
-    const productImages = req.files.map(file => ({
-      url: file.path,
-      public_id: file.filename
-    }));
+    let specifications = {};
+    if (req.body.specifications) {
+      try {
+        specifications = JSON.parse(req.body.specifications);
+      } catch (e) {
+        console.log("Specifications parse error:", e);
+      }
+    }
 
+    const productImages = req.files.map((file) => ({
+      url: file.path,
+      public_id: file.filename,
+    }));
 
     const product = new Product({
       name,
@@ -186,20 +188,19 @@ const addProduct = async (req, res) => {
       salePrice,
       variants: parsedVariants,
       productImage: productImages,
+      specifications: specifications,
       isListed: true,
-      isBlocked: false
+      isBlocked: false,
     });
 
     await product.save();
 
     res.status(201).json({ success: true });
-
   } catch (error) {
     console.error("Add product error:", error);
     res.status(500).json({ success: false });
   }
 };
-
 
 const editProduct = async (req, res) => {
   try {
@@ -211,42 +212,57 @@ const editProduct = async (req, res) => {
       regularPrice,
       salePrice,
       brand,
-      variants
+      variants,
+      removedImages,
     } = req.body;
-
 
     const parsedVariants = JSON.parse(variants || "[]");
 
     if (!parsedVariants.length) {
-      return res.status(400).json({ success: false, message: "At least one variant is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "At least one variant is required" });
     }
 
-    const updateData = {
-      name,
-      description,
-      category,
-      brand,
-      regularPrice,
-      salePrice,
-      variants: parsedVariants,
-    };
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false });
+    }
 
+    if (removedImages) {
+      const removeIndexes = JSON.parse(removedImages);
+      product.productImage = product.productImage.filter(
+        (_, index) => !removeIndexes.includes(index),
+      );
+    }
 
     if (req.files && req.files.length > 0) {
-      updateData.productImage = req.files.map(file => ({
+      const newImages = req.files.map((file) => ({
         url: file.path,
-        public_id: file.filename  
+        public_id: file.filename,
       }));
+      product.productImage.push(...newImages);
     }
 
-    await Product.findByIdAndUpdate(
-      productId,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    product.name = name;
+    product.description = description;
+    product.category = category;
+    product.brand = brand;
+    product.regularPrice = regularPrice;
+    product.salePrice = salePrice;
+    product.variants = parsedVariants;
+
+    if (req.body.specifications) {
+      try {
+        product.specifications = JSON.parse(req.body.specifications);
+      } catch (e) {
+        console.log("Specifications parse error:", e);
+      }
+    }
+
+    await product.save();
 
     res.status(200).json({ success: true });
-
   } catch (error) {
     console.error("Edit product error:", error);
     res.status(500).json({ success: false });
@@ -254,48 +270,48 @@ const editProduct = async (req, res) => {
 };
 
 const updateStock = async (req, res) => {
-    try{
+  try {
+    const { productId, action, color, quantity } = req.body;
 
-        const {productId, action, color, quantity} = req.body;
+    const product = await Product.findById(productId);
 
-        const product = await Product.findById(productId);
-
-        if(!product){
-            return res.json({success: false});
-        }
-
-        if(action === "set"){
-            const variant = product.variants.find( v => v.color === color);
-            
-            if(!variant){
-                return res.json({success: false});
-            }
-            variant.quantity = Math.max(0, Number(quantity));
-        }
-
-        if(action === "add" || action === "remove"){
-            product.variants.forEach(v => {
-                v.quantity = 
-                action === "add"
-                ? v.quantity + Number(quantity)
-                :Math.max(0, v.quantity - Number(quantity));
-            });
-        }
-
-        await product.save();
-        res.json({success: true});
-
-    }catch(error){
-        console.error("UPDATE STOCK ERROR:", error);
-        res.json({success: false});
+    if (!product) {
+      return res.json({ success: false });
     }
-}
+
+    if (action === "set") {
+      const variant = product.variants.find((v) => v.color === color);
+
+      if (!variant) {
+        return res.json({ success: false });
+      }
+      variant.quantity = Math.max(0, Number(quantity));
+    }
+
+    if (action === "add" || action === "remove") {
+      product.variants.forEach((v) => {
+        v.quantity =
+          action === "add"
+            ? v.quantity + Number(quantity)
+            : Math.max(0, v.quantity - Number(quantity));
+      });
+    }
+
+    await product.save();
+    res.json({ success: true });
+  } catch (error) {
+    console.error("UPDATE STOCK ERROR:", error);
+    res.json({ success: false });
+  }
+};
 
 const getProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate("category");
     if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
     }
     res.json(product);
   } catch (error) {
@@ -303,7 +319,6 @@ const getProduct = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
-
 
 const blockProduct = async (req, res) => {
   await Product.findByIdAndUpdate(req.params.id, { isBlocked: true });
@@ -316,17 +331,17 @@ const unblockProduct = async (req, res) => {
 };
 
 const deleteProduct = async (req, res) => {
-  await Product.findByIdAndUpdate(req.params.id, {isBlocked: true});
+  await Product.findByIdAndUpdate(req.params.id, { isBlocked: true });
   res.redirect("/admin/products");
 };
 
 module.exports = {
-    loadProducts,
-    addProduct,
-    editProduct,
-    updateStock,
-    getProduct, 
-    blockProduct,
-    unblockProduct,
-    deleteProduct
+  loadProducts,
+  addProduct,
+  editProduct,
+  updateStock,
+  getProduct,
+  blockProduct,
+  unblockProduct,
+  deleteProduct,
 };

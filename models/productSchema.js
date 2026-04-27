@@ -1,105 +1,79 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-
-const variantSchema = new Schema(
-  {
-    color: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: 0
-    }
-  },
-  { _id: false }
-);
-
-
 const productSchema = new Schema(
   {
     name: {
       type: String,
       required: true,
-      trim: true
     },
-
     description: {
       type: String,
-      required: true
+      required: true,
     },
-
     brand: {
       type: String,
       required: true,
-      trim: true
     },
-
     category: {
       type: Schema.Types.ObjectId,
       ref: "Category",
-      required: true
+      required: true,
     },
-
     regularPrice: {
       type: Number,
       required: true,
-      min: 0
     },
-
     salePrice: {
       type: Number,
       required: true,
-      min: 0
     },
-
     productImage: [
       {
-        url: {
-          type: String,
-          required: true
-        },
-        public_id: {
-          type: String,
-          required: true
-        }
-      }
+        url: String,
+        public_id: String,
+      },
     ],
-
-    variants: {
-      type: [variantSchema],
-      validate: {
-        validator: function (v) {
-          return v.length > 0;
-        },
-        message: "At least one variant is required"
-      }
-    },
-
-    rating: {
-      type: Number,
-      default: 0
-    },
-
-    reviewsCount: {
-      type: Number,
-      default: 0
-    },
-
     isBlocked: {
       type: Boolean,
-      default: false
+      default: false,
     },
-
     isListed: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
+    variants: [
+      {
+        color: {
+          type: String,
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
+      },
+    ],
+    specifications: {
+      type: Map,
+      of: String,
+      default: {},
+    },
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model("Product", productSchema);
+const Product = mongoose.model("Product", productSchema);
+
+module.exports = Product;

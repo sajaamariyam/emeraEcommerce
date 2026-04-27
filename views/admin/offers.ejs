@@ -1,0 +1,328 @@
+<%- include("../partials/admin/header") %>
+
+<div class="ml-52 h-screen overflow-y-auto bg-gray-50">
+
+    <!-- Top Navigation Bar -->
+    <div class="bg-white border-b sticky top-0 z-10">
+        <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-teal-700">Offer Management</h1>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    <%= admin.name.charAt(0) %>
+                </div>
+                <span class="text-sm text-gray-700"><%= admin.name %></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="p-8 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Offers & Discounts</h2>
+                <p class="text-gray-600 mt-1">Manage product and category offers here.</p>
+            </div>
+            <button onclick="openAddModal()" class="bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium shadow-md">
+                <i class="fas fa-plus"></i> Add Offer
+            </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+                <div class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center">
+                    <i class="fas fa-tags text-teal-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total Offers</p>
+                    <p class="text-2xl font-bold text-gray-800"><%= offers.length %></p>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+                <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check-circle text-green-600 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Active Offers</p>
+                    <p class="text-2xl font-bold text-gray-800"><%= offers.filter(o => o.isActive).length %></p>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+                <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
+                    <i class="fas fa-times-circle text-red-500 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Inactive Offers</p>
+                    <p class="text-2xl font-bold text-gray-800"><%= offers.filter(o => !o.isActive).length %></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Offers Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Applied To</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Discount</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Start Date</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">End Date</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <% if (offers.length === 0) { %>
+                        <tr>
+                            <td colspan="7" class="px-6 py-16 text-center text-gray-400">
+                                <i class="fas fa-tag text-4xl mb-3 block opacity-30"></i>
+                                <p class="font-medium">No offers found. Create your first offer!</p>
+                            </td>
+                        </tr>
+                    <% } %>
+                    <% offers.forEach(offer => { %>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <% if (offer.offerType === 'product') { %>
+                                    <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full border border-blue-100 flex items-center gap-1 w-fit">
+                                        <i class="fas fa-box text-[10px]"></i> Product
+                                    </span>
+                                <% } else { %>
+                                    <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-full border border-purple-100 flex items-center gap-1 w-fit">
+                                        <i class="fas fa-layer-group text-[10px]"></i> Category
+                                    </span>
+                                <% } %>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="font-semibold text-gray-800">
+                                    <% if (offer.offerType === 'product' && offer.productId) { %>
+                                        <%= offer.productId.name || 'Deleted Product' %>
+                                    <% } else if (offer.offerType === 'category' && offer.categoryId) { %>
+                                        <%= offer.categoryId.name || 'Deleted Category' %>
+                                    <% } else { %>
+                                        <span class="text-gray-400 italic">N/A</span>
+                                    <% } %>
+                                </p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-lg font-bold text-teal-700"><%= offer.discountPercentage %>%</span>
+                                <p class="text-xs text-gray-400 font-medium">OFF</p>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <%= new Date(offer.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <%= new Date(offer.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                            </td>
+                            <td class="px-6 py-4">
+                                <% if (offer.isActive) { %>
+                                    <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100">Active</span>
+                                <% } else { %>
+                                    <span class="px-3 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-full border border-red-100">Inactive</span>
+                                <% } %>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex justify-end gap-4">
+                                    <form action="/admin/offers/toggle/<%= offer._id %>" method="POST" class="inline">
+                                        <button type="submit" class="text-gray-500 hover:text-gray-700 text-sm font-bold transition">
+                                            <%= offer.isActive ? 'Deactivate' : 'Activate' %>
+                                        </button>
+                                    </form>
+                                    <button onclick="confirmDelete('<%= offer._id %>')" class="text-red-600 hover:text-red-800 text-sm font-bold transition">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Offer Modal -->
+<div id="offerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/50" onclick="closeModal()"></div>
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg z-50 overflow-hidden transform transition-all">
+        <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+            <h3 class="text-lg font-bold text-gray-800">Add New Offer</h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        </div>
+        <form action="/admin/offers" method="POST" id="offerForm" class="p-6">
+            <div class="space-y-5">
+
+                <!-- Offer Type -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Offer Type</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="offerType" value="product" id="typeProduct" onchange="toggleOfferTarget()" class="accent-teal-600" checked>
+                            <span class="text-sm font-medium text-gray-700">Product Offer</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="offerType" value="category" id="typeCategory" onchange="toggleOfferTarget()" class="accent-teal-600">
+                            <span class="text-sm font-medium text-gray-700">Category Offer</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Product Select -->
+                <div id="productSelectWrap">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
+                    <select name="productId" id="productSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+                        <option value="">-- Select Product --</option>
+                        <% products.forEach(product => { %>
+                            <option value="<%= product._id %>"><%= product.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <!-- Category Select -->
+                <div id="categorySelectWrap" class="hidden">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                    <select name="categoryId" id="categorySelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+                        <option value="">-- Select Category --</option>
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat._id %>"><%= cat.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <!-- Discount Percentage -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Discount Percentage</label>
+                    <div class="relative">
+                        <input type="number" name="discountPercentage" min="1" max="99" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition pr-10"
+                            placeholder="e.g. 20">
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
+                    </div>
+                </div>
+
+                <!-- Date Range -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
+                        <input type="date" name="startDate" id="startDate" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition">
+                        <p class="text-xs text-gray-400 mt-1">Today or later</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
+                        <input type="date" name="endDate" id="endDate" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition">
+                        <p class="text-xs text-gray-400 mt-1">Must be after start date</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button type="submit" class="flex-1 bg-teal-700 text-white py-3 rounded-lg font-bold hover:bg-teal-800 transition shadow-md">Save Offer</button>
+                <button type="button" onclick="closeModal()" class="flex-1 border border-gray-300 text-gray-600 py-3 rounded-lg font-bold hover:bg-gray-50 transition">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div id="confirmModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/40" onclick="closeConfirmModal()"></div>
+    <div class="bg-white rounded-lg shadow-2xl max-w-sm w-full p-6 z-[70] text-center transform transition-all">
+        <div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-trash-alt text-red-500 text-xl"></i>
+        </div>
+        <h4 class="text-lg font-bold text-gray-900 mb-2">Delete Offer?</h4>
+        <p class="text-sm text-gray-500 mb-6">This action cannot be undone. The offer will be permanently removed.</p>
+        <div class="flex gap-3">
+            <form id="deleteForm" action="" method="POST" class="flex-1">
+                <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700 transition">Yes, Delete</button>
+            </form>
+            <button onclick="closeConfirmModal()" class="flex-1 border border-gray-300 py-2 rounded-lg font-bold hover:bg-gray-50 transition text-gray-600">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const offerModal  = document.getElementById("offerModal");
+    const confirmModal = document.getElementById("confirmModal");
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput   = document.getElementById("endDate");
+
+    // ── Get today's date as YYYY-MM-DD in local time (avoids UTC off-by-one) ──
+    function getTodayStr() {
+        const t  = new Date();
+        const yy = t.getFullYear();
+        const mm = String(t.getMonth() + 1).padStart(2, '0');
+        const dd = String(t.getDate()).padStart(2, '0');
+        return `${yy}-${mm}-${dd}`;
+    }
+
+    // ── Open modal: reset form + enforce date constraints ──
+    function openAddModal() {
+        offerModal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+
+        const today = getTodayStr();
+
+        // Start date: today onwards only
+        startDateInput.min   = today;
+        startDateInput.value = '';
+
+        // End date: today onwards (will tighten when start is picked)
+        endDateInput.min   = today;
+        endDateInput.value = '';
+
+        // Reset form fields
+        document.getElementById("offerForm").reset();
+        // Re-apply min after reset (reset() clears min in some browsers)
+        startDateInput.min = today;
+        endDateInput.min   = today;
+
+        // Ensure correct target panel is shown
+        toggleOfferTarget();
+    }
+
+    function closeModal() {
+        offerModal.classList.add("hidden");
+        document.body.style.overflow = "";
+    }
+
+    // ── When start date changes, end date min must be >= start date ──
+    startDateInput.addEventListener('change', function () {
+        const selected = this.value;
+        const today    = getTodayStr();
+
+        // End date must be at least the start date (and never before today)
+        endDateInput.min = selected || today;
+
+        // If end date is now invalid (before new start), clear it
+        if (endDateInput.value && endDateInput.value < endDateInput.min) {
+            endDateInput.value = '';
+        }
+    });
+
+    // ── Toggle product / category select ──
+    function toggleOfferTarget() {
+        const isProduct = document.getElementById("typeProduct").checked;
+        document.getElementById("productSelectWrap").classList.toggle("hidden", !isProduct);
+        document.getElementById("categorySelectWrap").classList.toggle("hidden", isProduct);
+        if (isProduct) {
+            document.getElementById("categorySelect").value = "";
+        } else {
+            document.getElementById("productSelect").value = "";
+        }
+    }
+
+    // ── Delete confirm ──
+    function confirmDelete(id) {
+        document.getElementById("deleteForm").action = `/admin/offers/delete/${id}`;
+        confirmModal.classList.remove("hidden");
+    }
+
+    function closeConfirmModal() {
+        confirmModal.classList.add("hidden");
+    }
+</script>
+
+<%- include("../partials/admin/footer") %>

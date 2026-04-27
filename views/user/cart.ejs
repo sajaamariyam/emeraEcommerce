@@ -1,8 +1,7 @@
-<%- include('../partials/user/header', { user, cartItems }) %>
+<%- include('../partials/user/header', { user, cartCount }) %>
 
 
 <body class="bg-white text-gray-900 selection:bg-emera-950 selection:text-white">
-
 
     <!-- Header Spacer -->
     <div class="h-24 bg-emera-950"></div>
@@ -80,9 +79,11 @@
                                     class="qty-btn"
                                     data-action="decrease"
                                     data-item-id="<%= item.product._id %>"
+                                    data-color="<%= item.color %>"
                                     >
                                     −
                                     </button>
+
 
                                    <span class="text-sm font-light w-8 text-center"><%= item.quantity %></span>
 
@@ -90,14 +91,23 @@
                                     class="qty-btn"
                                     data-action="increase"
                                     data-item-id="<%= item.product._id %>"
-                                    <%= item.product.stock === 0 ? "disabled" : "" %>
+                                    data-color="<%= item.color %>"
                                     >
                                     +
                                     </button>
 
+
+
                                 </div>
-                                
-                                <button class="remove-btn text-[10px] tracking-[0.3em] uppercase text-gray-400 font-bold hover:text-gray-900 transition-colors" data-item-id="<%= item.product._id %>">Remove</button>
+                            
+                                <button
+                                class="remove-btn text-[10px] tracking-[0.3em] uppercase text-gray-400 font-bold hover:text-gray-900 transition-colors"
+                                data-item-id="<%= item.product._id %>"
+                                data-color="<%= item.color %>"
+                                >
+                                Remove
+                                </button>
+
                             </div>
                         </div>
                     </div>
@@ -119,7 +129,7 @@
                     <div class="space-y-6 mb-8 pb-8 border-b border-stone-200">
                         <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
                             <span class="text-gray-400 font-bold">Subtotal</span>
-                            <span class="font-bold text-gray-900">₹<%= subtotal.toLocaleString('en-IN') %></span>
+                            <span id="cart-subtotal" class="font-bold text-gray-900">₹<%= subtotal.toLocaleString('en-IN') %></span>
                         </div>
                         <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
                             <span class="text-gray-400 font-bold">Shipping</span>
@@ -127,18 +137,13 @@
                         </div>
                         <div class="flex justify-between text-[11px] uppercase tracking-[0.2em]">
                             <span class="text-gray-400 font-bold">Tax (GST 18%)</span>
-                            <span class="font-bold text-gray-900">₹<%= tax.toLocaleString('en-IN') %></span>
+                            <span id="cart-tax" class="font-bold text-gray-900">₹<%= tax.toLocaleString('en-IN') %></span>
                         </div>
-                    </div>
-                    
-                    <!-- Discount Code -->
-                    <div class="mb-8 pb-8 border-b border-stone-200">
-                        <button class="w-full text-left text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-emera-950 transition-colors mb-4">+ Apply Discount Code</button>
                     </div>
                     
                     <div class="flex justify-between mb-12 pb-8 border-b border-stone-200">
                         <span class="text-xl font-serif text-gray-900">Total</span>
-                        <span class="text-2xl font-serif text-gray-900">₹<%= total.toLocaleString('en-IN') %></span>
+                        <span id="cart-total" class="text-2xl font-serif text-gray-900">₹<%= total.toLocaleString('en-IN') %></span>
                     </div>
                     
                     <%
@@ -152,12 +157,14 @@
                     %>
 
 
-                    <a
-                    href="/checkout"
+                   <button
+                    type="button"
+                    onclick="window.location.href='/checkout'"
                     class="block text-center btn-hover w-full bg-emera-950 text-white py-6 text-[10px] uppercase tracking-[0.4em] font-bold"
                     >
                     Proceed to Checkout
-                    </a>
+                    </button>
+
 
 
                     
@@ -175,30 +182,103 @@
     </main>
 
 
+<!-- Modal -->
+<div id="cartModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+  <div class="bg-white p-8 max-w-md w-full mx-4">
+    <h3 id="modalTitle" class="text-2xl font-serif text-gray-900 mb-4"></h3>
+    <p id="modalMessage" class="text-sm text-gray-600 mb-8"></p>
+    <button id="modalClose" class="w-full bg-emera-950 text-white py-4 text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-emera-800 transition-colors">
+      Close
+    </button>
+  </div>
+</div>
+
+
 <script>
+  const modal = document.getElementById('cartModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalMessage = document.getElementById('modalMessage');
+  const modalClose = document.getElementById('modalClose');
+
+  function showModal(title, message) {
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modal.classList.remove('hidden');
+  }
+
+  modalClose.addEventListener('click', () => {
+    modal.classList.add('hidden');
+  });
+
+  function updateTotals(subtotal, tax, total) {
+    const subtotalEl = document.getElementById('cart-subtotal');
+    const taxEl      = document.getElementById('cart-tax');
+    const totalEl    = document.getElementById('cart-total');
+    if (subtotalEl) subtotalEl.textContent = '₹' + subtotal.toLocaleString('en-IN');
+    if (taxEl)      taxEl.textContent      = '₹' + tax.toLocaleString('en-IN');
+    if (totalEl)    totalEl.textContent    = '₹' + total.toLocaleString('en-IN');
+  }
+
   document.querySelectorAll(".qty-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
-      const action = btn.dataset.action;
+      const action    = btn.dataset.action;
       const productId = btn.dataset.itemId;
+      const color     = btn.dataset.color;
+      const url = action === "increase"
+        ? `/cart/increment/${productId}`
+        : `/cart/decrement/${productId}`;
 
-      const url =
-        action === "increase"
-          ? `/cart/increment/${productId}`
-          : `/cart/decrement/${productId}`;
+      const res  = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ color }),
+      });
+      const data = await res.json();
 
-      await fetch(url, { method: "PUT" });
-      location.reload();
+      if (data.success) {
+        // Update quantity display
+        const qtySpan = btn.closest('.flex.items-center.gap-4').querySelector('span');
+        if (qtySpan) qtySpan.textContent = data.quantity;
+        // Update item price
+        const itemPrice = btn.closest('.flex-1').querySelector('.item-total');
+        if (itemPrice && data.itemTotal) itemPrice.textContent = '₹' + data.itemTotal.toLocaleString('en-IN');
+        // Update totals
+        if (data.subtotal !== undefined) updateTotals(data.subtotal, data.tax, data.total);
+      } else {
+        showModal('Update Failed', data.message || 'Quantity update failed');
+      }
     });
   });
 
   document.querySelectorAll(".remove-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const productId = btn.dataset.itemId;
+      const color     = btn.dataset.color;
 
-      await fetch(`/cart/remove/${productId}`, { method: "DELETE" });
-      location.reload();
+      const res  = await fetch(`/cart/remove/${productId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ color }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Remove the cart item card from DOM
+        const cartItem = btn.closest('.bg-stone-50.p-8.border');
+        if (cartItem) cartItem.remove();
+        // Update totals
+        if (data.subtotal !== undefined) updateTotals(data.subtotal, data.tax, data.total);
+        // If cart is empty reload to show empty state
+        if (data.cartEmpty) location.reload();
+      } else {
+        showModal('Remove Failed', data.message || 'Failed to remove item');
+      }
     });
   });
 </script>
+
+
+
+
 
 <%- include('../partials/user/footer') %>

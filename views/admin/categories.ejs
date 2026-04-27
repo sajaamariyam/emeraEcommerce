@@ -2,294 +2,383 @@
 
 <div class="ml-52 h-screen overflow-y-auto bg-gray-50">
 
-    <!-- Top Navigation Bar -->
-    <div class="bg-white border-b sticky top-0 z-10">
-        <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-semibold text-teal-700">Category Management</h1>
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                    <%= admin.name.charAt(0) %>
-                </div>
-                <span class="text-sm text-gray-700"><%= admin.name %></span>
-            </div>
+  <!-- TOP BAR -->
+  <div class="bg-white border-b sticky top-0 z-10">
+    <div class="px-8 py-4 max-w-7xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-semibold text-teal-700">Category Management</h1>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+          <%= admin.name.charAt(0) %>
         </div>
+        <span class="text-sm text-gray-700"><%= admin.name %></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="p-8 max-w-7xl mx-auto">
+
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">Product Categories</h2>
+        <p class="text-gray-600 mt-1">Manage your shop categories here.</p>
+      </div>
+      <button onclick="openAddModal()" class="bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 flex items-center gap-2 font-medium shadow-md transition-colors">
+        <i class="fas fa-plus"></i> Add Category
+      </button>
     </div>
 
-    <!-- Main Content Area -->
-    <div class="p-8 max-w-7xl mx-auto">
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-800">Product Categories</h2>
-                <p class="text-gray-600 mt-1">Manage your shop categories here.</p>
-            </div>
-            <button onclick="openAddModal()" class="bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition flex items-center gap-2 font-medium shadow-md">
-                <i class="fas fa-plus"></i> Add Category
-            </button>
-        </div>
-
-        <!-- Search and Status Filtering -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-            <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <form method="GET" action="/admin/categories" class="flex-1 w-full md:w-auto flex gap-2">
-                    <input type="hidden" name="status" value="<%= status %>">
-                    <div class="relative flex-1">
-                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        <input 
-                            type="text" 
-                            name="search"
-                            value="<%= search || '' %>"
-                            placeholder="Search categories..." 
-                            class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        >
-                    </div>
-                    <% if (search) { %>
-                        <a href="/admin/categories?status=<%= status %>" class="px-5 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 font-medium text-gray-600 flex items-center transition">
-                            Clear
-                        </a>
-                    <% } %>
-                </form>
-
-                <div class="flex gap-3 w-full md:w-auto">
-                    <select onchange="window.location.href='/admin/categories?status=' + this.value + '&search=<%= search %>'" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white cursor-pointer">
-                        <option value="all" <%= status === 'all' ? 'selected' : '' %>>All Status</option>
-                        <option value="listed" <%= status === 'listed' ? 'selected' : '' %>>Listed Only</option>
-                        <option value="unlisted" <%= status === 'unlisted' ? 'selected' : '' %>>Unlisted Only</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- Categories List Table -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Image</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Products</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    <% categories.forEach(category => { %>
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <img src="<%= category.image?.url || '/images/placeholder.png' %>" class="w-12 h-12 rounded object-cover border border-gray-100 shadow-sm">
-                            </td>
-                            <td class="px-6 py-4">
-                                <p class="font-bold text-gray-800"><%= category.name %></p>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
-                                <%= category.productCount || 0 %> Items
-                            </td>
-                            <td class="px-6 py-4">
-                                <% if (category.isListed) { %>
-                                    <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100">Listed</span>
-                                <% } else { %>
-                                    <span class="px-3 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-full border border-red-100">Unlisted</span>
-                                <% } %>
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <div class="flex justify-end gap-4">
-                                    <button onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.image?.url || '' %>', <%= category.isListed %>)" class="text-teal-600 hover:text-teal-800 text-sm font-bold transition">Edit</button>
-                                    <button onclick="confirmStatusChange('<%= category._id %>', <%= category.isListed %>)" class="text-gray-500 hover:text-gray-700 text-sm font-bold transition">
-                                        <%= category.isListed ? 'Unlist' : 'List' %>
-                                    </button>
-                                    <button onclick="confirmDelete('<%= category._id %>')" class="text-red-600 hover:text-red-800 text-sm font-bold transition">Delete</button>
-                                </div>
-                            </td>
-                        </tr>
-                    <% }) %>
-                </tbody>
-            </table>
-
-            <!-- Pagination Control -->
-            <% if (totalPages > 1) { %>
-                <div class="px-6 py-6 bg-gray-50 border-t flex justify-center gap-2">
-                    <% if (currentPage > 1) { %>
-                        <a href="/admin/categories?page=<%= currentPage - 1 %>&search=<%= search %>&status=<%= status %>" class="px-3 py-1 bg-white border rounded hover:bg-gray-100 text-sm font-medium">Prev</a>
-                    <% } %>
-                    <% for (let i = 1; i <= totalPages; i++) { %>
-                        <a href="/admin/categories?page=<%= i %>&search=<%= search %>&status=<%= status %>" class="w-8 h-8 flex items-center justify-center border rounded text-sm font-bold transition-all <%= currentPage === i ? 'bg-teal-700 text-white border-teal-700' : 'bg-white text-gray-500 hover:bg-gray-100' %>"><%= i %></a>
-                    <% } %>
-                    <% if (currentPage < totalPages) { %>
-                        <a href="/admin/categories?page=<%= currentPage + 1 %>&search=<%= search %>&status=<%= status %>" class="px-3 py-1 bg-white border rounded hover:bg-gray-100 text-sm font-medium">Next</a>
-                    <% } %>
-                </div>
-            <% } %>
-        </div>
-    </div>
-</div>
-
-<!-- Add / Edit Modal -->
-<div id="categoryModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/50" onclick="closeModal()"></div>
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg z-50 overflow-hidden transform transition-all">
-        <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
-            <h3 id="modalTitle" class="text-lg font-bold text-gray-800">Add Category</h3>
-            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-        </div>
-        <form id="categoryForm" enctype="multipart/form-data" class="p-6">
-            <input type="hidden" name="categoryId" id="categoryId">
-            <div class="space-y-5">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Name</label>
-                    <input type="text" name="name" id="categoryName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition" placeholder="Category Name">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                    <select name="isListed" id="categoryStatus" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                        <option value="true">Listed</option>
-                        <option value="false">Unlisted</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Image</label>
-                    <div class="flex items-center gap-4">
-                        <div onclick="document.getElementById('categoryImage').click()" class="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 hover:border-teal-500 transition overflow-hidden group">
-                            <img id="previewImage" class="hidden w-full h-full object-cover">
-                            <div id="uploadPlaceholder" class="text-center group-hover:scale-110 transition-transform">
-                                <i class="fas fa-camera text-gray-400"></i>
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-xs text-gray-500">Pick an image for this category.</p>
-                            <input type="file" id="categoryImage" name="image" accept="image/*" class="hidden" onchange="previewFile(this)">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="flex gap-3 mt-8">
-                <button type="submit" class="flex-1 bg-teal-700 text-white py-3 rounded-lg font-bold hover:bg-teal-800 transition shadow-md">Save</button>
-                <button type="button" onclick="closeModal()" class="flex-1 border border-gray-300 text-gray-600 py-3 rounded-lg font-bold hover:bg-gray-50 transition">Cancel</button>
-            </div>
+    <!-- SEARCH -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
+      <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <form method="GET" action="/admin/categories" class="flex-1 w-full md:w-auto flex gap-2">
+          <input type="hidden" name="status" value="<%= status %>">
+          <div class="relative flex-1">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input
+              type="text"
+              name="search"
+              value="<%= search || '' %>"
+              placeholder="Search categories..."
+              class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+            >
+          </div>
+          <% if(search){ %>
+          <a href="/admin/categories?status=<%= status %>" class="px-5 py-3 border rounded-lg hover:bg-gray-100 flex items-center">
+            Clear
+          </a>
+          <% } %>
         </form>
+        <select onchange="window.location.href='/admin/categories?status='+this.value+'&search=<%= search %>'"
+          class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+          <option value="all" <%= status==='all'?'selected':'' %>>All Status</option>
+          <option value="listed" <%= status==='listed'?'selected':'' %>>Listed Only</option>
+          <option value="unlisted" <%= status==='unlisted'?'selected':'' %>>Unlisted Only</option>
+        </select>
+      </div>
     </div>
+
+    <!-- TABLE -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+      <table class="w-full text-left">
+        <thead class="bg-gray-50 border-b">
+          <tr>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Image</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Name</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          <% categories.forEach(category=>{ %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4">
+              <img src="<%= category.image?.url || '/images/placeholder.png' %>"
+                class="w-12 h-12 rounded object-cover">
+            </td>
+            <td class="px-6 py-4 font-semibold"><%= category.name %></td>
+            <td class="px-6 py-4">
+              <% if(category.isListed){ %>
+              <span class="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">Listed</span>
+              <% }else{ %>
+              <span class="px-3 py-1 bg-red-50 text-red-700 text-xs rounded-full">Unlisted</span>
+              <% } %>
+            </td>
+            <td class="px-6 py-4 text-right flex justify-end gap-4">
+              <button onclick="openEditModal('<%= category._id %>','<%= category.name %>','<%= category.image?.url || '' %>',<%= category.isListed %>)"
+                class="text-teal-600 hover:text-teal-800 font-bold">Edit</button>
+              <button onclick="confirmStatusChange('<%= category._id %>',<%= category.isListed %>)"
+                class="text-gray-500 hover:text-gray-700 font-bold"><%= category.isListed?'Unlist':'List' %></button>
+              <button onclick="confirmDelete('<%= category._id %>')"
+                class="text-red-600 hover:text-red-800 font-bold">Delete</button>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <!-- PAGINATION -->
+      <% if(totalPages>1){ %>
+      <div class="px-6 py-6 bg-gray-50 border-t flex justify-center gap-2">
+        <% for(let i=1;i<=totalPages;i++){ %>
+        <a href="/admin/categories?page=<%= i %>&search=<%= search %>&status=<%= status %>"
+          class="w-8 h-8 flex items-center justify-center border rounded text-sm <%= currentPage===i?'bg-teal-700 text-white':'bg-white' %>">
+          <%= i %>
+        </a>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+  </div>
 </div>
 
-<!-- Small Confirmation Modal -->
-<div id="confirmModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/40" onclick="closeConfirmModal()"></div>
-    <div class="bg-white rounded-lg shadow-2xl max-w-sm w-full p-6 z-[70] text-center transform transition-all">
-        <h4 id="confirmTitle" class="text-lg font-bold text-gray-900 mb-2">Are you sure?</h4>
-        <p id="confirmMessage" class="text-sm text-gray-500 mb-6">Do you want to do this?</p>
-        <div class="flex gap-3">
-            <button id="confirmBtn" class="flex-1 bg-teal-700 text-white py-2 rounded-lg font-bold hover:bg-teal-800 transition">Yes, Sure</button>
-            <button onclick="closeConfirmModal()" class="flex-1 border border-gray-300 py-2 rounded-lg font-bold hover:bg-gray-50 transition text-gray-600">Cancel</button>
-        </div>
+
+<!-- ===================== MODAL ===================== -->
+<div id="categoryModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-black/50" onclick="closeModal()"></div>
+
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg z-50 overflow-hidden">
+
+    <!-- Modal Header -->
+    <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+      <h3 id="modalTitle" class="text-lg font-bold text-gray-800">Add Category</h3>
+      <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-500 text-xl leading-none transition-colors">&times;</button>
     </div>
+
+    <form id="categoryForm" enctype="multipart/form-data" class="p-6">
+      <input type="hidden" id="categoryId">
+
+      <div class="space-y-5">
+
+        <!-- Name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+          <input type="text" name="name" id="categoryName" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none transition-colors"
+            placeholder="e.g. Electronics, Clothing...">
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select name="isListed" id="categoryStatus"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            <option value="true">Listed</option>
+            <option value="false">Unlisted</option>
+          </select>
+        </div>
+
+        <!-- Image Upload -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Category Image</label>
+
+          <!-- Drop Zone -->
+          <div id="dropZone"
+            class="relative border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-teal-400 hover:bg-teal-50/40 transition-all group"
+            onclick="document.getElementById('categoryImage').click()">
+
+            <!-- Preview image (hidden by default) -->
+            <img id="imagePreview" src="" alt="Preview"
+              class="hidden w-full h-44 object-cover rounded-lg mb-2">
+
+            <!-- Upload icon & text -->
+            <div id="uploadPlaceholder" class="flex flex-col items-center gap-2 text-center">
+              <div class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center group-hover:bg-teal-100 transition-colors">
+                <i class="fas fa-cloud-upload-alt text-teal-500 text-xl"></i>
+              </div>
+              <p class="text-sm font-medium text-gray-700">Click to upload image</p>
+              <p class="text-xs text-gray-400">PNG, JPG, WEBP up to 5MB</p>
+            </div>
+
+            <!-- Change label (shown after image selected) -->
+            <p id="changeLabel" class="hidden text-xs text-teal-600 font-medium mt-1">
+              <i class="fas fa-pencil-alt mr-1"></i>Click to change image
+            </p>
+
+            <input type="file" id="categoryImage" name="image" accept="image/*" class="hidden">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Error message -->
+      <div id="formError" class="hidden mt-4 px-4 py-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg flex items-center gap-2">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="formErrorText"></span>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex gap-3 mt-6">
+        <button type="submit" id="submitBtn"
+          class="flex-1 bg-teal-700 text-white py-3 rounded-lg font-bold hover:bg-teal-800 transition-colors flex items-center justify-center gap-2">
+          <span id="submitLabel">Save Category</span>
+          <svg id="submitSpinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+        </button>
+        <button type="button" onclick="closeModal()"
+          class="flex-1 border border-gray-300 py-3 rounded-lg font-bold hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+      </div>
+
+    </form>
+  </div>
 </div>
+
 
 <script>
-    const modal = document.getElementById("categoryModal");
-    const form = document.getElementById("categoryForm");
-    const preview = document.getElementById("previewImage");
-    const placeholder = document.getElementById("uploadPlaceholder");
-    const confirmModal = document.getElementById("confirmModal");
+  const modal = document.getElementById("categoryModal");
+  const form = document.getElementById("categoryForm");
+  const imageInput = document.getElementById("categoryImage");
+  const imagePreview = document.getElementById("imagePreview");
+  const uploadPlaceholder = document.getElementById("uploadPlaceholder");
+  const changeLabel = document.getElementById("changeLabel");
+  const formError = document.getElementById("formError");
+  const formErrorText = document.getElementById("formErrorText");
 
-    function openAddModal() {
-        form.reset();
-        document.getElementById("categoryId").value = "";
-        document.getElementById("modalTitle").innerText = "Add Category";
-        preview.classList.add("hidden");
-        placeholder.classList.remove("hidden");
-        modal.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
-    }
-
-    function openEditModal(id, name, imageUrl, isListed) {
-        document.getElementById("categoryId").value = id;
-        document.getElementById("categoryName").value = name;
-        document.getElementById("categoryStatus").value = isListed.toString();
-        document.getElementById("modalTitle").innerText = "Edit Category";
-        
-        if (imageUrl) {
-            preview.src = imageUrl;
-            preview.classList.remove("hidden");
-            placeholder.classList.add("hidden");
-        } else {
-            preview.classList.add("hidden");
-            placeholder.classList.remove("hidden");
-        }
-        
-        modal.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
-    }
-
-    function closeModal() {
-        modal.classList.add("hidden");
-        document.body.style.overflow = "";
-    }
-
-    function previewFile(input) {
-        const file = input.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.classList.remove("hidden");
-                placeholder.classList.add("hidden");
-            }
-            reader.readAsDataURL(file);
-        }
-    }
-
-    form.onsubmit = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const categoryId = document.getElementById("categoryId").value;
-        const url = categoryId ? `/admin/categories/edit/${categoryId}` : '/admin/categories';
-
-        try {
-            const res = await fetch(url, { method: 'POST', body: formData });
-            if (res.ok) {
-                window.location.reload();
-            } else {
-                const data = await res.json();
-                alert(data.message || "Failed to save.");
-            }
-        } catch (err) {
-            alert("An error occurred.");
-        }
+  // ── Image preview ──
+  imageInput.addEventListener("change", function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imagePreview.src = e.target.result;
+      imagePreview.classList.remove("hidden");
+      uploadPlaceholder.classList.add("hidden");
+      changeLabel.classList.remove("hidden");
     };
+    reader.readAsDataURL(file);
+  });
 
-    function confirmStatusChange(id, isListed) {
-        const action = isListed ? 'unlist' : 'list';
-        const msg = `Are you sure you want to ${action} this?`;
-        
-        showConfirmation(msg, async () => {
-            try {
-                const res = await fetch(`/admin/categories/toggleCategoryStatus/${id}`, { method: 'PATCH' });
-                if (res.ok) window.location.reload();
-                else alert("Failed to update status.");
-            } catch (err) {
-                alert("An error occurred.");
-            }
-        });
+  // ── Drag & Drop ──
+  const dropZone = document.getElementById("dropZone");
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("border-teal-500", "bg-teal-50");
+  });
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("border-teal-500", "bg-teal-50");
+  });
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("border-teal-500", "bg-teal-50");
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      imageInput.files = dt.files;
+      imageInput.dispatchEvent(new Event("change"));
+    }
+  });
+
+  function showError(msg) {
+    formErrorText.textContent = msg;
+    formError.classList.remove("hidden");
+  }
+
+  function hideError() {
+    formError.classList.add("hidden");
+  }
+
+  function resetImageUpload() {
+    imagePreview.src = "";
+    imagePreview.classList.add("hidden");
+    uploadPlaceholder.classList.remove("hidden");
+    changeLabel.classList.add("hidden");
+    imageInput.value = "";
+  }
+
+  function openAddModal() {
+    form.reset();
+    document.getElementById("categoryId").value = "";
+    document.getElementById("modalTitle").innerText = "Add Category";
+    resetImageUpload();
+    hideError();
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  function openEditModal(id, name, image, isListed) {
+    document.getElementById("categoryId").value = id;
+    document.getElementById("categoryName").value = name;
+    document.getElementById("categoryStatus").value = isListed.toString();
+    document.getElementById("modalTitle").innerText = "Edit Category";
+    hideError();
+
+    if (image) {
+      imagePreview.src = image;
+      imagePreview.classList.remove("hidden");
+      uploadPlaceholder.classList.add("hidden");
+      changeLabel.classList.remove("hidden");
+    } else {
+      resetImageUpload();
     }
 
-    function confirmDelete(id) {
-        showConfirmation("Are you sure you want to delete this?", async () => {
-            try {
-                const res = await fetch(`/admin/categories/delete/${id}`, { method: 'DELETE' });
-                if (res.ok) window.location.reload();
-                else alert("Delete failed.");
-            } catch (err) {
-                alert("An error occurred.");
-            }
-        });
-    }
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
 
-    function showConfirmation(message, onConfirm) {
-        document.getElementById("confirmMessage").innerText = message;
-        document.getElementById("confirmBtn").onclick = onConfirm;
-        confirmModal.classList.remove("hidden");
-    }
+  function closeModal() {
+    modal.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
 
-    function closeConfirmModal() {
-        confirmModal.classList.add("hidden");
+  // ── Form submit ──
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    hideError();
+
+    const submitBtn = document.getElementById("submitBtn");
+    const submitLabel = document.getElementById("submitLabel");
+    const submitSpinner = document.getElementById("submitSpinner");
+
+    // Loading state
+    submitBtn.disabled = true;
+    submitLabel.textContent = "Saving...";
+    submitSpinner.classList.remove("hidden");
+
+    const formData = new FormData(form);
+    const categoryId = document.getElementById("categoryId").value;
+    const url = categoryId ? `/admin/categories/edit/${categoryId}` : "/admin/categories";
+
+    try {
+      const res = await fetch(url, { method: "POST", body: formData });
+
+      // Always read as text first — safe for both JSON and HTML responses
+      const rawText = await res.text();
+
+      let data = {};
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        // Server returned non-JSON (HTML error page, redirect, etc.)
+        console.error("Non-JSON server response:", rawText.substring(0, 300));
+        if (!res.ok) {
+          showError(`Server error (${res.status}). Check console for details.`);
+          return;
+        }
+        // If status is ok but not JSON, still treat as success
+        window.location.reload();
+        return;
+      }
+
+      if (!res.ok) {
+        showError(data.message || "Failed to save category");
+        return;
+      }
+
+      window.location.reload();
+
+    } catch (err) {
+      console.error("Fetch error:", err);
+      showError("Network error. Please try again.");
+    } finally {
+      submitBtn.disabled = false;
+      submitLabel.textContent = "Save Category";
+      submitSpinner.classList.add("hidden");
     }
+  };
+
+  async function confirmStatusChange(id) {
+    try {
+      const res = await fetch(`/admin/categories/toggleCategoryStatus/${id}`, { method: "PATCH" });
+      if (res.ok) window.location.reload();
+    } catch (err) {
+      console.error("Status update failed", err);
+    }
+  }
+
+  async function confirmDelete(id) {
+    if (!confirm("Delete this category?")) return;
+    try {
+      const res = await fetch(`/admin/categories/delete/${id}`, { method: "DELETE" });
+      if (res.ok) window.location.reload();
+    } catch (err) {
+      console.error("Delete failed", err);
+    }
+  }
 </script>
 
 <%- include("../partials/admin/footer") %>
