@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+// ---------------- ADDRESS SCHEMA ----------------
 const addressSchema = new Schema(
   {
     fullName: {
@@ -36,119 +37,136 @@ const addressSchema = new Schema(
       default: false,
     },
   },
-  { _id: true },
+  { _id: true }
 );
 
-const User = mongoose.model(
-  "User",
-  new Schema(
-    {
-      name: {
-        type: String,
-        required: true,
+// ---------------- USER SCHEMA ----------------
+const userSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    phone: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: null,
+    },
+
+    addresses: [addressSchema],
+
+    profileImage: {
+      type: String,
+      default: "",
+    },
+
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+
+    password: {
+      type: String,
+    },
+
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+
+    wallet: {
+      type: Number,
+      default: 0,
+    },
+
+    walletTransactions: [
+      {
+        type: { type: String },
+        amount: Number,
+        description: String,
+        razorpayPaymentId: { type: String, default: null },
+        date: { type: Date, default: Date.now },
       },
-      email: {
-        type: String,
-        required: true,
-        unique: true,
+    ],
+
+    orderHistory: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Order",
       },
-      phone: {
-        type: String,
-        required: false,
-        unique: true,
-        sparse: true,
-        default: null,
+    ],
+
+    referralCode: {
+      type: String,
+    },
+
+    referralToken: {
+      type: String,
+      unique: true,
+    },
+
+    redeemed: {
+      type: Boolean,
+    },
+
+    wishlist: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Product",
       },
-      addresses: [addressSchema],
-      profileImage: {
-        type: String,
-        default: "",
-      },
-      googleId: {
-        type: String,
-        unique: true,
-        sparse: true,
-      },
-      password: {
-        type: String,
-        required: false,
-      },
-      isBlocked: {
-        type: Boolean,
-        default: false,
-      },
-      isAdmin: {
-        type: Boolean,
-        default: false,
-      },
-      wallet: {
-        type: Number,
-        default: 0,
-      },
-      walletTransactions: [
-        {
-          type: { type: String },
-          amount: Number,
-          description: String,
-          razorpayPaymentId: { type: String, default: null },
-          date: { type: Date, default: Date.now },
-        },
-      ],
-      orderHistory: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: "Order",
-        },
-      ],
-      referralCode: {
-        type: String,
-      },
-      referralToken: {
-        type: String,
-        unique: true,
-      },
-      redeemed: {
-        type: Boolean,
-      },
-      wishlist: [
-        {
+    ],
+
+    cart: [
+      {
+        product: {
           type: Schema.Types.ObjectId,
           ref: "Product",
         },
-      ],
-      cart: [
-        {
-          product: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Product",
-          },
-          quantity: Number,
-        },
-      ],
-      redeemedUsers: [
-        {
+        quantity: Number,
+      },
+    ],
+
+    redeemedUsers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    searchHistory: [
+      {
+        category: {
           type: Schema.Types.ObjectId,
-          ref: "User",
+          ref: "Category",
         },
-      ],
-      searchHistory: [
-        {
-          category: {
-            type: Schema.Types.ObjectId,
-            ref: "Category",
-          },
-          brand: {
-            type: String,
-          },
-          searchOn: {
-            type: Date,
-            default: Date.now,
-          },
+        brand: {
+          type: String,
         },
-      ],
-    },
-    { timestamps: true },
-  ),
+        searchOn: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+  },
+  { timestamps: true }
 );
+
+// ---------------- MODEL ----------------
 const User = mongoose.model("User", userSchema);
+
 module.exports = User;
