@@ -85,6 +85,8 @@ router.get("/orders/:id", orderController.getOrderDetails);
 // ── OFFERS ───────────────────────────────────────────────────
 router.get("/offers", offerController.loadOffers);
 router.post("/offers", offerController.createOffer);
+router.get("/offers/:id", offerController.getOffer);
+router.put("/offers/:id", offerController.editOffer);
 router.post("/offers/toggle/:id", offerController.toggleOfferStatus);
 router.post("/offers/delete/:id", offerController.deleteOffer);
 

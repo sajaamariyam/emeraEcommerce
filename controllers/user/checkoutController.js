@@ -321,6 +321,35 @@ const placeOrder = async (req, res) => {
       }),
     );
 
+    for (const item of orderItems) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return res.status(400).json({
+          success: false,
+          message: "One or more products no longer exist",
+        });
+      }
+      const variant = product.variants.find((v) => v.color === item.color);
+      if (!variant) {
+        return res.status(400).json({
+          success: false,
+          message: `Color "${item.color}" is no longer available for ${product.name}`,
+        });
+      }
+      if (variant.quantity < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Only ${variant.quantity} unit(s) left for ${product.name} (${item.color}). Please update your cart.`,
+        });
+      }
+      if (product.isBlocked || !product.isListed) {
+        return res.status(400).json({
+          success: false,
+          message: `${product.name} is no longer available`,
+        });
+      }
+    }
+
     const subtotal = orderItems.reduce(
       (sum, i) => sum + i.price * i.quantity,
       0,

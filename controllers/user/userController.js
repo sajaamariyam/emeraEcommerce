@@ -126,6 +126,56 @@ const signup = async (req, res) => {
       referralToken,
     } = req.body;
 
+    if (!name || !email || !phone || !password || !cPassword) {
+      return res.render("user/signup", {
+        message: "All fields are required",
+        refToken: null,
+      });
+    }
+
+    if (name.trim().length < 3) {
+      return res.render("user/signup", {
+        message: "Name must be at least 3 characters",
+        refToken: null,
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.render("user/signup", {
+        message: "Invalid email format",
+        refToken: null,
+      });
+    }
+
+    if (!/^[6-9][0-9]{9}$/.test(phone)) {
+      return res.render("user/signup", {
+        message: "Enter a valid Indian mobile number",
+        refToken: null,
+      });
+    }
+
+    if (password.length < 8) {
+      return res.render("user/signup", {
+        message: "Password must be at least 8 characters",
+        refToken: null,
+      });
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return res.render("user/signup", {
+        message: "Password must contain an uppercase letter",
+        refToken: null,
+      });
+    }
+
+    if (!/\d/.test(password)) {
+      return res.render("user/signup", {
+        message: "Password must contain a number",
+        refToken: null,
+      });
+    }
+
     if (password !== cPassword) {
       return res.render("user/signup", {
         message: "Passwords do not match",
@@ -146,6 +196,7 @@ const signup = async (req, res) => {
     if (!emailSent) return res.json("email-error");
 
     req.session.userOtp = otp;
+    req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
     req.session.userData = {
       name,
       phone,
@@ -172,6 +223,15 @@ const securePassword = async (password) => {
 const verifyOtp = async (req, res) => {
   try {
     const { otp } = req.body;
+
+    if (Date.now() > req.session.otpExpiry) {
+      req.session.userOtp = null;
+      req.session.otpExpiry = null;
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
+    }
 
     if (!req.session.userOtp || otp !== req.session.userOtp) {
       return res
@@ -311,7 +371,8 @@ const resendOtp = async (req, res) => {
     }
     const email = req.session.userData.email;
     const otp = generateOtp();
-    req.session.userOtp = otp;
+    rreq.session.userOtp = otp;
+    req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
     const emailSent = await sendVerificationEmail(email, otp);
     if (!emailSent)
       return res
@@ -436,6 +497,7 @@ const sendForgotPassword = async (req, res) => {
       });
     req.session.forgotEmail = email;
     req.session.forgotOtp = otp;
+    req.session.forgotOtpExpiry = Date.now() + 2 * 60 * 1000;
     console.log("Forgot Password OTP:", otp);
     res.render("user/verify-otp", { otpMode: "forgot", userEmail: email });
   } catch (error) {
@@ -453,6 +515,16 @@ const verifyForgotOtp = async (req, res) => {
         message: "Session expired. Please restart the process.",
       });
     }
+
+    if (Date.now() > req.session.forgotOtpExpiry) {
+      req.session.forgotOtp = null;
+      req.session.forgotOtpExpiry = null;
+      return res.json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
+    }
+
     if (otp !== req.session.forgotOtp) {
       return res.json({
         success: false,
@@ -476,6 +548,7 @@ const resendForgotPasswordOtp = async (req, res) => {
       });
     const otp = generateOtp();
     req.session.forgotOtp = otp;
+    req.session.forgotOtpExpiry = Date.now() + 2 * 60 * 1000;
     const emailSent = await sendVerificationEmail(email, otp);
     if (!emailSent)
       return res.json({ success: false, message: "Failed to resend OTP." });
@@ -820,8 +893,28 @@ const editProfile = async (req, res) => {
   try {
     const userId = req.session.user;
     const { name, phone } = req.body;
-    const updateData = { name, phone };
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+    if (name.trim().length < 3 || name.trim().length > 50) {
+      return res.status(400).json({ message: "Name must be 3–50 characters" });
+    }
+    if (!/^[a-zA-Z\s]+$/.test(name.trim())) {
+      return res
+        .status(400)
+        .json({ message: "Name can only contain letters and spaces" });
+    }
+
+    if (!phone || !/^[6-9][0-9]{9}$/.test(phone.trim())) {
+      return res
+        .status(400)
+        .json({ message: "Enter a valid 10-digit Indian mobile number" });
+    }
+
+    const updateData = { name: name.trim(), phone: phone.trim() };
     if (req.file) updateData.profileImage = req.file.path;
+
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
       runValidators: true,
@@ -838,6 +931,11 @@ const requestEmailOtp = async (req, res) => {
     const { newEmail } = req.body;
     if (!newEmail)
       return res.status(400).json({ message: "New email is required" });
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
     const user = await User.findById(req.session.user);
     if (!user) return res.status(404).json({ message: "User not found" });
     if (user.googleId)
@@ -852,6 +950,7 @@ const requestEmailOtp = async (req, res) => {
       return res.status(409).json({ message: "This email is already in use" });
     const otp = generateOtp();
     req.session.emailChangeOtp = otp;
+    req.session.emailChangeOtpExpiry = Date.now() + 2 * 60 * 1000;
     req.session.newEmail = newEmail;
     req.session.emailVerified = false;
     const emailSent = await sendEmailChangeOtp(newEmail, otp);
@@ -868,6 +967,15 @@ const requestEmailOtp = async (req, res) => {
 
 const verifyEmailOtp = async (req, res) => {
   const { otp } = req.body;
+
+  if (Date.now() > req.session.emailChangeOtpExpiry) {
+    req.session.emailChangeOtp = null;
+    req.session.emailChangeOtpExpiry = null;
+    return res
+      .status(400)
+      .json({ message: "OTP has expired. Please request a new one." });
+  }
+
   if (otp !== req.session.emailChangeOtp)
     return res.status(400).json({ message: "Invalid OTP" });
   req.session.emailVerified = true;
@@ -1001,6 +1109,10 @@ const updateAddress = async (req, res) => {
         .status(400)
         .json({ message: "All required fields must be filled" });
     }
+    if (!/^\d{6}$/.test(pincode))
+      return res.status(400).json({ message: "Invalid pincode" });
+    if (phone && !/^[6-9][0-9]{9}$/.test(phone.trim()))
+      return res.status(400).json({ message: "Invalid phone number" });
     if (isDefault) user.addresses.forEach((a) => (a.isDefault = false));
     address.fullName = `${firstName} ${lastName}`;
     address.street = address1 + (address2 ? `, ${address2}` : "");

@@ -16,7 +16,7 @@
                 <div class="text-center p-8 border-b border-stone-200">
                     <div class="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-stone-100">
                         <img id="sidebar-profile-img"
-                            src="<%= user.profileImage || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200' %>"
+                            src="<%= user.profileImage || '/images/default-avatar.svg' %>"
                             alt="Profile" class="w-full h-full object-cover">
                     </div>
                     <h3 class="font-serif text-xl mb-1 text-gray-900"><%= user.name %></h3>
@@ -46,7 +46,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
                         <div class="md:col-span-1 text-center">
                             <div class="w-48 h-48 mx-auto mb-6 rounded-full overflow-hidden bg-stone-100 border-4 border-stone-50">
-                                <img src="<%= user.profileImage || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' %>" alt="Profile" class="w-full h-full object-cover">
+                               <img src="<%= user.profileImage || '/images/default-avatar.svg' %>" alt="Profile" class="w-full h-full object-cover"> alt="Profile" class="w-full h-full object-cover">
                             </div>
                             <span class="text-[10px] text-stone-400 uppercase tracking-[0.3em] font-bold">Member Since <%= new Date(user.createdAt || Date.now()).getFullYear() %></span>
                         </div>
@@ -234,18 +234,19 @@
             <form id="edit-profile-form" class="space-y-6" novalidate>
                 <div class="text-center mb-10">
                     <img id="edit-profile-img-preview"
-                        src="<%= user.profileImage || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' %>"
+                        src="<%= user.profileImage || '/images/default-avatar.svg' %>"
                         alt="Profile Preview" class="w-32 h-32 rounded-full mx-auto mb-6 border-4 border-stone-50 object-cover">
                     <label class="cursor-pointer px-8 py-3 bg-stone-100 text-stone-700 text-[10px] tracking-[0.3em] uppercase font-bold hover:bg-stone-200 transition-all inline-block">
                         Change Photo
                         <input type="file" name="profileImage" id="profile-image-input" accept="image/*" class="hidden">
                     </label>
+                    <p id="profile-image-error" class="text-xs text-red-500 mt-2 hidden"></p>
                 </div>
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">First Name</label>
                         <input type="text" id="edit-firstname" class="w-full px-5 py-4 border border-stone-300 text-sm focus:border-stone-950 transition-all">
-                        <p id="edit-firstname-error" class="text-xs text-red-500 mt-1 hidden">First name is required</p>
+                        <p id="edit-firstname-error" class="text-xs text-red-500 mt-1 hidden">First name is required and must contain only letters</p>
                     </div>
                     <div>
                         <label class="text-[10px] uppercase tracking-[0.3em] text-stone-400 font-bold block mb-3">Last Name</label>
@@ -604,7 +605,7 @@ const ProfileApp = (function () {
             name:         "<%= user.name %>",
             email:        "<%= user.email %>",
             phone:        "<%= user.phone || '' %>",
-            profileImage: "<%= user.profileImage || '' %>",
+            profileImage: "<%= user.profileImage || '/images/default-avatar.svg' %>",
             googleId:     "<%= user.googleId || '' %>"
         },
         pendingEmailChange: null,
@@ -699,17 +700,39 @@ const ProfileApp = (function () {
         document.getElementById('edit-lastname').value  = parts.slice(1).join(' ') || '';
         document.getElementById('edit-email').value     = state.currentUser.email;
         document.getElementById('edit-phone').value     = state.currentUser.phone;
-        if (state.currentUser.profileImage) document.getElementById('edit-profile-img-preview').src = state.currentUser.profileImage;
+        if (state.currentUser.profileImage) document.getElementById('edit-profile-img-preview').src = state.currentUser.profileImage || '/images/default-avatar.svg';
         originalEmailAtEdit = state.currentUser.email;
         openModal('edit-profile-modal');
     }
 
-    function previewProfileImage(file) {
-        if (!file || !file.type.startsWith('image/')) return;
-        var reader = new FileReader();
-        reader.onload = function(e) { document.getElementById('edit-profile-img-preview').src = e.target.result; };
-        reader.readAsDataURL(file);
+function previewProfileImage(file) {
+    var errEl = document.getElementById('profile-image-error');
+    errEl.classList.add('hidden');
+    errEl.textContent = '';
+
+    if (!file) return;
+
+
+    if (!file.type.startsWith('image/')) {
+        errEl.textContent = 'Only image files are allowed (JPG, PNG, WEBP)';
+        errEl.classList.remove('hidden');
+        document.getElementById('profile-image-input').value = '';
+        return;
     }
+
+    if (file.size > 2 * 1024 * 1024) {
+        errEl.textContent = 'Image must be smaller than 2MB';
+        errEl.classList.remove('hidden');
+        document.getElementById('profile-image-input').value = '';
+        return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('edit-profile-img-preview').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
 
     async function handleEditProfileSubmit(e) {
         e.preventDefault();
@@ -721,7 +744,9 @@ const ProfileApp = (function () {
         var imgFile    = document.getElementById('profile-image-input').files[0];
 
         var valid = true;
-        showFieldError('edit-firstname', 'edit-firstname-error', !firstName); if (!firstName) valid = false;
+        var firstNameBad = !firstName || !/^[a-zA-Z\s]+$/.test(firstName);
+        showFieldError('edit-firstname', 'edit-firstname-error', firstNameBad);
+        if (firstNameBad) valid = false;
         if (!emailInput.disabled) { var bad = !email || !isValidEmail(email); showFieldError('edit-email', 'edit-email-error', bad); if (bad) valid = false; }
         var phoneBad = !phone || !isValidPhone(phone); showFieldError('edit-phone', 'edit-phone-error', phoneBad); if (phoneBad) valid = false;
         if (!valid) return;

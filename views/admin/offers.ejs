@@ -307,7 +307,7 @@ function closeEditModal() {
 
 async function submitEditOffer() {
     const id         = document.getElementById('editOfferId').value;
-    const discount   = document.getElementById('editDiscount').value.trim();
+    const discount = Number(document.getElementById('editDiscount').value.trim());
     const startDate  = document.getElementById('editStartDate').value;
     const endDate    = document.getElementById('editEndDate').value;
     const btn        = document.getElementById('editOfferBtn');
@@ -316,7 +316,7 @@ async function submitEditOffer() {
     if (!discount || discount < 1 || discount > 99) { showToast('Discount must be 1–99%', 'error'); return; }
     if (!startDate) { showToast('Start date is required', 'error'); return; }
     if (!endDate)   { showToast('End date is required', 'error'); return; }
-    if (endDate <= startDate) { showToast('End date must be after start date', 'error'); return; }
+    if (new Date(endDate) <= new Date(startDate)) { showToast('End date must be after start date', 'error'); return; }
 
     btn.disabled = true; btn.textContent = 'Saving...';
     try {

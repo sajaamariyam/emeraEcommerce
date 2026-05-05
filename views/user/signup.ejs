@@ -282,10 +282,13 @@
             const phoneval = phoneid.value.replace(/\D/g, ""); // strip non-digits
             if (phoneval.trim() === "") {
                 error3.style.display = "block";
-                error3.innerHTML = "Enter valid phone number";
+                error3.innerHTML = "Enter a valid phone number";
             } else if (phoneval.length !== 10) {
                 error3.style.display = "block";
-                error3.innerHTML = "Enter 10 digit number";
+                error3.innerHTML = "Enter a 10 digit number";
+            } else if (!/^[6-9]/.test(phoneval)) {
+                error3.style.display = "block";
+                error3.innerHTML = "Enter a valid Indian mobile number";
             } else {
                 error3.style.display = "none";
                 error3.innerHTML = "";

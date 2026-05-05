@@ -143,10 +143,25 @@ const addProduct = async (req, res) => {
       variants,
     } = req.body;
 
-    if (!name?.trim())
-      return res
-        .status(400)
-        .json({ success: false, message: "Product name is required" });
+    const trimmedName = name?.trim();
+    if (!trimmedName || trimmedName.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Product name must be at least 3 characters",
+      });
+    }
+    if (trimmedName.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Product name must be under 100 characters",
+      });
+    }
+    if (!/[a-zA-Z]/.test(trimmedName)) {
+      return res.status(400).json({
+        success: false,
+        message: "Product name must contain at least one letter",
+      });
+    }
     if (!category)
       return res
         .status(400)
@@ -252,10 +267,31 @@ const editProduct = async (req, res) => {
       removedImages,
     } = req.body;
 
-    if (!name?.trim())
+    const trimmedName = name?.trim();
+    if (!trimmedName || trimmedName.length < 3) {
       return res
         .status(400)
-        .json({ success: false, message: "Product name is required" });
+        .json({
+          success: false,
+          message: "Product name must be at least 3 characters",
+        });
+    }
+    if (trimmedName.length > 100) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Product name must be under 100 characters",
+        });
+    }
+    if (!/[a-zA-Z]/.test(trimmedName)) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Product name must contain at least one letter",
+        });
+    }
     if (!category)
       return res
         .status(400)
