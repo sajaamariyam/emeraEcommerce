@@ -10,7 +10,8 @@ const addressSchema = new Schema(
     },
     phone: {
       type: String,
-      required: true,
+      unique: true,
+      sparse: true,
     },
     street: {
       type: String,
@@ -37,9 +38,8 @@ const addressSchema = new Schema(
       default: false,
     },
   },
-  { _id: true }
+  { _id: true },
 );
-
 
 const userSchema = new Schema(
   {
@@ -162,7 +162,7 @@ const userSchema = new Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const User = mongoose.model("User", userSchema);
