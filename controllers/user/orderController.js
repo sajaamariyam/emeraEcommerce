@@ -195,7 +195,8 @@ const cancelOrder = async (req, res) => {
     }
 
     const shouldRefund =
-      order.paymentStatus === "paid" && order.paymentMethod !== "COD";
+      order.paymentStatus === "paid" &&
+      order.paymentMethod.toLowerCase() !== "cod";
 
     if (shouldRefund) {
       const refundAmount = order.finalAmount;
@@ -371,8 +372,9 @@ const returnOrder = async (req, res) => {
         .json({ success: false, message: "Return reason is mandatory" });
     }
 
+    const deliveryDate = order.deliveredAt || order.updatedAt;
     const daysSinceDelivery = Math.floor(
-      (new Date() - order.updatedAt) / (1000 * 60 * 60 * 24),
+      (new Date() - deliveryDate) / (1000 * 60 * 60 * 24),
     );
 
     if (daysSinceDelivery > 30) {

@@ -8,24 +8,26 @@ const crypto = require("crypto");
 const loadPayment = async (req, res) => {
   try {
     const { orderId } = req.params;
- 
-    let order = await Order.findOne({ orderId }).populate("orderedItems.productId");
- 
+
+    let order = await Order.findOne({ orderId }).populate(
+      "orderedItems.productId",
+    );
+
     if (!order) {
       order = await Order.findById(orderId).populate("orderedItems.productId");
     }
- 
+
     if (!order) {
       return res.redirect("/pageNotFound");
     }
- 
+
     const user = await User.findById(req.session.user);
- 
+
     res.render("user/payment", {
       order,
       user,
-      showAnnouncement: false,   
-      cartCount: 0,              
+      showAnnouncement: false,
+      cartCount: 0,
     });
   } catch (error) {
     console.error("LOAD PAYMENT ERROR:", error);
@@ -89,7 +91,6 @@ const verifyPayment = async (req, res) => {
       orderId,
     } = req.body;
 
-    console.log("VERIFY PAYMNET BODY", req.body);
 
     const order = await Order.findOne({ orderId }).populate(
       "orderedItems.productId",
@@ -115,9 +116,6 @@ const verifyPayment = async (req, res) => {
       .update(body)
       .digest("hex");
 
-    console.log("EXPECTED SIG:", expectedSignature);
-    console.log("RECEIVED SIG:", razorpay_signature);
-    console.log("SIG MATCH:", expectedSignature === razorpay_signature);
 
     if (expectedSignature === razorpay_signature) {
       for (const item of order.orderedItems) {
@@ -166,7 +164,10 @@ const walletPayment = async (req, res) => {
     const order = await Order.findOne({ orderId }).populate(
       "orderedItems.productId",
     );
+    if (!order) return res.json({ success: false, message: "Order not found" });
+
     const user = await User.findById(order.userId);
+    if (!user) return res.json({ success: false, message: "User not found" });
 
     console.log("USER WALLET:", user.wallet);
     console.log("ORDER FINAL AMOUNT:", order.finalAmount);
@@ -197,10 +198,15 @@ const walletPayment = async (req, res) => {
     });
 
     await user.save();
-    console.log("USER SAVED");
-
-    console.log("PRODUCTS UPDATED");
-
+    for (const item of order.orderedItems) {
+      await Product.updateOne(
+        {
+          _id: item.productId._id || item.productId,
+          "variants.color": item.color,
+        },
+        { $inc: { "variants.$.quantity": -item.quantity } },
+      );
+    }
     await Cart.deleteOne({ userId: order.userId });
     console.log("CART DELETED");
 
