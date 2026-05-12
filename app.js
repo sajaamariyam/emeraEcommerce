@@ -38,14 +38,16 @@ app.use(
 );
 
 app.use(async (req, res, next) => {
+  if (req.path.startsWith("/admin")) return next();
+
   try {
     if (req.session.user) {
       const user = await User.findById(req.session.user);
 
       if (!user || user.isBlocked) {
-        req.session.destroy(() => {
-          res.clearCookie("connect.sid");
-        });
+        req.session.user = null;
+        await new Promise((r) => req.session.save(r));
+        res.clearCookie("connect.sid");
         res.locals.user = null;
 
         const isAjax =
@@ -105,7 +107,7 @@ app.use("/", paymentRouter);
 const PORT = process.env.PORT || 3000;
 
 app.listen(3000, () => {
-  console.log('Server running');
+  console.log("Server running");
 });
 
 module.exports = app;

@@ -193,7 +193,11 @@ const signup = async (req, res) => {
 
     const otp = generateOtp();
     const emailSent = await sendVerificationEmail(email, otp);
-    if (!emailSent) return res.json("email-error");
+    if (!emailSent)
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send email. Please try again.",
+      });
 
     req.session.userOtp = otp;
     req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
@@ -363,29 +367,39 @@ const loadOtp = async (req, res) => {
 
 const resendOtp = async (req, res) => {
   try {
-    if (!req.session.userData || !req.session.userData.email) {
+    const isForgot = !!req.session.forgotEmail;
+    const email = isForgot
+      ? req.session.forgotEmail
+      : req.session.userData?.email;
+
+    if (!email) {
       return res.status(400).json({
         success: false,
-        message: "Session expired. Please signup again.",
+        message: "Session expired. Please start again.",
       });
     }
-    const email = req.session.userData.email;
+
     const otp = generateOtp();
-    rreq.session.userOtp = otp;
-    req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
+
+    if (isForgot) {
+      req.session.forgotOtp = otp;
+      req.session.forgotOtpExpiry = Date.now() + 2 * 60 * 1000;
+    } else {
+      req.session.userOtp = otp;
+      req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
+    }
+
     const emailSent = await sendVerificationEmail(email, otp);
     if (!emailSent)
       return res
         .status(500)
         .json({ success: false, message: "Failed to resend OTP" });
+
     console.log("RESEND OTP:", otp);
     return res.json({ success: true });
   } catch (error) {
     console.error("Error resending OTP", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error. Please try again",
-    });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -531,7 +545,12 @@ const verifyForgotOtp = async (req, res) => {
         message: "Invalid OTP. Please try again.",
       });
     }
-    return res.redirect("/reset-password");
+
+    return res.json({
+      success: true,
+      redirectTo: "/reset-password",
+      message: "OTP verified. Please reset your password.",
+    });
   } catch (error) {
     console.log("verifyForgotOtp error:", error);
     res.json({ success: false, message: "Server error" });

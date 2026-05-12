@@ -259,11 +259,10 @@ const decrementQty = async (req, res) => {
     const { color } = req.body;
 
     const cart = await Cart.findOne({ userId });
-    if (!cart) {
+    if (!cart)
       return res
         .status(400)
         .json({ success: false, message: "Cart not found" });
-    }
 
     const index = cart.items.findIndex(
       (i) =>
@@ -271,14 +270,16 @@ const decrementQty = async (req, res) => {
         i.color.toLowerCase() === color.toLowerCase(),
     );
 
-    if (index === -1) {
+    if (index === -1)
       return res
         .status(400)
         .json({ success: false, message: "Item not found" });
-    }
+
+    let removed = false;
 
     if (cart.items[index].quantity === 1) {
       cart.items.splice(index, 1);
+      removed = true;
     } else {
       cart.items[index].quantity -= 1;
     }
@@ -304,6 +305,7 @@ const decrementQty = async (req, res) => {
 
     res.json({
       success: true,
+      removed,
       quantity: updatedItem ? updatedItem.quantity : 0,
       itemTotal: updatedItem ? updatedItem.price * updatedItem.quantity : 0,
       subtotal,

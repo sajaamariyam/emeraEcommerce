@@ -45,8 +45,9 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
                         <div class="md:col-span-1 text-center">
+                            <!-- FIX 1: removed duplicate alt/class attributes outside the tag -->
                             <div class="w-48 h-48 mx-auto mb-6 rounded-full overflow-hidden bg-stone-100 border-4 border-stone-50">
-                               <img src="<%= user.profileImage || '/images/default-avatar.svg' %>" alt="Profile" class="w-full h-full object-cover"> alt="Profile" class="w-full h-full object-cover">
+                                <img src="<%= user.profileImage || '/images/default-avatar.svg' %>" alt="Profile" class="w-full h-full object-cover">
                             </div>
                             <span class="text-[10px] text-stone-400 uppercase tracking-[0.3em] font-bold">Member Since <%= new Date(user.createdAt || Date.now()).getFullYear() %></span>
                         </div>
@@ -705,34 +706,29 @@ const ProfileApp = (function () {
         openModal('edit-profile-modal');
     }
 
-function previewProfileImage(file) {
-    var errEl = document.getElementById('profile-image-error');
-    errEl.classList.add('hidden');
-    errEl.textContent = '';
-
-    if (!file) return;
-
-
-    if (!file.type.startsWith('image/')) {
-        errEl.textContent = 'Only image files are allowed (JPG, PNG, WEBP)';
-        errEl.classList.remove('hidden');
-        document.getElementById('profile-image-input').value = '';
-        return;
+    function previewProfileImage(file) {
+        var errEl = document.getElementById('profile-image-error');
+        errEl.classList.add('hidden');
+        errEl.textContent = '';
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            errEl.textContent = 'Only image files are allowed (JPG, PNG, WEBP)';
+            errEl.classList.remove('hidden');
+            document.getElementById('profile-image-input').value = '';
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            errEl.textContent = 'Image must be smaller than 2MB';
+            errEl.classList.remove('hidden');
+            document.getElementById('profile-image-input').value = '';
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('edit-profile-img-preview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
     }
-
-    if (file.size > 2 * 1024 * 1024) {
-        errEl.textContent = 'Image must be smaller than 2MB';
-        errEl.classList.remove('hidden');
-        document.getElementById('profile-image-input').value = '';
-        return;
-    }
-
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        document.getElementById('edit-profile-img-preview').src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
 
     async function handleEditProfileSubmit(e) {
         e.preventDefault();
@@ -966,7 +962,7 @@ function previewProfileImage(file) {
             allTransactions = Array.isArray(r.data.transactions) ? r.data.transactions : [];
             document.getElementById('wallet-balance').textContent      = '\u20B9' + balance.toFixed(2);
             var credit = allTransactions.filter(function(t){ return t.type === 'credit'; }).reduce(function(s,t){ return s + (t.amount||0); }, 0);
-            var debit  = allTransactions.filter(function(t){ return t.type === 'debit'; }).reduce(function(s,t){ return s + (t.amount||0); }, 0);
+            var debit  = allTransactions.filter(function(t){ return t.type === 'debit';  }).reduce(function(s,t){ return s + (t.amount||0); }, 0);
             document.getElementById('wallet-total-credit').textContent = '\u20B9' + credit.toFixed(2);
             document.getElementById('wallet-total-debit').textContent  = '\u20B9' + debit.toFixed(2);
             filterTransactions('all');
@@ -976,9 +972,13 @@ function previewProfileImage(file) {
     function retryLoadWallet() { loadWallet(); }
 
     function renderTransactions(txs) {
-        var c    = document.getElementById('wallet-transactions');
-        var list = txs.slice().reverse();
-        if (!list.length) { c.innerHTML = '<div class="text-center py-16 border border-stone-100"><p class="text-stone-400 text-sm">No transactions yet</p></div>'; return; }
+        var c = document.getElementById('wallet-transactions');
+        // FIX 2: removed .reverse() — server already returns newest-first
+        var list = txs;
+        if (!list.length) {
+            c.innerHTML = '<div class="text-center py-16 border border-stone-100"><p class="text-stone-400 text-sm">No transactions yet</p></div>';
+            return;
+        }
         c.innerHTML = '<div class="border border-stone-200 divide-y divide-stone-100">' + list.map(function(tx) {
             var isC  = tx.type === 'credit';
             var date = new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -1044,9 +1044,8 @@ function previewProfileImage(file) {
         } catch (err) { console.error(err); showError('Network error. Please try again.'); }
     }
 
- function launchWalletRazorpay(rzpOrder, amount) {
+    function launchWalletRazorpay(rzpOrder, amount) {
         if (typeof Razorpay === 'undefined') { showError('Payment gateway not loaded. Please refresh the page.'); return; }
- 
         var rzp = new Razorpay({
             key:         rzpOrder.key || '',
             amount:      rzpOrder.amount,
@@ -1054,9 +1053,7 @@ function previewProfileImage(file) {
             order_id:    rzpOrder.id,
             name:        'Emera',
             description: 'Adding \u20B9' + amount + ' to your wallet',
- 
             handler: async function(response) {
-               
                 try {
                     var vr = await safeFetch('/payment/wallet/verify', {
                         method:  'POST',
@@ -1068,8 +1065,7 @@ function previewProfileImage(file) {
                         })
                     });
                     if (vr.ok && vr.data.success) {
-                        document.getElementById('wallet-success-msg').textContent =
-                            '\u20B9' + amount.toFixed(2) + ' has been added to your wallet.';
+                        document.getElementById('wallet-success-msg').textContent = '\u20B9' + amount.toFixed(2) + ' has been added to your wallet.';
                         openEmera('walletSuccess');
                         setTimeout(function() { closeEmera('walletSuccess'); loadWallet(); }, 2000);
                     } else {
@@ -1080,28 +1076,19 @@ function previewProfileImage(file) {
                     showError('Verification failed. Please contact support.');
                 }
             },
- 
             modal: {
-               
                 ondismiss: function() {
                     showError('Payment was cancelled. No amount was deducted from your account.');
                 }
             },
- 
             theme: { color: '#0c0a09' }
         });
- 
-      
         rzp.on('payment.failed', function(response) {
             console.error('Wallet payment failed:', response.error);
-            showError(
-                'Payment failed: ' + (response.error.description || 'Please try again.')
-            );
+            showError('Payment failed: ' + (response.error.description || 'Please try again.'));
         });
- 
         rzp.open();
     }
- 
 
     // ─── Security ─────────────────────────────────────────────────
     async function handleChangePassword(e) {

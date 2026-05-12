@@ -1,6 +1,7 @@
 const Cart = require("../models/cartSchema");
 
 const cartCount = async (req, res, next) => {
+  if (req.path.startsWith("/admin")) return next();
   try {
     let count = 0;
 
@@ -13,7 +14,6 @@ const cartCount = async (req, res, next) => {
     }
 
     res.locals.cartCount = count;
-    res.locals.user = req.user || null;
 
     next();
   } catch (error) {

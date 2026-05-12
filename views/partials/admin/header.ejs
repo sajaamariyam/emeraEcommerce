@@ -9,68 +9,88 @@
 </head>
 <body class="bg-gray-50">
 
-<!-- FIXED SIDEBAR -->
-
 <% const page = typeof activePage !== 'undefined' ? activePage : '' %>
 
-<div class="fixed top-0 left-0 w-52 h-screen bg-teal-700 text-white flex flex-col">
+<!-- ── Mobile top bar ───────────────────────────────────────── -->
+<div class="md:hidden fixed top-0 left-0 right-0 z-50 bg-teal-700 text-white flex items-center justify-between px-4 py-3 shadow-md">
+    <span class="text-base font-semibold">Emera Admin</span>
+    <button id="sidebar-toggle" class="text-white focus:outline-none" aria-label="Toggle menu">
+        <i class="fas fa-bars text-xl" id="hamburger-icon"></i>
+    </button>
+</div>
 
-    <div class="px-5 py-5 text-lg font-semibold border-b border-teal-600">
-        Emera Admin
+<!-- ── Overlay (mobile only) ────────────────────────────────── -->
+<div id="sidebar-overlay"
+    class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"
+    onclick="closeSidebar()">
+</div>
+
+<!-- ── Sidebar ───────────────────────────────────────────────── -->
+<div id="sidebar"
+    class="fixed top-0 left-0 w-52 h-screen bg-teal-700 text-white flex flex-col z-50
+           -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+
+    <!-- Logo -->
+    <div class="px-5 py-5 text-lg font-semibold border-b border-teal-600 flex items-center justify-between">
+        <span>Emera Admin</span>
+        <!-- Close btn — mobile only -->
+        <button class="md:hidden text-white focus:outline-none" onclick="closeSidebar()" aria-label="Close menu">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
 
     <nav class="flex-1 py-2 overflow-y-auto text-sm">
 
-        <a href="/admin/adminDashboard"
+        <a href="/admin/adminDashboard" onclick="closeSidebar()"
             class="flex items-center px-5 py-3 transition
             <%= page === 'dashboard' ? 'bg-teal-800 border-l-4 border-white text-white' : 'hover:bg-teal-600' %>">
             <i class="fas fa-th-large w-5"></i>
             <span class="ml-3">Dashboard</span>
         </a>
 
-        <a href="/admin/users"
+        <a href="/admin/users" onclick="closeSidebar()"
             class="flex items-center px-5 py-3 transition
             <%= page === 'users' ? 'bg-teal-800 border-l-4 border-white text-white' : 'hover:bg-teal-600' %>">
             <i class="fas fa-users w-5"></i>
             <span class="ml-3">Users</span>
         </a>
 
-        <a href="/admin/products"
+        <a href="/admin/products" onclick="closeSidebar()"
             class="flex items-center px-5 py-3 transition
             <%= page === 'products' ? 'bg-teal-800 border-l-4 border-white text-white' : 'hover:bg-teal-600' %>">
             <i class="fas fa-box w-5"></i>
             <span class="ml-3">Products</span>
         </a>
 
-        <a href="/admin/categories"
+        <a href="/admin/categories" onclick="closeSidebar()"
             class="flex items-center px-5 py-3 transition
             <%= page === 'categories' ? 'bg-teal-800 border-l-4 border-white text-white' : 'hover:bg-teal-600' %>">
             <i class="fas fa-layer-group w-5"></i>
             <span class="ml-3">Categories</span>
         </a>
 
-        <a href="/admin/orders"
+        <a href="/admin/orders" onclick="closeSidebar()"
             class="flex items-center px-5 py-3 transition
             <%= page === 'orders' ? 'bg-teal-800 border-l-4 border-white text-white' : 'hover:bg-teal-600' %>">
             <i class="fas fa-shopping-bag w-5"></i>
             <span class="ml-3">Orders</span>
         </a>
 
-        <a href="/admin/coupons"
+        <a href="/admin/coupons" onclick="closeSidebar()"
             class="flex items-center px-5 py-3 transition
             <%= page === 'coupons' ? 'bg-teal-800 border-l-4 border-white text-white' : 'hover:bg-teal-600' %>">
             <i class="fas fa-ticket-alt w-5"></i>
             <span class="ml-3">Coupons</span>
         </a>
 
-        <a href="/admin/offers"
+        <a href="/admin/offers" onclick="closeSidebar()"
             class="flex items-center px-5 py-3 transition
             <%= page === 'offers' ? 'bg-teal-800 border-l-4 border-white text-white' : 'hover:bg-teal-600' %>">
             <i class="fas fa-tags w-5"></i>
             <span class="ml-3">Offers</span>
         </a>
 
-        <a href="/admin/sales-report"
+        <a href="/admin/sales-report" onclick="closeSidebar()"
             class="flex items-center px-5 py-3 transition
             <%= page === 'salesReport' ? 'bg-teal-800 border-l-4 border-white text-white' : 'hover:bg-teal-600' %>">
             <i class="fas fa-chart-line w-5"></i>
@@ -85,3 +105,34 @@
         <span class="ml-3">Logout</span>
     </a>
 </div>
+
+<!-- ── Every admin page content wrapper must use this class ─── -->
+<!-- Replace ml-52 with: ml-0 md:ml-52 pt-14 md:pt-0          -->
+
+<script>
+    const sidebar  = document.getElementById('sidebar');
+    const overlay  = document.getElementById('sidebar-overlay');
+    const toggler  = document.getElementById('sidebar-toggle');
+    const hamIcon  = document.getElementById('hamburger-icon');
+
+    function openSidebar() {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+        hamIcon.classList.replace('fa-bars', 'fa-times');
+    }
+
+    function closeSidebar() {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+        hamIcon.classList.replace('fa-times', 'fa-bars');
+    }
+
+    toggler.addEventListener('click', function () {
+        sidebar.classList.contains('-translate-x-full') ? openSidebar() : closeSidebar();
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSidebar();
+    });
+</script>

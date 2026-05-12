@@ -2,6 +2,7 @@ const Cart = require("../models/cartSchema");
 const User = require("../models/userSchema");
 
 const userHeader = async (req, res, next) => {
+  if (req.path.startsWith("/admin")) return next();
   try {
     let user = null;
     let cartCount = 0;

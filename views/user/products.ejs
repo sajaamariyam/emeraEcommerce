@@ -20,7 +20,10 @@
                 .map(String);
             %>
             <form action="/products" method="GET" id="filter-form">
+                <!-- FIX 1: carry search, sort, maxPrice as hidden inputs so Apply Filters never drops them -->
                 <input type="hidden" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>">
+                <input type="hidden" name="sort" id="hidden-sort" value="<%= typeof sort !== 'undefined' ? sort : 'newest' %>">
+                <input type="hidden" name="page" value="1">
 
                 <!-- Category Filter -->
                 <div class="space-y-10 mb-16">
@@ -81,12 +84,16 @@
             <div class="flex flex-col sm:flex-row items-center justify-between mb-16 gap-10 border-b border-stone-50 pb-12">
                 <div class="flex items-center space-x-12">
                     <span class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Sort By</span>
-                    <select onchange="handleSortChange(this.value)" class="bg-transparent text-[10px] uppercase tracking-[0.3em] font-bold outline-none cursor-pointer hover:text-emera-950 transition-colors">
-                        <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>Newest</option>
-                        <option value="price-asc" <%= sort === 'price-asc' ? 'selected' : '' %>>Price: Low to High</option>
+                    <!-- FIX 2: select now updates hidden-sort input AND triggers handleSortChange -->
+                    <select
+                        id="sort-select"
+                        onchange="handleSortChange(this.value)"
+                        class="bg-transparent text-[10px] uppercase tracking-[0.3em] font-bold outline-none cursor-pointer hover:text-emera-950 transition-colors">
+                        <option value="newest"     <%= sort === 'newest'     ? 'selected' : '' %>>Newest</option>
+                        <option value="price-asc"  <%= sort === 'price-asc'  ? 'selected' : '' %>>Price: Low to High</option>
                         <option value="price-desc" <%= sort === 'price-desc' ? 'selected' : '' %>>Price: High to Low</option>
-                        <option value="name-asc" <%= sort === 'name-asc' ? 'selected' : '' %>>Name: A-Z</option>
-                        <option value="name-desc" <%= sort === 'name-desc' ? 'selected' : '' %>>Name: Z-A</option>
+                        <option value="name-asc"   <%= sort === 'name-asc'   ? 'selected' : '' %>>Name: A-Z</option>
+                        <option value="name-desc"  <%= sort === 'name-desc'  ? 'selected' : '' %>>Name: Z-A</option>
                     </select>
                 </div>
 
@@ -200,16 +207,19 @@
         document.getElementById('price-label').textContent = `UP TO ₹${Number(val).toLocaleString()}`;
     }
 
+    // FIX 3: handleSortChange updates hidden-sort so filter form also carries current sort
     function handleSortChange(val) {
+        // keep hidden input in sync (used when Apply Filters is clicked)
+        document.getElementById('hidden-sort').value = val;
+
         const url = new URL(window.location.href);
         const form = document.getElementById('filter-form');
 
-        const searchVal = form.querySelector('[name="search"]').value;
-        url.searchParams.set('search', searchVal);
-
-        const maxPriceVal = form.querySelector('[name="maxPrice"]').value;
-        url.searchParams.set('maxPrice', maxPriceVal);
-
+        // carry search
+        url.searchParams.set('search', form.querySelector('[name="search"]').value);
+        // carry maxPrice from slider
+        url.searchParams.set('maxPrice', form.querySelector('[name="maxPrice"]').value);
+        // carry checked categories
         url.searchParams.delete('category');
         form.querySelectorAll('[name="category"]:checked').forEach(el => {
             url.searchParams.append('category', el.value);
@@ -233,8 +243,10 @@
 
     window.addEventListener('scroll', () => {
         const nav = document.getElementById('navbar');
-        if (window.scrollY > 50) nav.classList.add('shadow-xl', 'bg-emera-950');
-        else nav.classList.remove('shadow-xl', 'bg-emera-950');
+        if (nav) {
+            if (window.scrollY > 50) nav.classList.add('shadow-xl', 'bg-emera-950');
+            else nav.classList.remove('shadow-xl', 'bg-emera-950');
+        }
     });
 </script>
 

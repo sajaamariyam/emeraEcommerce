@@ -12,7 +12,8 @@ const userAuth = async (req, res, next) => {
     const user = await User.findById(req.session.user);
 
     if (!user || user.isBlocked) {
-      return req.session.destroy(() => {
+      req.session.user = null;
+      return req.session.save(() => {
         res.clearCookie("connect.sid");
         return res.redirect("/login?blocked=true");
       });
@@ -66,14 +67,16 @@ const adminAuth = async (req, res, next) => {
     const admin = await User.findById(req.session.admin);
 
     if (!admin || !admin.isAdmin) {
-      return req.session.destroy((err) => {
+      req.session.admin = null;
+      return req.session.save(() => {
         res.clearCookie("connect.sid");
         return res.redirect("/admin/adminLogin");
       });
     }
 
     if (admin.isBlocked) {
-      return req.session.destroy((err) => {
+      req.session.admin = null;
+      return req.session.save(() => {
         res.clearCookie("connect.sid");
         return res.redirect("/admin/adminLogin");
       });

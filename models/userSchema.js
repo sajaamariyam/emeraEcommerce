@@ -40,7 +40,7 @@ const addressSchema = new Schema(
   { _id: true }
 );
 
-// ---------------- USER SCHEMA ----------------
+
 const userSchema = new Schema(
   {
     name: {
@@ -165,7 +165,6 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-// ---------------- MODEL ----------------
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;
