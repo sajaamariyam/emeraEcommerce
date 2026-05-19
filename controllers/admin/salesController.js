@@ -20,19 +20,27 @@ const getDateRange = (query) => {
     startDate = new Date();
     startDate.setDate(today.getDate() - 7);
     startDate.setHours(0, 0, 0, 0);
+    // FIX: endDate was missing reset for weekly
+    endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
   } else if (filter === "monthly") {
     startDate = new Date();
     startDate.setMonth(today.getMonth() - 1);
     startDate.setHours(0, 0, 0, 0);
+    endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
   } else if (filter === "custom" && from && to) {
     startDate = new Date(from);
     startDate.setHours(0, 0, 0, 0);
     endDate = new Date(to);
     endDate.setHours(23, 59, 59, 999);
   } else {
+    // default: last 30 days
     startDate = new Date();
     startDate.setDate(today.getDate() - 30);
     startDate.setHours(0, 0, 0, 0);
+    endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
   }
 
   return { startDate, endDate };
@@ -77,12 +85,16 @@ const loadSalesReport = async (req, res) => {
       totalDiscount: 0,
     };
 
+    const activeFilter = req.query.filter || "";
+    const from = req.query.from || "";
+    const to = req.query.to || "";
+
     res.render("admin/salesReport", {
       summary,
       orders,
-      filter: req.query.filter || "",
-      from: req.query.from || "",
-      to: req.query.to || "",
+      filter: activeFilter,
+      from,
+      to,
       currentPage: page,
       totalPages,
       totalOrders,

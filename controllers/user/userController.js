@@ -482,9 +482,10 @@ const logout = async (req, res) => {
 
 const loadForgotPassword = async (req, res) => {
   try {
-    res.render("user/forgot-password", { message: null });
+    if (req.session.user) return res.redirect("/");
+    return res.render("user/forgot-password", { message: null });
   } catch (error) {
-    console.log("Forgot password page error:", error);
+    console.error("LOAD FORGOT PASSWORD ERROR:", error);
     res.redirect("/pageNotFound");
   }
 };
@@ -492,41 +493,70 @@ const loadForgotPassword = async (req, res) => {
 const sendForgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user)
+
+    if (!email || !email.trim()) {
       return res.render("user/forgot-password", {
-        message: "No user found with this email",
-      });
-    if (user.googleId) {
-      return res.render("user/forgot-password", {
-        message:
-          "This account is linked with Google. Please login using Google.",
+        message: "Please enter your email address",
       });
     }
-    const otp = generateOtp();
-    const emailSent = await sendVerificationEmail(email, otp);
-    if (!emailSent)
+
+    const user = await User.findOne({ email: email.trim() });
+
+    if (!user) {
       return res.render("user/forgot-password", {
-        message: "Failed to send OTP. Try again",
+        message: "No account found with this email",
       });
-    req.session.forgotEmail = email;
+    }
+
+    if (user.googleId) {
+      return res.render("user/forgot-password", {
+        message: "This account uses Google login. Please sign in with Google.",
+      });
+    }
+
+    const otp = generateOtp();
+    const emailSent = await sendVerificationEmail(email.trim(), otp);
+
+    if (!emailSent) {
+      return res.render("user/forgot-password", {
+        message: "Failed to send OTP. Please try again.",
+      });
+    }
+
+    req.session.forgotEmail = email.trim();
     req.session.forgotOtp = otp;
     req.session.forgotOtpExpiry = Date.now() + 2 * 60 * 1000;
+
     console.log("Forgot Password OTP:", otp);
-    res.render("user/verify-otp", { otpMode: "forgot", userEmail: email });
+
+    req.session.save((err) => {
+      if (err) {
+        console.error("SESSION SAVE ERROR:", err);
+        return res.render("user/forgot-password", {
+          message: "Session error. Please try again.",
+        });
+      }
+      res.render("user/verify-otp", {
+        otpMode: "forgot",
+        userEmail: email.trim(),
+      });
+    });
   } catch (error) {
-    console.log("Forgot password OTP error:", error);
-    res.redirect("/pageNotFound");
+    console.error("SEND FORGOT PASSWORD ERROR:", error);
+    return res.render("user/forgot-password", {
+      message: "Something went wrong. Please try again.",
+    });
   }
 };
 
 const verifyForgotOtp = async (req, res) => {
   try {
     const { otp } = req.body;
+
     if (!req.session.forgotOtp || !req.session.forgotEmail) {
       return res.json({
         success: false,
-        message: "Session expired. Please restart the process.",
+        message: "Session expired. Please restart the forgot password process.",
       });
     }
 
@@ -546,14 +576,17 @@ const verifyForgotOtp = async (req, res) => {
       });
     }
 
+    req.session.forgotOtp = null;
+    req.session.forgotOtpExpiry = null;
+
     return res.json({
       success: true,
       redirectTo: "/reset-password",
       message: "OTP verified. Please reset your password.",
     });
   } catch (error) {
-    console.log("verifyForgotOtp error:", error);
-    res.json({ success: false, message: "Server error" });
+    console.error("VERIFY FORGOT OTP ERROR:", error);
+    res.json({ success: false, message: "Server error. Please try again." });
   }
 };
 
@@ -572,7 +605,11 @@ const resendForgotPasswordOtp = async (req, res) => {
     if (!emailSent)
       return res.json({ success: false, message: "Failed to resend OTP." });
     console.log("Resent Forgot Password OTP:", otp);
-    return res.json({ success: true });
+
+    req.session.save((err) => {
+      if (err) return res.json({ success: false, message: "Session error." });
+      return res.json({ success: true });
+    });
   } catch (error) {
     console.log("resendForgotPasswordOtp error:", error);
     res.json({ success: false });
@@ -592,19 +629,40 @@ const loadResetPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { newPassword, confirmPassword } = req.body;
-    if (!req.session.forgotEmail) return res.redirect("/forgot-password");
+
+    if (!req.session.forgotEmail) {
+      return res.redirect("/forgot-password");
+    }
+
+    if (!newPassword || !confirmPassword) {
+      return res.render("user/reset-password", {
+        message: "Both password fields are required",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.render("user/reset-password", {
+        message: "Password must be at least 8 characters",
+      });
+    }
+
     if (newPassword !== confirmPassword) {
       return res.render("user/reset-password", {
         message: "Passwords do not match",
       });
     }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+
     await User.updateOne(
       { email: req.session.forgotEmail },
       { $set: { password: hashedPassword } },
     );
+
     req.session.forgotEmail = null;
     req.session.forgotOtp = null;
+    req.session.forgotOtpExpiry = null;
+
     res.redirect("/login");
   } catch (error) {
     console.log("Reset password error:", error);
