@@ -44,7 +44,7 @@
                         type="text" 
                         id="fullName"
                         name="name"
-                        placeholder="John Doe"
+                        placeholder="Saja Mariyam"
                         required
                         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
                     >
@@ -72,7 +72,7 @@
                         type="tel"
                         id="phone"
                         name="phone"
-                        placeholder="+91 8943220832"
+                        placeholder="1234567890"
                         required 
                         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
                     >
@@ -279,7 +279,7 @@
         }
 
         function phoneValidateChecking() {
-            const phoneval = phoneid.value.replace(/\D/g, ""); // strip non-digits
+            const phoneval = phoneid.value.replace(/\D/g, ""); 
             if (phoneval.trim() === "") {
                 error3.style.display = "block";
                 error3.innerHTML = "Enter a valid phone number";

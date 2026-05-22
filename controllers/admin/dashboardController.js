@@ -12,7 +12,7 @@ const loadDashboard = async (req, res) => {
     const totalUsers  = await User.countDocuments({ isAdmin: false });
 
     const salesAgg = await Order.aggregate([
-      { $match: { status: { $nin: ["cancelled"] }, paymentStatus: "paid" } },
+      { $match: { status: "delivered" } },
       { $group: { _id: null, total: { $sum: "$finalAmount" } } },
     ]);
     const totalSales = salesAgg[0]?.total || 0;
@@ -24,7 +24,6 @@ const loadDashboard = async (req, res) => {
       ],
     });
 
-    // Low stock: products where total variant qty <= 5
     const allProducts = await Product.find({ isListed: true, isBlocked: false });
     const lowStockProducts = allProducts
       .map((p) => ({ ...p.toObject(), totalStock: p.variants.reduce((s, v) => s + v.quantity, 0) }))
@@ -83,7 +82,7 @@ async function getChartData(filter) {
       labelFn     = (d) => `${String(d._id.day).padStart(2,"0")}/${String(d._id.month).padStart(2,"0")}`;
       break;
     }
-    default: { // monthly
+    default: {
       matchFilter = { createdAt: { $gte: new Date(`${now.getFullYear()}-01-01`), $lte: new Date(`${now.getFullYear()}-12-31`) } };
       groupStage  = { _id: { $month: "$createdAt" }, revenue: { $sum: "$finalAmount" }, orders: { $sum: 1 } };
       const M     = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -92,7 +91,7 @@ async function getChartData(filter) {
   }
 
   const results = await Order.aggregate([
-    { $match: { status: { $nin: ["cancelled"] }, ...matchFilter } },
+    { $match: { status: "delivered", ...matchFilter } },
     { $group: groupStage },
     { $sort: { _id: 1 } },
   ]);

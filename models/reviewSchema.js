@@ -59,7 +59,7 @@ const reviewSchema = new Schema(
 
     isApproved: {
       type: Boolean,
-      default: true, // Auto-approve for now, can add admin moderation later
+      default: true, 
     },
   },
   { timestamps: true }

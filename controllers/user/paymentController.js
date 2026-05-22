@@ -91,7 +91,6 @@ const verifyPayment = async (req, res) => {
       orderId,
     } = req.body;
 
-
     const order = await Order.findOne({ orderId }).populate(
       "orderedItems.productId",
     );
@@ -116,7 +115,6 @@ const verifyPayment = async (req, res) => {
       .update(body)
       .digest("hex");
 
-
     if (expectedSignature === razorpay_signature) {
       for (const item of order.orderedItems) {
         await Product.updateOne(
@@ -129,7 +127,9 @@ const verifyPayment = async (req, res) => {
 
       order.paymentStatus = "paid";
       order.status = "pending";
+      order.razorpayOrderId = razorpay_order_id;
       order.razorpayPaymentId = razorpay_payment_id;
+      order.razorpaySignature = razorpay_signature;
       order.paidAt = new Date();
 
       await order.save();
@@ -211,7 +211,7 @@ const walletPayment = async (req, res) => {
     console.log("CART DELETED");
 
     order.status = "pending";
-    order.paymentMethod = "WALLET";
+    order.paymentMethod = "wallet";
     order.paymentStatus = "paid";
     order.paidAt = new Date();
     console.log("SAVING ORDER...");

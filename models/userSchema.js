@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-// ---------------- ADDRESS SCHEMA ----------------
 const addressSchema = new Schema(
   {
     fullName: {
@@ -101,14 +100,7 @@ const userSchema = new Schema(
         date: { type: Date, default: Date.now },
       },
     ],
-
-    orderHistory: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Order",
-      },
-    ],
-
+    
     referralCode: {
       type: String,
     },
@@ -116,6 +108,7 @@ const userSchema = new Schema(
     referralToken: {
       type: String,
       unique: true,
+      sparse: true,
     },
 
     redeemed: {
@@ -143,22 +136,6 @@ const userSchema = new Schema(
       {
         type: Schema.Types.ObjectId,
         ref: "User",
-      },
-    ],
-
-    searchHistory: [
-      {
-        category: {
-          type: Schema.Types.ObjectId,
-          ref: "Category",
-        },
-        brand: {
-          type: String,
-        },
-        searchOn: {
-          type: Date,
-          default: Date.now,
-        },
       },
     ],
   },

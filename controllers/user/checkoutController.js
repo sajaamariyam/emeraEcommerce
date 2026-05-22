@@ -469,6 +469,7 @@ const handlePaymentFailure = async (req, res) => {
     const order = await Order.findOne({ orderId: req.body.orderId });
     if (order) {
       order.status = "cancelled";
+      order.paymentStatus = "failed";
       order.cancelReason = req.body.error_description || "Payment failed";
       await order.save();
     }
@@ -484,4 +485,3 @@ module.exports = {
   placeOrder,
   handlePaymentFailure,
 };
-

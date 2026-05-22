@@ -1,6 +1,7 @@
 const User = require("../../models/userSchema");
 const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
+const Order = require("../../models/orderSchema");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
@@ -70,6 +71,43 @@ const loadUsers = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
+
+    const userIds = users.map((u) => u._id);
+
+    const orderCounts = await Order.aggregate([
+      { $match: { userId: { $in: userIds } } },
+      { $group: { _id: "$userId", count: { $sum: 1 } } },
+    ]);
+
+    const spentAgg = await Order.aggregate([
+      {
+        $match: {
+          userId: { $in: userIds },
+          status: "delivered",
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          totalSpent: { $sum: "$finalAmount" },
+        },
+      },
+    ]);
+
+    const countMap = {};
+    orderCounts.forEach((o) => {
+      countMap[o._id.toString()] = o.count;
+    });
+
+    const spentMap = {};
+    spentAgg.forEach((o) => {
+      spentMap[o._id.toString()] = o.totalSpent;
+    });
+
+    users.forEach((u) => {
+      u.orderCount = countMap[u._id.toString()] || 0;
+      u.totalSpent = spentMap[u._id.toString()] || 0;
+    });
 
     const totalFilteredUsers = await User.countDocuments(filter);
     const totalPages = Math.ceil(totalFilteredUsers / limit);
