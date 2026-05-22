@@ -11,11 +11,13 @@ const loadCart = async (req, res) => {
       return res.redirect("/login");
     }
 
+    const user = await User.findById(userId);
+
     const cart = await Cart.findOne({ userId }).populate("items.productId");
 
     if (!cart || cart.items.length === 0) {
       return res.render("user/cart", {
-        user: req.user,
+        user,
         cartItems: [],
         subtotal: 0,
         tax: 0,
