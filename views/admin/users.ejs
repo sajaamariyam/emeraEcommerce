@@ -140,7 +140,7 @@
                                     <%= user.orderCount || 0 %>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 font-medium">
-                                    ₹<%= user.totalSpent?.toLocaleString("en-IN") || 0 %>
+                                    ₹<%= user.totalSpent ? user.totalSpent.toLocaleString("en-IN") : 0 %>
                                 </td>
                                 <td class="px-6 py-4">
                                     <% if (user.isBlocked) { %>
