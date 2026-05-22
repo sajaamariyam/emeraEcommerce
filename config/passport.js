@@ -1,6 +1,12 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const crypto = require("crypto");
 const User = require("../models/userSchema");
+
+const generateReferralCode = () =>
+  "REF" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+const generateReferralToken = () => crypto.randomBytes(16).toString("hex");
 
 passport.use(
   new GoogleStrategy(
@@ -27,10 +33,31 @@ passport.use(
             return done(null, false, { message: "blocked" });
           }
 
+          let shouldSave = false;
+
           if (!user.googleId) {
             user.googleId = profile.id;
             user.profileImage =
               user.profileImage || profile.photos?.[0]?.value || "";
+            shouldSave = true;
+          }
+
+          if (!user.referralCode) {
+            user.referralCode = generateReferralCode();
+            shouldSave = true;
+          }
+
+          if (!user.referralToken) {
+            user.referralToken = generateReferralToken();
+            shouldSave = true;
+          }
+
+          if (user.redeemed === undefined) {
+            user.redeemed = false;
+            shouldSave = true;
+          }
+
+          if (shouldSave) {
             await user.save();
           }
 
@@ -44,6 +71,9 @@ passport.use(
           profileImage: profile.photos?.[0]?.value || "",
           isAdmin: false,
           isBlocked: false,
+          referralCode: generateReferralCode(),
+          referralToken: generateReferralToken(),
+          redeemed: false,
         });
 
         await newUser.save();
@@ -59,6 +89,7 @@ passport.use(
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
+
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
