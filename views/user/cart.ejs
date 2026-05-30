@@ -54,7 +54,6 @@
                                 <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-6 font-bold">
                                 <%= item.product.material || 'Premium Leather' %>
                                 </p>
-
                                 
                                 <p class="text-lg font-bold text-gray-900 tracking-widest mb-1">₹<%= item.price.toLocaleString('en-IN') %></p>
                                 <% if (item.color || item.size) { %>
@@ -70,6 +69,7 @@
                             const itemVariant = item.product.variants?.find(v => v.color === item.color);
                             const variantQty = itemVariant ? itemVariant.quantity : 0;
                             const isOutOfStock = variantQty === 0;
+
                             %>
                             <% if (isOutOfStock) { %>
                             <div class="flex items-center gap-2 mt-2">
@@ -179,10 +179,6 @@
                     >
                     Proceed to Checkout
                     </button>
-
-
-
-                    
                     <div class="space-y-4 text-center">
                         <p class="text-[9px] text-gray-400 uppercase tracking-widest">Secure Checkout &bull; 256-bit SSL</p>
                         <p class="text-[9px] text-gray-400 uppercase tracking-widest">Free Returns Within 30 Days</p>

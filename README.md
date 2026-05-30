@@ -118,4 +118,4 @@ npm start
 ## Author
 
 Saja Mariyam  
-Full Stack Developer
+Mern Stack Developer
