@@ -100,7 +100,7 @@ const userSchema = new Schema(
         date: { type: Date, default: Date.now },
       },
     ],
-    
+
     referralCode: {
       type: String,
     },
@@ -121,17 +121,6 @@ const userSchema = new Schema(
         ref: "Product",
       },
     ],
-
-    cart: [
-      {
-        product: {
-          type: Schema.Types.ObjectId,
-          ref: "Product",
-        },
-        quantity: Number,
-      },
-    ],
-
     redeemedUsers: [
       {
         type: Schema.Types.ObjectId,
