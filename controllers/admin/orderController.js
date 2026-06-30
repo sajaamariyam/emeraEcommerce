@@ -60,6 +60,7 @@ const loadOrders = async (req, res) => {
     const search = req.query.search?.trim() || "";
     const status = req.query.status || "all";
     const sortBy = req.query.sortBy || "date-desc";
+    const payment = req.query.payment 
 
     let query = {};
 

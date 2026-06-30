@@ -5,11 +5,10 @@ const passport = require("passport");
 const userController = require("../controllers/user/userController");
 const cartController = require("../controllers/user/cartController");
 const {
-  requireLogin,
   userAuth,
+  requireLogin,
   noCache,
-  saveRedirect,
-} = require("../middlewares/auth");
+} = require("../middlewares/auth/userAuth");
 const { uploadProduct, uploadProfile } = require("../middlewares/upload");
 const checkoutController = require("../controllers/user/checkoutController");
 const orderController = require("../controllers/user/orderController");
@@ -19,7 +18,7 @@ const walletController = require("../controllers/user/walletController");
 const paymentController = require("../controllers/user/paymentController");
 const couponController = require("../controllers/user/couponController");
 
-// ── AUTHENTICATION ───────────────────────────────────────────────────────────
+//AUTHENTICATION
 router.get("/login", noCache, userController.loadLogin);
 router.post("/login", userController.login);
 
@@ -87,13 +86,13 @@ router.post("/reset-password", userController.resetPassword);
 router.get("/", userController.loadHomepage);
 router.get("/logout", noCache, userController.logout);
 
-// ── PRODUCT ──────────────────────────────────────────────────────────────────
+//PRODUCT
 router.get("/products", userController.loadProducts);
 router.get("/products/:id", saveRedirect, userController.loadProductDetails);
 router.get("/pageNotFound", userController.pageNotFound);
 router.get("/search", userController.searchProducts);
 
-// ── PROFILE ──────────────────────────────────────────────────────────────────
+//PROFILE
 router.get("/profile", requireLogin, noCache, userController.loadProfile);
 router.get(
   "/api/profile/orders",
@@ -140,7 +139,7 @@ router.post(
   userController.changePassword,
 );
 
-// ── CART ─────────────────────────────────────────────────────────────────────
+//CART
 router.get(
   "/cart",
   saveRedirect,
@@ -153,7 +152,7 @@ router.put("/cart/increment/:productId", userAuth, cartController.incrementQty);
 router.put("/cart/decrement/:productId", userAuth, cartController.decrementQty);
 router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
 
-// ── CHECKOUT ─────────────────────────────────────────────────────────────────
+//CHECKOUT
 router.get(
   "/checkout",
   userAuth,
@@ -166,7 +165,7 @@ router.post("/checkout", userAuth, checkoutController.placeOrder);
 router.get("/checkout/coupons", couponController.getAvailableCoupons);
 router.post("/checkout/apply-coupon", couponController.applyCoupon);
 
-// ── ORDER ─────────────────────────────────────────────────────────────────────
+//ORDER
 router.get(
   "/orderConfirmation/:orderId",
   userAuth,
@@ -198,7 +197,7 @@ router.get(
   orderController.downloadInvoice,
 );
 
-// ── WISHLIST ──────────────────────────────────────────────────────────────────
+//WISHLIST
 router.get(
   "/wishlist",
   saveRedirect,
@@ -223,7 +222,7 @@ router.post(
   wishlistController.addAllToCart,
 );
 
-// ── REVIEW ────────────────────────────────────────────────────────────────────
+//REVIEW
 router.post("/reviews/submit", userAuth, reviewController.submitReview);
 router.get("/reviews/product/:productId", reviewController.getProductReviews);
 router.get(
@@ -237,7 +236,7 @@ router.post(
   reviewController.markHelpful,
 );
 
-// ── WALLET ────────────────────────────────────────────────────────────────────
+//WALLET
 router.get("/payment/wallet", userAuth, noCache, walletController.getWallet);
 router.post("/payment/wallet/add", userAuth, walletController.addMoneyInit);
 router.post(
@@ -251,7 +250,7 @@ router.post(
   walletController.handleWalletPaymentFailure,
 );
 
-// ── PAYMENT ───────────────────────────────────────────────────────────────────
+//PAYMENT
 router.get(
   "/payment/:orderId",
   userAuth,
@@ -276,7 +275,7 @@ router.post(
   paymentController.walletPayment,
 );
 
-// ── ABOUT ─────────────────────────────────────────────────────────────────────
+//ABOUT
 router.get("/about", userController.loadAbout);
 
 module.exports = router;

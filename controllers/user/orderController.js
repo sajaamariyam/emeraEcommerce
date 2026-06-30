@@ -253,7 +253,6 @@ const cancelProduct = async (req, res) => {
     }
 
     const status = order.status.toLowerCase();
-
     if (
       status === "delivered" ||
       status === "cancelled" ||
@@ -284,25 +283,36 @@ const cancelProduct = async (req, res) => {
       { $inc: { "variants.$.quantity": item.quantity } },
     );
 
+    const activeItems = order.orderedItems.filter(
+      (i) => i.itemStatus === "active",
+    );
+    const totalActiveSubtotal = activeItems.reduce(
+      (sum, i) => sum + i.price * i.quantity,
+      0,
+    );
+
     const itemSubtotal = item.price * item.quantity;
 
-    const orderSubtotal = order.totalPrice;
-    const orderGross = orderSubtotal + Math.round(orderSubtotal * 0.18);
-    const orderFinal = order.finalAmount;
+    const itemRatio =
+      totalActiveSubtotal > 0 ? itemSubtotal / totalActiveSubtotal : 0;
 
-    const itemRatio = orderSubtotal > 0 ? itemSubtotal / orderSubtotal : 0;
+    const itemDiscount = Math.round((order.discount || 0) * itemRatio);
 
-    let refundAmount = Math.round(orderFinal * itemRatio);
-    if (refundAmount < 0) refundAmount = 0;
+    const itemTax = Math.round(itemSubtotal * 0.18);
 
-    order.totalPrice = Math.max(orderSubtotal - itemSubtotal, 0);
-    const newGross = order.totalPrice + Math.round(order.totalPrice * 0.18);
+    const refundAmount = Math.max(itemSubtotal + itemTax - itemDiscount, 0);
 
-    const discountRatio = orderGross > 0 ? order.discount / orderGross : 0;
-    order.discount = Math.round(newGross * discountRatio);
-    if (order.discount < 0) order.discount = 0;
+    const remainingSubtotal = Math.max(totalActiveSubtotal - itemSubtotal, 0);
+    const remainingTax = Math.round(remainingSubtotal * 0.18);
+    const remainingDiscount = Math.max((order.discount || 0) - itemDiscount, 0);
+    const remainingFinal = Math.max(
+      remainingSubtotal + remainingTax - remainingDiscount,
+      0,
+    );
 
-    order.finalAmount = Math.max(newGross - order.discount, 0);
+    order.totalPrice = remainingSubtotal;
+    order.discount = remainingDiscount;
+    order.finalAmount = remainingFinal;
 
     item.itemStatus = "cancelled";
     item.cancelledAt = new Date();

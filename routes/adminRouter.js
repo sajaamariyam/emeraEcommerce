@@ -2,14 +2,14 @@ const express = require("express");
 const router = express.Router();
 
 const adminController = require("../controllers/admin/adminController");
-const dashboardController = require("../controllers/admin/dashboardController"); // your existing file
+const dashboardController = require("../controllers/admin/dashboardController");
 const orderController = require("../controllers/admin/orderController");
 const productController = require("../controllers/admin/productController");
 const offerController = require("../controllers/admin/offerController");
 const salesController = require("../controllers/admin/salesController");
 const couponController = require("../controllers/admin/couponController");
 
-const { adminAuth, noCache } = require("../middlewares/auth");
+const { adminAuth } = require("../middlewares/auth/adminAuth");
 const { uploadCategory, uploadProduct } = require("../middlewares/upload");
 
 // ── AUTH ─────────────────────────────────────────────────────

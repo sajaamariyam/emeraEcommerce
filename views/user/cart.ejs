@@ -1,7 +1,8 @@
-<%- include('../partials/user/header', { user, cartCount }) %>
-
-
-<body class="bg-white text-gray-900 selection:bg-emera-950 selection:text-white">
+<%- include('../partials/user/header', { 
+  user, 
+  cartCount, 
+  bodyClass: 'bg-white text-gray-900 selection:bg-emera-950 selection:text-white' 
+}) %>
 
     <!-- Header Spacer -->
     <div class="h-24 bg-emera-950"></div>
@@ -62,8 +63,11 @@
                                     <% if (item.color && item.size) { %> / <% } %>
                                     <% if (item.size) { %>Size: <%= item.size %><% } %>
                                 </p>
+                                
                                 <% } %>
                             </div>
+
+                    
 
                             <%
                             const itemVariant = item.product.variants?.find(v => v.color === item.color);
@@ -71,6 +75,7 @@
                             const isOutOfStock = variantQty === 0;
 
                             %>
+
                             <% if (isOutOfStock) { %>
                             <div class="flex items-center gap-2 mt-2">
                                 <span class="inline-block w-2 h-2 rounded-full bg-red-500"></span>
