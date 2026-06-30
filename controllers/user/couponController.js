@@ -151,16 +151,9 @@ const markCouponAsUsed = async (couponCode, userId) => {
     });
 
     if (!coupon) return;
-
-    const update = {
+    await Coupon.findByIdAndUpdate(coupon._id, {
       $addToSet: { usedBy: userId },
-    };
-
-    if (!coupon.isPercentage) {
-      update.$set = { isUsed: true, isActive: false };
-    }
-
-    await Coupon.findByIdAndUpdate(coupon._id, update);
+    });
   } catch (error) {
     console.error("MARK COUPON USED ERROR:", error);
   }
