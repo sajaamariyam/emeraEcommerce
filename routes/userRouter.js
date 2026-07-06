@@ -88,7 +88,7 @@ router.get("/logout", noCache, userController.logout);
 
 //PRODUCT
 router.get("/products", userController.loadProducts);
-router.get("/products/:id", saveRedirect, userController.loadProductDetails);
+router.get("/products/:id", userController.loadProductDetails);
 router.get("/pageNotFound", userController.pageNotFound);
 router.get("/search", userController.searchProducts);
 
@@ -142,12 +142,11 @@ router.post(
 //CART
 router.get(
   "/cart",
-  saveRedirect,
   requireLogin,
   noCache,
   cartController.loadCart,
 );
-router.post("/cart/add", saveRedirect, requireLogin, cartController.addToCart);
+router.post("/cart/add", requireLogin, cartController.addToCart);
 router.put("/cart/increment/:productId", userAuth, cartController.incrementQty);
 router.put("/cart/decrement/:productId", userAuth, cartController.decrementQty);
 router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
@@ -156,7 +155,6 @@ router.delete("/cart/remove/:productId", userAuth, cartController.removeItem);
 router.get(
   "/checkout",
   userAuth,
-  saveRedirect,
   requireLogin,
   noCache,
   checkoutController.loadCheckout,
@@ -200,14 +198,12 @@ router.get(
 //WISHLIST
 router.get(
   "/wishlist",
-  saveRedirect,
   requireLogin,
   noCache,
   wishlistController.getWishlist,
 );
 router.post(
   "/wishlist/add/:productId",
-  saveRedirect,
   requireLogin,
   wishlistController.addToWishlist,
 );

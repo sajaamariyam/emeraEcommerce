@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const paymentController = require("../controllers/user/paymentController");
-const { userAuth } = require("../middlewares/auth");
+const { userAuth } = require("../middlewares/auth/userAuth");
 
 router.post("/payment/verify", userAuth, paymentController.verifyPayment);
 router.post(

@@ -10,17 +10,18 @@ const salesController = require("../controllers/admin/salesController");
 const couponController = require("../controllers/admin/couponController");
 
 const { adminAuth } = require("../middlewares/auth/adminAuth");
+const nocache = require("nocache"); 
 const { uploadCategory, uploadProduct } = require("../middlewares/upload");
 
-// ── AUTH ─────────────────────────────────────────────────────
+//AUTH
 router.get("/adminLogin", adminController.loadLogin);
 router.post("/adminLogin", adminController.login);
 router.get("/logout", adminController.logout);
 
 router.use(adminAuth);
-router.use(noCache);
+router.use(nocache());
 
-// ── DASHBOARD ────────────────────────────────────────────────
+//DASHBOARD
 router.get("/adminDashboard", dashboardController.loadDashboard);
 router.get("/dashboard/chart-data", dashboardController.getDashboardChartData);
 router.get(
@@ -34,12 +35,12 @@ router.get(
 router.get("/best-selling/brands", dashboardController.getBestSellingBrands);
 router.get("/ledger", dashboardController.generateLedger);
 
-// ── USERS ────────────────────────────────────────────────────
+//USERS
 router.get("/users", adminController.loadUsers);
 router.post("/users/block/:id", adminController.blockUser);
 router.post("/users/unblock/:id", adminController.unblockUser);
 
-// ── CATEGORIES ───────────────────────────────────────────────
+//CATEGORIES
 router.get("/categories", adminController.loadCategories);
 router.post(
   "/categories",
@@ -57,7 +58,7 @@ router.patch(
 );
 router.delete("/categories/delete/:id", adminController.deleteCategory);
 
-// ── PRODUCTS ─────────────────────────────────────────────────
+//PRODUCTS
 router.get("/products", productController.loadProducts);
 router.get("/products/:id", productController.getProduct);
 router.post(
@@ -75,14 +76,14 @@ router.post("/products/block/:id", productController.blockProduct);
 router.post("/products/unblock/:id", productController.unblockProduct);
 router.delete("/products/delete/:id", productController.deleteProduct);
 
-// ── ORDERS ───────────────────────────────────────────────────
-router.get("/orders", noCache, orderController.loadOrders);
+//ORDERS
+router.get("/orders", nocache(), orderController.loadOrders);
 router.post("/orders/update-status", orderController.updateOrderStatus);
 router.post("/orders/:id/approve-return", orderController.approveReturn);
 router.post("/orders/:id/reject-return", orderController.rejectReturn);
 router.get("/orders/:id", orderController.getOrderDetails);
 
-// ── OFFERS ───────────────────────────────────────────────────
+//OFFERS
 router.get("/offers", offerController.loadOffers);
 router.post("/offers", offerController.createOffer);
 router.get("/offers/:id", offerController.getOffer);
@@ -90,12 +91,12 @@ router.put("/offers/:id", offerController.editOffer);
 router.post("/offers/toggle/:id", offerController.toggleOfferStatus);
 router.post("/offers/delete/:id", offerController.deleteOffer);
 
-// ── COUPONS ──────────────────────────────────────────────────
+//COUPONS
 router.get("/coupons", couponController.loadCoupons);
 router.post("/coupons", couponController.createCoupon);
 router.delete("/coupons/:id", couponController.deleteCoupon);
 
-// ── SALES REPORT ─────────────────────────────────────────────
+//SALES REPORT
 router.get("/sales-report", salesController.loadSalesReport);
 router.get("/sales-report/pdf", salesController.downloadSalesPDF);
 router.get("/sales-report/excel", salesController.downloadSalesExcel);

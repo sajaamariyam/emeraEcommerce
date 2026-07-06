@@ -2,23 +2,24 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
+const MongoStore = require("connect-mongo").default;
 const flash = require("connect-flash");
 const nocache = require("nocache");
 const passport = require("./config/passport");
 const db = require("./config/db");
-
 const userRouter = require("./routes/userRouter");
 const adminRouter = require("./routes/adminRouter");
 const paymentRouter = require("./routes/paymentRouter");
-
 const cartCount = require("./middlewares/cartCount");
 const wishlistCount = require("./middlewares/wishlistCount");
 const userHeader = require("./middlewares/userHeader");
 const errorHandler = require("./middlewares/errorMiddleware");
+const User = require("./models/userSchema"); 
 
-db();
 const app = express();
+
+const startServer = async () => {
+await db();
 
 //PARSERS
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -89,8 +90,6 @@ app.use((req, res, next) => {
 });
 
 //USER LOCALS MIDDLEWARE
-const User = require("./models/userSchema");
-
 app.use(async (req, res, next) => {
   try {
     const userId = req.session.user || req.user?._id;
@@ -144,8 +143,10 @@ app.use("/", paymentRouter);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
 
+startServer();
 module.exports = app;
